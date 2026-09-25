@@ -1,0 +1,11 @@
+node_modules/
+.next/
+out/
+build/
+next-env.d.ts
+.DS_Store
+
+# Secrets : ne doivent jamais partir dans git.
+.env
+.env.*
+!.env.example
