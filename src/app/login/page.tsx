@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
 
@@ -72,6 +73,12 @@ export default function Connexion() {
           <button className="btn btn-primary" style={{ height: 44 }} disabled={envoi || etat.statut === "chargement"}>
             {envoi ? "Connexion…" : "Se connecter"}
           </button>
+          <p className="hint" style={{ textAlign: "center" }}>
+            Première connexion ?{" "}
+            <Link href="/activer" style={{ color: "var(--purple-ink)", fontWeight: 600 }}>
+              Active ton compte
+            </Link>
+          </p>
         </form>
       </div>
     </div>

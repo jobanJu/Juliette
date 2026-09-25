@@ -41,6 +41,8 @@ type Etat =
 type Session = {
   etat: Etat;
   connexion: (code: string, email: string, motDePasse: string) => Promise<string | null>;
+  /** Première connexion d'un salarié invité. Renvoie null, un message d'erreur, ou "CONFIRMER_EMAIL". */
+  activation: (code: string, email: string, motDePasse: string) => Promise<string | null>;
   deconnexion: () => Promise<void>;
   changerEtablissement: (etablissementId: string) => void;
 };
@@ -128,8 +130,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (!sb) return "Connexion au serveur indisponible.";
       const { error } = await sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: motDePasse });
       if (error) return "E-mail ou mot de passe incorrect.";
-      const sites = await chargerSites();
-      const site = sites.find((s) => s.etablissement.code.toUpperCase() === code.trim().toUpperCase());
+      let sites = await chargerSites();
+      let site = sites.find((s) => s.etablissement.code.toUpperCase() === code.trim().toUpperCase());
+      if (!site) {
+        // Invitation en attente pour cet e-mail dans cet établissement : on la rattache au compte.
+        const { error: errInvit } = await sb.rpc("rejoindre_etablissement", { p_code: code.trim(), p_email: email.trim() });
+        if (!errInvit) {
+          sites = await chargerSites();
+          site = sites.find((s) => s.etablissement.code.toUpperCase() === code.trim().toUpperCase());
+        }
+      }
       if (!site) {
         await sb.auth.signOut();
         return sites.length
@@ -140,6 +150,24 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       return null;
     },
     [ouvrir],
+  );
+
+  const activation = useCallback(
+    async (code: string, email: string, motDePasse: string) => {
+      const sb = getSupabaseClient();
+      if (!sb) return "Connexion au serveur indisponible.";
+      const { data, error } = await sb.auth.signUp({ email: email.trim().toLowerCase(), password: motDePasse });
+      if (error && !/already|registered|exists/i.test(error.message)) {
+        return /password/i.test(error.message) ? "Mot de passe trop faible : 8 caractères minimum, avec des lettres et des chiffres." : "Activation impossible pour le moment. Réessaie dans un instant.";
+      }
+      if (!error && !data.session) return "CONFIRMER_EMAIL";
+      // Compte déjà existant (ou session ouverte) : la connexion rattache l'invitation.
+      const err = await connexion(code, email, motDePasse);
+      if (err && error) return "Cet e-mail a déjà un compte Juliette : connecte-toi avec ton mot de passe habituel.";
+      if (err) return "Aucune invitation ne correspond à ce code et cet e-mail. Vérifie-les avec ton responsable.";
+      return null;
+    },
+    [connexion],
   );
 
   const deconnexion = useCallback(async () => {
@@ -156,7 +184,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [ouvrir],
   );
 
-  const valeur = useMemo(() => ({ etat, connexion, deconnexion, changerEtablissement }), [etat, connexion, deconnexion, changerEtablissement]);
+  const valeur = useMemo(
+    () => ({ etat, connexion, activation, deconnexion, changerEtablissement }),
+    [etat, connexion, activation, deconnexion, changerEtablissement],
+  );
   return <Ctx.Provider value={valeur}>{children}</Ctx.Provider>;
 }
 
