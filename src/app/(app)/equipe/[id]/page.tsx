@@ -8,7 +8,7 @@ import { initiales, nomComplet, ROLE_LABEL, useConnecte } from "@/lib/session";
 import type { Role } from "@/lib/session";
 import { ajouterJours, dureeCreneau, formatDuree, iso, lundi, MOTIFS_ABSENCE, ORDRE_POSTES, POSTES } from "@/lib/planning";
 import type { Creneau } from "@/lib/planning";
-import { anciennete, COLONNES_MEMBRE, dateFr, emailValide, FONCTIONS, NATURES, STATUTS, TYPES_CONTRAT } from "@/lib/personnel";
+import { anciennete, chargerMembres, dateFr, emailValide, FONCTIONS, NATURES, STATUTS, TYPES_CONTRAT } from "@/lib/personnel";
 import type { Membre } from "@/lib/personnel";
 
 type Brouillon = {
@@ -75,13 +75,13 @@ export default function FicheCollaborateur() {
     let actif = true;
     const debut = lundi(new Date());
     Promise.all([
-      sb.from("comptes").select(COLONNES_MEMBRE).eq("id", id).eq("etablissement_id", etablissement.id).maybeSingle(),
+      chargerMembres(etablissement.id, id),
       directeur ? sb.from("comptes_remuneration").select("taux_brut").eq("compte_id", id).maybeSingle() : null,
       voitTout ? sb.from("planning_creneaux").select("id, compte_id, date, type, heure_debut, heure_fin, pause_minutes, motif, note").eq("compte_id", id).gte("date", debut).lte("date", ajouterJours(debut, 6)).order("date") : null,
       voitTout ? sb.from("conges").select("id, date_debut, date_fin, motif, statut").eq("compte_id", id).eq("type", "conge").gte("date_fin", iso(new Date())).neq("statut", "refusee").order("date_debut").limit(5) : null,
     ]).then(([c, r, p, cg]) => {
       if (!actif) return;
-      const membre = (c.data as Membre | null) ?? null;
+      const membre = c?.[0] ?? null;
       setM(membre);
       setB(membre ? versBrouillon(membre) : null);
       const t = r?.data?.taux_brut != null ? String(Number(r.data.taux_brut)) : "";

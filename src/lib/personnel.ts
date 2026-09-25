@@ -1,6 +1,7 @@
 // Gestion du personnel : libellés et règles partagées entre l'annuaire, la fiche et l'invitation.
 // Les valeurs reprennent exactement les contraintes CHECK de la table comptes.
 
+import { getSupabaseClient } from "@/lib/supabase";
 import type { Compte } from "@/lib/session";
 
 export type Membre = Compte & {
@@ -17,8 +18,23 @@ export type Membre = Compte & {
   created_at: string;
 };
 
-export const COLONNES_MEMBRE =
-  "id, etablissement_id, auth_user_id, prenom, nom, email, role, statut, poste, avatar_url, telephone, date_naissance, fonction, type_contrat, nature_contrat, heures_contrat, date_embauche, date_depart, code_badgeuse, created_at";
+// Colonnes lisibles par tout membre. Téléphone, date de naissance et code badgeuse sont privés :
+// la base ne les renvoie que via comptes_coordonnees(), aux responsables ou à l'intéressé.
+const COLONNES_PUBLIQUES =
+  "id, etablissement_id, auth_user_id, prenom, nom, email, role, statut, poste, avatar_url, fonction, type_contrat, nature_contrat, heures_contrat, date_embauche, date_depart, created_at";
+
+/** Membres d'un établissement (ou un seul), complétés des coordonnées privées quand on y a droit. */
+export async function chargerMembres(etablissementId: string, compteId?: string): Promise<Membre[] | null> {
+  const sb = getSupabaseClient()!;
+  let requete = sb.from("comptes").select(COLONNES_PUBLIQUES).eq("etablissement_id", etablissementId).order("prenom");
+  if (compteId) requete = requete.eq("id", compteId);
+  const [membres, privees] = await Promise.all([requete, sb.rpc("comptes_coordonnees", { p_etablissement_id: etablissementId })]);
+  if (membres.error) return null;
+  const parId = new Map<string, { telephone: string | null; date_naissance: string | null; code_badgeuse: string | null }>(
+    (privees.data ?? []).map((p: { compte_id: string; telephone: string | null; date_naissance: string | null; code_badgeuse: string | null }) => [p.compte_id, p]),
+  );
+  return (membres.data ?? []).map((m) => ({ telephone: null, date_naissance: null, code_badgeuse: null, ...m, ...parId.get(m.id) }) as Membre);
+}
 
 export const FONCTIONS: Record<string, string> = {
   directeur: "Directeur",

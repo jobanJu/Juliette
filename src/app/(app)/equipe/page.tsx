@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { getSupabaseClient } from "@/lib/supabase";
 import { initiales, nomComplet, ROLE_LABEL, useConnecte } from "@/lib/session";
 import { ORDRE_POSTES, POSTES } from "@/lib/planning";
-import { anciennete, COLONNES_MEMBRE, FONCTIONS, NATURES, STATUTS, TYPES_CONTRAT } from "@/lib/personnel";
+import { anciennete, chargerMembres, FONCTIONS, NATURES, STATUTS, TYPES_CONTRAT } from "@/lib/personnel";
 import type { Membre } from "@/lib/personnel";
 import ModalNouveau from "@/components/equipe/ModalNouveau";
 
@@ -23,12 +22,7 @@ export default function Equipe() {
 
   useEffect(() => {
     let actif = true;
-    getSupabaseClient()!
-      .from("comptes")
-      .select(COLONNES_MEMBRE)
-      .eq("etablissement_id", etablissement.id)
-      .order("prenom")
-      .then(({ data }) => actif && setMembres((data ?? []) as Membre[]));
+    chargerMembres(etablissement.id).then((data) => actif && setMembres(data ?? []));
     return () => {
       actif = false;
     };
