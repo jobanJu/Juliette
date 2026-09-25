@@ -20,7 +20,7 @@ export const MODULES: ModuleJuliette[] = [
   { module: "planning", href: "/planning", label: "Planning", sub: "Horaires de la semaine", icon: "▦", groupe: "Équipe", pret: true },
   { module: "equipe", href: "/equipe", label: "Équipe", sub: "Annuaire du personnel", icon: "☺", groupe: "Équipe", pret: true },
   { module: "rh-conges", href: "/rh-conges", label: "RH & congés", sub: "Demandes & absences", icon: "✎", groupe: "Équipe", pret: true },
-  { module: "messagerie", href: "/messagerie", label: "Messagerie", sub: "Fil de messages d'équipe", icon: "✉", groupe: "Équipe", pret: false },
+  { module: "messagerie", href: "/messagerie", label: "Messagerie", sub: "Fil de messages d'équipe", icon: "✉", groupe: "Équipe", pret: true },
 
   // HACCP : module autonome, sans lien avec le stock ni les achats (tables haccp_* dédiées).
   { module: "haccp", href: "/haccp", label: "HACCP", sub: "Températures, nettoyage, traçabilité", icon: "❄", groupe: "HACCP", pret: false },
