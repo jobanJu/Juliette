@@ -41,7 +41,7 @@ export default function Connexion() {
           <ul>
             <li>◷ Pointage, planning et congés</li>
             <li>▤ Inventaire, pertes et commandes fournisseurs</li>
-            <li>✓ Réception et relevés HACCP</li>
+            <li>❄ HACCP : températures, nettoyage et traçabilité</li>
           </ul>
         </div>
         <small style={{ opacity: 0.6 }}>© {new Date().getFullYear()} Juliette</small>

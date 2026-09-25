@@ -88,6 +88,8 @@ async function chargerModules(etablissementId: string, role: Role): Promise<Set<
   );
   const autorises = new Set(reponses.filter(([, ok]) => ok).map(([m]) => m));
   autorises.add("dashboard");
+  // Les relevés HACCP sont ouverts à tout membre actif (RLS des tables haccp_*), quel que soit le poste.
+  autorises.add("haccp");
   return autorises;
 }
 

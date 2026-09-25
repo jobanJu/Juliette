@@ -7,7 +7,7 @@ export type ModuleJuliette = {
   label: string;
   sub: string;
   icon: string;
-  groupe: "Pilotage" | "Équipe" | "Stock & achats" | "Salle" | "Établissement";
+  groupe: "Pilotage" | "Équipe" | "HACCP" | "Stock & achats" | "Salle" | "Établissement";
   pret: boolean;
 };
 
@@ -22,10 +22,13 @@ export const MODULES: ModuleJuliette[] = [
   { module: "rh-conges", href: "/rh-conges", label: "RH & congés", sub: "Demandes & absences", icon: "✎", groupe: "Équipe", pret: false },
   { module: "messagerie", href: "/messagerie", label: "Messagerie", sub: "Fil de messages d'équipe", icon: "✉", groupe: "Équipe", pret: false },
 
+  // HACCP : module autonome, sans lien avec le stock ni les achats (tables haccp_* dédiées).
+  { module: "haccp", href: "/haccp", label: "HACCP", sub: "Températures, nettoyage, traçabilité", icon: "❄", groupe: "HACCP", pret: false },
+
   { module: "inventaire", href: "/inventaire", label: "Stocks", sub: "Inventaire par zone", icon: "▤", groupe: "Stock & achats", pret: false },
   { module: "perte", href: "/perte", label: "Pertes", sub: "Casse, DLC, retours", icon: "↘", groupe: "Stock & achats", pret: false },
   { module: "aide-commande", href: "/aide-commande", label: "Commandes", sub: "Quoi commander aujourd'hui", icon: "↗", groupe: "Stock & achats", pret: false },
-  { module: "reception", href: "/reception", label: "Réception & HACCP", sub: "Livraisons & températures", icon: "✓", groupe: "Stock & achats", pret: false },
+  { module: "reception", href: "/reception", label: "Réception", sub: "Livraisons conformes à la commande", icon: "✓", groupe: "Stock & achats", pret: false },
 
   { module: "commandes-clients", href: "/commandes-clients", label: "Commandes clients", sub: "Tables & commandes en cours", icon: "◫", groupe: "Salle", pret: false },
   { module: "reservations", href: "/reservations", label: "Réservations", sub: "Accueil & briefing", icon: "▣", groupe: "Salle", pret: false },
@@ -35,7 +38,7 @@ export const MODULES: ModuleJuliette[] = [
   { module: "accreditations", href: "/accreditations", label: "Accréditations", sub: "Comptes & niveaux d'accès", icon: "⚿", groupe: "Établissement", pret: false },
 ];
 
-export const GROUPES = ["Pilotage", "Équipe", "Stock & achats", "Salle", "Établissement"] as const;
+export const GROUPES = ["Pilotage", "Équipe", "HACCP", "Stock & achats", "Salle", "Établissement"] as const;
 
 export function moduleDeRoute(pathname: string): ModuleJuliette | undefined {
   return MODULES.find((m) => pathname === m.href || pathname.startsWith(m.href + "/"));
