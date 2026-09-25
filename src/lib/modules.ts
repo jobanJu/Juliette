@@ -16,7 +16,7 @@ export const MODULES: ModuleJuliette[] = [
   { module: "finance", href: "/finance", label: "Finance", sub: "Ventes, pertes et estimations", icon: "€", groupe: "Pilotage", pret: false },
   { module: "evenements", href: "/evenements", label: "Événements", sub: "Concerts, matchs, marchés", icon: "✦", groupe: "Pilotage", pret: false },
 
-  { module: "pointeuse", href: "/pointeuse", label: "Pointage", sub: "Arrivées & départs", icon: "◷", groupe: "Équipe", pret: false },
+  { module: "pointeuse", href: "/pointeuse", label: "Pointage", sub: "Arrivées & départs", icon: "◷", groupe: "Équipe", pret: true },
   { module: "planning", href: "/planning", label: "Planning", sub: "Horaires de la semaine", icon: "▦", groupe: "Équipe", pret: true },
   { module: "equipe", href: "/equipe", label: "Équipe", sub: "Annuaire du personnel", icon: "☺", groupe: "Équipe", pret: true },
   { module: "rh-conges", href: "/rh-conges", label: "RH & congés", sub: "Demandes & absences", icon: "✎", groupe: "Équipe", pret: false },
