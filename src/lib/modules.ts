@@ -23,7 +23,7 @@ export const MODULES: ModuleJuliette[] = [
   { module: "messagerie", href: "/messagerie", label: "Messagerie", sub: "Fil de messages d'équipe", icon: "✉", groupe: "Équipe", pret: true },
 
   // HACCP : module autonome, sans lien avec le stock ni les achats (tables haccp_* dédiées).
-  { module: "haccp", href: "/haccp", label: "HACCP", sub: "Températures, nettoyage, traçabilité", icon: "❄", groupe: "HACCP", pret: false },
+  { module: "haccp", href: "/haccp", label: "HACCP", sub: "Températures, nettoyage, traçabilité", icon: "❄", groupe: "HACCP", pret: true },
 
   { module: "inventaire", href: "/inventaire", label: "Stocks", sub: "Inventaire par zone", icon: "▤", groupe: "Stock & achats", pret: false },
   { module: "perte", href: "/perte", label: "Pertes", sub: "Casse, DLC, retours", icon: "↘", groupe: "Stock & achats", pret: false },

@@ -555,3 +555,70 @@ button.slot { cursor: pointer; }
   .chat-tip { display: none; }
   .msg-del { opacity: 1; }
 }
+
+/* ——— HACCP ——— */
+button.card { font: inherit; color: inherit; text-align: left; cursor: pointer; }
+button.card:hover { border-color: #ddd6ea; }
+.tabs-scroll { overflow-x: auto; margin-bottom: 14px; }
+.link-btn { border: 0; background: transparent; color: var(--purple-ink); font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; justify-self: start; }
+.temp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.temp-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 10px; }
+.temp-card.ok { border-color: #cfe9da; background: #f7fcf9; }
+.temp-card.ko { border-color: #f1c7c2; background: #fff8f7; }
+.temp-top { display: flex; gap: 10px; align-items: center; }
+.temp-top b { display: block; font-size: 13px; }
+.temp-top small { color: var(--muted); font-size: 11.5px; }
+.temp-done { display: grid; gap: 3px; }
+.temp-val { font-size: 24px; font-weight: 750; letter-spacing: -.6px; font-variant-numeric: tabular-nums; }
+.temp-card.ok .temp-val { color: var(--mint-ink); }
+.temp-card.ko .temp-val { color: var(--red-ink); }
+.temp-done small { font-size: 11.5px; color: var(--muted); }
+.temp-action { color: var(--red-ink) !important; }
+.temp-form { display: grid; gap: 6px; }
+.temp-input { display: flex; align-items: center; gap: 6px; }
+.temp-input input { flex: 1; min-width: 0; height: 40px; border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; font-size: 16px; font-weight: 650; outline: 0; font-variant-numeric: tabular-nums; }
+.temp-input input:focus { border-color: var(--purple); }
+.temp-input span { color: var(--muted); font-size: 13px; }
+.temp-input .btn { height: 40px; }
+.temp-action-input { height: 36px; border: 1px solid #f1c7c2; border-radius: 10px; padding: 0 10px; font-size: 12.5px; outline: 0; background: #fff; }
+.temp-err { color: var(--red-ink); font-size: 11.5px; }
+.temp-hist th, .temp-hist td { text-align: center; white-space: nowrap; }
+.temp-hist td:first-child, .temp-hist th:first-child { text-align: left; }
+.th-ok { color: var(--mint-ink); font-weight: 600; }
+.th-ko { color: var(--red-ink); font-weight: 700; background: var(--red); }
+.th-vide { color: #c9c4d4; }
+.clean-task { display: flex; align-items: center; gap: 12px; padding: 9px 4px; border-top: 1px solid var(--line); cursor: pointer; }
+.clean-task input { width: 20px; height: 20px; accent-color: var(--mint-ink); flex-shrink: 0; }
+.clean-txt { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.clean-txt b { font-size: 13px; font-weight: 600; }
+.clean-txt small { font-size: 11.5px; color: var(--muted); }
+.clean-task.done .clean-txt b { color: var(--muted); text-decoration: line-through; }
+.clean-who { font-size: 11px; color: var(--mint-ink); white-space: nowrap; }
+.plan-list, .equip-list { display: grid; gap: 6px; max-height: 50vh; overflow-y: auto; }
+.plan-row, .equip-row { display: grid; gap: 6px; align-items: center; }
+.plan-row { grid-template-columns: 1.3fr 1.3fr .8fr .9fr 32px; }
+.equip-row { grid-template-columns: 1.6fr 1.2fr 64px 64px 32px; }
+.plan-row input, .plan-row select, .equip-row input, .equip-row select { height: 36px; border: 1px solid var(--line); border-radius: 9px; padding: 0 8px; font-size: 12.5px; min-width: 0; background: var(--card); }
+.modal:has(.plan-list) { max-width: 760px; }
+.modal:has(.equip-list) { max-width: 600px; }
+.refroid-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.refroid-form > input { flex: 1 1 240px; height: 40px; border: 1px solid var(--line); border-radius: 10px; padding: 0 12px; outline: 0; }
+.refroid-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.refroid-row:first-child { border-top: 0; }
+.refroid-row .main-txt { flex: 1 1 200px; display: grid; gap: 2px; min-width: 0; }
+.refroid-row .main-txt small { color: var(--muted); font-size: 11.5px; }
+.etiquette-print { display: none; }
+@media (max-width: 860px) {
+  .plan-row { grid-template-columns: 1fr 1fr; }
+  .equip-row { grid-template-columns: 1fr 1fr 56px 56px 32px; }
+}
+@media print {
+  body.imprime-etiquette * { visibility: hidden !important; }
+  body.imprime-etiquette .etiquette-print, body.imprime-etiquette .etiquette-print * { visibility: visible !important; }
+  body.imprime-etiquette .etiquette-print {
+    display: grid !important; position: fixed; top: 0; left: 0; width: 70mm; min-height: 40mm; padding: 3mm 4mm; gap: 1mm;
+    border: 1px solid #000; font: 9pt/1.25 Inter, -apple-system, sans-serif; color: #000;
+  }
+  body.imprime-etiquette .et-produit { font-size: 12pt; }
+  body.imprime-etiquette .et-dlc { font-size: 13pt; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 1mm 0; }
+}
