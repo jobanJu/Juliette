@@ -8,6 +8,8 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
 
+const ENTETES = { "Content-Type": "application/json; charset=utf-8" };
+
 export async function GET() {
   const publique = getSupabaseClient();
   const admin = getSupabaseAdmin();
@@ -22,17 +24,17 @@ export async function GET() {
 
   if (!admin) {
     etat.message = "SUPABASE_SERVICE_ROLE_KEY absente de .env.local — les routes serveur ne peuvent pas lire la base.";
-    return NextResponse.json(etat, { status: 200 });
+    return NextResponse.json(etat, { status: 200, headers: ENTETES });
   }
 
   const { count, error } = await admin.from("etablissements").select("id", { count: "exact", head: true });
   if (error) {
     etat.message = "Connexion refusée par Supabase — vérifie l'URL et la clé service_role.";
-    return NextResponse.json(etat, { status: 200 });
+    return NextResponse.json(etat, { status: 200, headers: ENTETES });
   }
 
   etat.lectureBase = true;
   etat.nbEtablissements = count ?? 0;
   etat.message = "Connexion établie.";
-  return NextResponse.json(etat);
+  return NextResponse.json(etat, { headers: ENTETES });
 }
