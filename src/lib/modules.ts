@@ -25,10 +25,10 @@ export const MODULES: ModuleJuliette[] = [
   // HACCP : module autonome, sans lien avec le stock ni les achats (tables haccp_* dédiées).
   { module: "haccp", href: "/haccp", label: "HACCP", sub: "Températures, nettoyage, traçabilité", icon: "❄", groupe: "HACCP", pret: true },
 
-  { module: "inventaire", href: "/inventaire", label: "Stocks", sub: "Inventaire par zone", icon: "▤", groupe: "Stock & achats", pret: false },
-  { module: "perte", href: "/perte", label: "Pertes", sub: "Casse, DLC, retours", icon: "↘", groupe: "Stock & achats", pret: false },
-  { module: "aide-commande", href: "/aide-commande", label: "Commandes", sub: "Quoi commander aujourd'hui", icon: "↗", groupe: "Stock & achats", pret: false },
-  { module: "reception", href: "/reception", label: "Réception", sub: "Livraisons conformes à la commande", icon: "✓", groupe: "Stock & achats", pret: false },
+  { module: "inventaire", href: "/inventaire", label: "Stocks", sub: "Inventaire par zone", icon: "▤", groupe: "Stock & achats", pret: true },
+  { module: "perte", href: "/perte", label: "Pertes", sub: "Casse, DLC, retours", icon: "↘", groupe: "Stock & achats", pret: true },
+  { module: "aide-commande", href: "/aide-commande", label: "Commandes", sub: "Quoi commander aujourd'hui", icon: "↗", groupe: "Stock & achats", pret: true },
+  { module: "reception", href: "/reception", label: "Réception", sub: "Livraisons conformes à la commande", icon: "✓", groupe: "Stock & achats", pret: true },
 
   { module: "commandes-clients", href: "/commandes-clients", label: "Commandes clients", sub: "Tables & commandes en cours", icon: "◫", groupe: "Salle", pret: false },
   { module: "reservations", href: "/reservations", label: "Réservations", sub: "Accueil & briefing", icon: "▣", groupe: "Salle", pret: false },
