@@ -126,7 +126,7 @@ export default function FicheCollaborateur() {
   async function enregistrer() {
     if (!m || !b) return;
     setErreur(null);
-    if (!b.prenom.trim()) return setErreur("Le prénom est obligatoire.");
+    if (!b.prenom.trim() || !b.nom.trim()) return setErreur("Le prénom et le nom sont obligatoires.");
     if (m.statut === "invite" && !emailValide(b.email)) return setErreur("E-mail invalide : il sert à activer le compte.");
     const h = b.heures_contrat.trim() === "" ? null : Number(b.heures_contrat.replace(",", "."));
     if (h !== null && (!Number.isFinite(h) || h < 0 || h > 60)) return setErreur("Heures contrat : un nombre entre 0 et 60.");
@@ -136,7 +136,7 @@ export default function FicheCollaborateur() {
     setEnvoi(true);
     const maj: Record<string, unknown> = {
       prenom: b.prenom.trim(),
-      nom: b.nom.trim() || null,
+      nom: b.nom.trim(),
       telephone: b.telephone.trim() || null,
       date_naissance: b.date_naissance || null,
       fonction: b.fonction || null,

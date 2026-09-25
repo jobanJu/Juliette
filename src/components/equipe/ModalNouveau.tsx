@@ -35,7 +35,7 @@ export default function ModalNouveau(p: Props) {
 
   async function creer() {
     setErreur(null);
-    if (!prenom.trim()) return setErreur("Le prénom est obligatoire.");
+    if (!prenom.trim() || !nom.trim()) return setErreur("Le prénom et le nom sont obligatoires.");
     if (!emailValide(email)) return setErreur("Il faut un e-mail valide : c'est lui qui permettra d'activer le compte.");
     if (p.emailsExistants.includes(email.trim().toLowerCase())) return setErreur("Quelqu'un de l'équipe a déjà cet e-mail.");
     setEnvoi(true);
@@ -44,7 +44,7 @@ export default function ModalNouveau(p: Props) {
       .insert({
         etablissement_id: p.etablissementId,
         prenom: prenom.trim(),
-        nom: nom.trim() || null,
+        nom: nom.trim(),
         email: email.trim().toLowerCase(),
         telephone: telephone.trim() || null,
         fonction: fonction || null,
@@ -120,7 +120,7 @@ export default function ModalNouveau(p: Props) {
           <input id="n-prenom" value={prenom} onChange={(e) => setPrenom(e.target.value)} autoFocus />
         </div>
         <div className="field">
-          <label htmlFor="n-nom">Nom</label>
+          <label htmlFor="n-nom">Nom *</label>
           <input id="n-nom" value={nom} onChange={(e) => setNom(e.target.value)} />
         </div>
       </div>
