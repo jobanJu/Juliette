@@ -23,6 +23,7 @@ export default function Commandes() {
   const [fournEdit, setFournEdit] = useState<Fournisseur | "nouveau" | null>(null);
   const [preparer, setPreparer] = useState<Groupe | null>(null);
   const [ajout, setAjout] = useState("");
+  const [catalogue, setCatalogue] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,6 +61,17 @@ export default function Commandes() {
       .filter(({ p, s }) => !enListe.has(p.id) && (s.statut === "rupture" || s.statut === "bas"))
       .map(({ p, s }) => ({ p, s, q: quantiteSuggeree(p, s.quantite) ?? 1 }));
   }, [d, stocks]);
+
+  const nomsFournisseurs = useMemo(() => {
+    const m = new Map<string, { cle: string; nom: string; nb: number }>();
+    for (const p of d?.produits ?? []) {
+      const cle = (p.fournisseur ?? "").trim().toLowerCase() || "—";
+      const e = m.get(cle) ?? { cle, nom: p.fournisseur?.trim() || "Sans fournisseur", nb: 0 };
+      e.nb++;
+      m.set(cle, e);
+    }
+    return [...m.values()].sort((a, b) => (a.cle === "—" ? 1 : b.cle === "—" ? -1 : a.nom.localeCompare(b.nom)));
+  }, [d]);
 
   const doublons = useMemo(() => {
     const vus = new Map<string, number>();
@@ -139,36 +151,58 @@ export default function Commandes() {
           )}
 
           {gestion && (
-            <div style={{ position: "relative", maxWidth: 420 }}>
-              <label className="search" style={{ background: "var(--card)" }}>
-                <span aria-hidden>＋</span>
-                <input placeholder="Ajouter un produit à la liste…" value={ajout} onChange={(e) => setAjout(e.target.value)} />
-              </label>
-              {recherchables.length > 0 && (
-                <div className="suggest">
-                  {recherchables.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => {
-                        setAjout("");
-                        mettreQuantite(p, quantiteSuggeree(p, stocks.get(p.id)?.quantite ?? null) ?? 1);
-                      }}
-                    >
-                      {p.nom} <small className="hint">{p.fournisseur ?? "sans fournisseur"}</small>
-                    </button>
-                  ))}
+            <section className="card">
+              <div className="card-head" style={{ flexWrap: "wrap" }}>
+                <h2>Passer une commande chez…</h2>
+                <div style={{ position: "relative", minWidth: 240 }}>
+                  <label className="search" style={{ background: "var(--card)" }}>
+                    <span aria-hidden>⌕</span>
+                    <input placeholder="ou chercher un produit" value={ajout} onChange={(e) => setAjout(e.target.value)} />
+                  </label>
+                  {recherchables.length > 0 && (
+                    <div className="suggest">
+                      {recherchables.map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => {
+                            setAjout("");
+                            mettreQuantite(p, quantiteSuggeree(p, stocks.get(p.id)?.quantite ?? null) ?? 1);
+                          }}
+                        >
+                          {p.nom} <small className="hint">{p.fournisseur ?? "sans fournisseur"}</small>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
+              </div>
+              <div className="chips">
+                {nomsFournisseurs.map((f) => (
+                  <button key={f.cle} className={`chip${catalogue === f.cle ? " on" : ""}`} onClick={() => setCatalogue(catalogue === f.cle ? null : f.cle)}>
+                    {f.nom} <span className="seg-count">{f.nb}</span>
+                  </button>
+                ))}
+              </div>
+              {catalogue && (
+                <Catalogue
+                  produits={d.produits.filter((p) => ((p.fournisseur ?? "").trim().toLowerCase() || "—") === catalogue)}
+                  quantites={new Map(d.liste.map((l) => [l.produit_id, Number(l.quantite)]))}
+                  stocks={stocks}
+                  onQuantite={mettreQuantite}
+                />
               )}
-            </div>
+              {!catalogue && <p className="hint" style={{ margin: "10px 0 0" }}>Choisis un fournisseur pour voir tout son catalogue et saisir les quantités.</p>}
+            </section>
           )}
 
-          {!groupes.length ? (
+          {groupes.length > 0 && <h2 style={{ margin: "6px 0 -4px", fontSize: 15 }}>Commandes en préparation</h2>}
+          {groupes.map((g) => (
+            <CarteFournisseur key={g.cle} g={g} gestion={gestion} onQuantite={mettreQuantite} onPreparer={() => setPreparer(g)} />
+          ))}
+          {!gestion && !groupes.length && (
             <section className="card empty">
-              <b>La liste de commande est vide</b>
-              Ajoute des produits ici ou depuis Stocks (« + Commander »). Les produits sous le seuil te seront proposés automatiquement.
+              <b>Aucune commande en préparation</b>
             </section>
-          ) : (
-            groupes.map((g) => <CarteFournisseur key={g.cle} g={g} gestion={gestion} onQuantite={mettreQuantite} onPreparer={() => setPreparer(g)} />)
           )}
         </div>
       ) : onglet === "envoyees" ? (
@@ -239,6 +273,74 @@ async function envoyerParEmail(commandeId: string): Promise<{ ok: boolean; messa
   const j = (await r.json().catch(() => ({}))) as { erreur?: string; message?: string };
   const libelles: Record<string, string> = { non_configure: "envoi automatique non branché", sans_email: "pas d'e-mail pour ce fournisseur", interdit: "réservé aux responsables", echec_envoi: j.message ?? "refusé par le prestataire" };
   return { ok: false, message: libelles[j.erreur ?? ""] ?? "erreur inconnue" };
+}
+
+/** Tout le catalogue d'un fournisseur, avec une quantité à saisir par produit. */
+function Catalogue({ produits, quantites, stocks, onQuantite }: { produits: Produit[]; quantites: Map<string, number>; stocks: Map<string, EtatStock>; onQuantite: (p: Produit, q: number) => void }) {
+  const noms = new Map<string, number>();
+  for (const p of produits) noms.set(p.nom.toLowerCase(), (noms.get(p.nom.toLowerCase()) ?? 0) + 1);
+  const tries = [...produits].sort((a, b) => a.nom.localeCompare(b.nom));
+  return (
+    <div className="table-wrap" style={{ marginTop: 12 }}>
+      <table className="data">
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th style={{ textAlign: "right" }}>En stock</th>
+            <th style={{ textAlign: "right" }}>Prix HT</th>
+            <th style={{ textAlign: "right" }}>Quantité</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tries.map((p) => {
+            const q = quantites.get(p.id) ?? 0;
+            const s = stocks.get(p.id);
+            const sugg = quantiteSuggeree(p, s?.quantite ?? null);
+            return (
+              <tr key={p.id} className={q > 0 ? "row-choisi" : ""}>
+                <td>
+                  <b style={{ fontWeight: 600 }}>{p.nom}</b>
+                  {(noms.get(p.nom.toLowerCase()) ?? 0) > 1 && <small className="pill t-yellow" style={{ marginLeft: 6 }}>doublon</small>}
+                  <small className="justif">{[p.conditionnement, p.reference_fournisseur && `réf. ${p.reference_fournisseur}`].filter(Boolean).join(" · ")}</small>
+                </td>
+                <td style={{ textAlign: "right", whiteSpace: "nowrap" }} className={s?.statut === "rupture" || s?.statut === "bas" ? "th-ko" : "hint"}>
+                  {formatQte(s?.quantite, p.unite)}
+                  {sugg && !q ? <small className="justif">conseillé : {formatQte(sugg, p.unite)}</small> : null}
+                </td>
+                <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{p.prix_unitaire ? `${euros(Number(p.prix_unitaire))}/${p.unite}` : <span className="hint">?</span>}</td>
+                <td style={{ textAlign: "right" }}>
+                  <span className="qty-ctrl" style={{ justifyContent: "flex-end" }}>
+                    <button onClick={() => onQuantite(p, Math.max(0, q - 1))} disabled={q <= 0} aria-label={`Retirer 1 ${p.unite}`}>
+                      −
+                    </button>
+                    <input
+                      key={q}
+                      className="qty-input"
+                      defaultValue={q ? String(q).replace(".", ",") : ""}
+                      placeholder="0"
+                      inputMode="decimal"
+                      onBlur={(e) => {
+                        const v = Number(e.target.value.replace(",", ".") || 0);
+                        if (Number.isFinite(v) && v !== q) onQuantite(p, Math.max(0, v));
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+                      aria-label={`Quantité ${p.nom}`}
+                    />
+                    <button onClick={() => onQuantite(p, q + 1)} aria-label={`Ajouter 1 ${p.unite}`}>
+                      +
+                    </button>
+                    <small className="hint" style={{ minWidth: 42, textAlign: "left" }}>
+                      {p.unite}
+                    </small>
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 function totaux(g: Groupe) {

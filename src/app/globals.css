@@ -884,3 +884,6 @@ tr.clickable { cursor: pointer; }
 .colchart-tip { position: absolute; bottom: 60%; left: 50%; z-index: 5; display: grid; gap: 2px; min-width: 150px; padding: 8px 10px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); font-size: 12px; white-space: nowrap; }
 .colchart-tip.gauche { left: auto; right: 50%; }
 @media (max-width: 600px) { .hero-num { font-size: 40px; } .hero-side { text-align: left; } }
+.qty-input { width: 64px; height: 30px; border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; outline: 0; }
+.qty-input:focus { border-color: var(--purple); }
+tr.row-choisi td { background: var(--lavender); }
