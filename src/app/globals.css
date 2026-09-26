@@ -655,3 +655,52 @@ tr.clickable { cursor: pointer; }
   .perte-form > .field:first-child { grid-column: 1 / -1; }
   .motif-bar { grid-template-columns: 1fr 1fr 80px; }
 }
+
+/* ——— Fiches techniques ——— */
+.recipe-card { display: grid; padding: 0; overflow: hidden; transition: border-color .12s, box-shadow .12s; }
+.recipe-card:hover { border-color: #ddd6ea; box-shadow: var(--shadow); }
+.recipe-img { display: grid; place-items: center; aspect-ratio: 16 / 9; background: var(--lavender); color: #c7bdf0; font-size: 34px; overflow: hidden; }
+.recipe-img img { width: 100%; height: 100%; object-fit: cover; }
+.recipe-body { display: grid; gap: 4px; padding: 12px 14px 14px; }
+.recipe-body b { font-size: 15px; letter-spacing: -.2px; }
+.recipe-allerg { font-size: 14px; letter-spacing: 2px; }
+.recipe-cost { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12.5px; font-weight: 600; }
+.editeur-grid, .fiche-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+.ing-list { display: grid; gap: 6px; overflow-x: auto; }
+.ing-row { display: grid; grid-template-columns: minmax(170px, 2.2fr) 74px 74px 78px 104px 76px 30px; gap: 6px; align-items: center; min-width: 640px; }
+.ing-row > input, .ing-row .with-suffix input, .ing-row span > input { height: 36px; border: 1px solid var(--line); border-radius: 9px; padding: 0 8px; font-size: 13px; min-width: 0; width: 100%; background: var(--card); outline: 0; }
+.ing-row input:focus { border-color: var(--purple); }
+.ing-head { font-size: 10.5px; font-weight: 650; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+.ing-lie { display: flex; align-items: center; gap: 4px; height: 36px; padding: 0 2px 0 10px; border-radius: 9px; background: var(--mint); border: 1px solid #cfe9da; min-width: 0; }
+.ing-lie b { font-size: 13px; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.with-suffix { position: relative; display: block; }
+.with-suffix i { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); font-style: normal; color: var(--muted); font-size: 12px; pointer-events: none; }
+.with-suffix input { padding-right: 22px !important; }
+.etape-row { display: grid; grid-template-columns: 30px 1fr 32px; gap: 8px; align-items: start; }
+.etape-num { width: 26px; height: 26px; border-radius: 50%; background: var(--lavender); color: var(--purple-ink); display: grid; place-items: center; font-size: 12px; font-weight: 700; margin-top: 6px; }
+.etape-row textarea { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 13px; resize: vertical; outline: 0; min-height: 44px; }
+.etape-row textarea:focus { border-color: var(--purple); }
+.cost-list { display: grid; grid-template-columns: 1fr auto; gap: 7px 12px; margin: 12px 0 8px; font-size: 13px; }
+.cost-list dt { color: var(--muted); }
+.cost-list dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.photo { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--paper); border: 1px solid var(--line); }
+.photo img { width: 100%; height: 100%; object-fit: cover; }
+.photo button { position: absolute; top: 4px; right: 4px; border: 0; width: 22px; height: 22px; border-radius: 50%; background: #0008; color: #fff; cursor: pointer; font-size: 11px; }
+.photo-add { display: grid; place-items: center; cursor: pointer; color: var(--muted); font-weight: 600; border-style: dashed; }
+.fiche-photo { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; display: block; }
+.photo-thumbs { display: flex; gap: 6px; margin-top: 8px; }
+.photo-thumbs button { width: 52px; height: 52px; padding: 0; border: 2px solid transparent; border-radius: 8px; overflow: hidden; cursor: pointer; background: none; }
+.photo-thumbs button.on { border-color: var(--purple); }
+.photo-thumbs img { width: 100%; height: 100%; object-fit: cover; }
+.etapes { margin: 0; padding-left: 22px; display: grid; gap: 10px; font-size: 14px; line-height: 1.5; }
+.etapes li::marker { color: var(--purple); font-weight: 700; }
+.scale { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.scale input { width: 60px; height: 30px; border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; text-align: center; font-weight: 650; }
+@media (max-width: 1000px) {
+  .editeur-grid, .fiche-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media print {
+  .fiche-grid { grid-template-columns: 1fr 220px; }
+  .fiche-view .card { break-inside: avoid; }
+}

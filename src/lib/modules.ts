@@ -33,7 +33,7 @@ export const MODULES: ModuleJuliette[] = [
   { module: "commandes-clients", href: "/commandes-clients", label: "Commandes clients", sub: "Tables & commandes en cours", icon: "◫", groupe: "Salle", pret: false },
   { module: "reservations", href: "/reservations", label: "Réservations", sub: "Accueil & briefing", icon: "▣", groupe: "Salle", pret: false },
 
-  { module: "fiche-technique", href: "/fiche-technique", label: "Fiches techniques", sub: "Recettes & coûts matière", icon: "❏", groupe: "Établissement", pret: false },
+  { module: "fiche-technique", href: "/fiche-technique", label: "Fiches techniques", sub: "Recettes & coûts matière", icon: "❏", groupe: "Établissement", pret: true },
   { module: "documentation", href: "/documentation", label: "Documentation", sub: "Procédures & archives", icon: "▢", groupe: "Établissement", pret: false },
   { module: "accreditations", href: "/accreditations", label: "Accréditations", sub: "Comptes & niveaux d'accès", icon: "⚿", groupe: "Établissement", pret: false },
 ];
