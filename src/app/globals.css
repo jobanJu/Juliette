@@ -854,3 +854,33 @@ tr.clickable { cursor: pointer; }
 .profile-link { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; border-radius: 10px; padding: 2px; }
 .profile-link:hover b { color: var(--purple-ink); }
 .cover { height: 140px; border-radius: 12px; background: var(--lavender) center / cover no-repeat; display: grid; place-items: end start; padding: 10px; }
+
+/* ——— Finance ——— */
+.hero-ca { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; flex-wrap: wrap; }
+.hero-ca > div:first-child { display: grid; gap: 4px; }
+.hero-num { font-size: 52px; font-weight: 750; letter-spacing: -2px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.hero-side { display: grid; gap: 2px; text-align: right; }
+.hero-side b { font-size: 26px; letter-spacing: -.8px; font-variant-numeric: tabular-nums; }
+.barlist { display: grid; gap: 10px; }
+.barlist-row { display: grid; grid-template-columns: minmax(110px, 1.1fr) 2fr auto; gap: 10px; align-items: center; font-size: 12.5px; }
+.barlist-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.barlist-track { height: 10px; border-radius: 4px; background: var(--paper); overflow: hidden; }
+.barlist-track i { display: block; height: 100%; background: var(--purple); border-radius: 0 4px 4px 0; }
+.barlist-val { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.colchart { position: relative; height: 240px; padding-left: 46px; margin-top: 6px; }
+.colchart-grid { position: absolute; inset: 0 0 22px 46px; pointer-events: none; }
+.colchart-line { position: absolute; left: 0; right: 0; border-top: 1px solid var(--line); }
+.colchart-line span { position: absolute; right: calc(100% + 8px); top: -7px; font-size: 10.5px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.colchart-moy { position: absolute; left: 0; right: 0; border-top: 1.5px dashed #b9b3c4; }
+.colchart-moy span { position: absolute; right: 0; top: -17px; font-size: 10.5px; color: var(--muted); background: var(--card); padding: 0 4px; }
+.colchart-cols { position: absolute; inset: 0 0 0 46px; display: flex; gap: 2px; }
+.colchart-col { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 22px; cursor: default; outline: none; min-width: 0; }
+.colchart-bar { display: block; background: var(--purple); border-radius: 4px 4px 0 0; min-height: 0; transition: background .1s; }
+.colchart-col.on .colchart-bar, .colchart-col:focus-visible .colchart-bar { background: var(--purple-ink); }
+.colchart-col.on::before { content: ""; position: absolute; inset: 0 0 22px; background: #7357d90d; border-radius: 4px; }
+.colchart-x { position: absolute; bottom: 2px; left: 0; right: 0; text-align: center; font-size: 10.5px; color: var(--muted); }
+.colchart-col.today .colchart-x { color: var(--purple-ink); font-weight: 700; }
+.colchart-evt { position: absolute; bottom: 16px; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--yellow-ink); box-shadow: 0 0 0 2px var(--card); }
+.colchart-tip { position: absolute; bottom: 60%; left: 50%; z-index: 5; display: grid; gap: 2px; min-width: 150px; padding: 8px 10px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); font-size: 12px; white-space: nowrap; }
+.colchart-tip.gauche { left: auto; right: 50%; }
+@media (max-width: 600px) { .hero-num { font-size: 40px; } .hero-side { text-align: left; } }

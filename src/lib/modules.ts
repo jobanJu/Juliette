@@ -13,7 +13,7 @@ export type ModuleJuliette = {
 
 export const MODULES: ModuleJuliette[] = [
   { module: "dashboard", href: "/dashboard", label: "Tableau de bord", sub: "Vue d'ensemble", icon: "⌂", groupe: "Pilotage", pret: true },
-  { module: "finance", href: "/finance", label: "Finance", sub: "Ventes, pertes et estimations", icon: "€", groupe: "Pilotage", pret: false },
+  { module: "finance", href: "/finance", label: "Finance", sub: "Ventes, pertes et estimations", icon: "€", groupe: "Pilotage", pret: true },
   { module: "evenements", href: "/evenements", label: "Événements", sub: "Concerts, matchs, marchés", icon: "✦", groupe: "Pilotage", pret: true },
 
   { module: "pointeuse", href: "/pointeuse", label: "Pointage", sub: "Arrivées & départs", icon: "◷", groupe: "Équipe", pret: true },
