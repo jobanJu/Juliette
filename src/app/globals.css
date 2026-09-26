@@ -704,3 +704,27 @@ tr.clickable { cursor: pointer; }
   .fiche-grid { grid-template-columns: 1fr 220px; }
   .fiche-view .card { break-inside: avoid; }
 }
+
+/* ——— Calculateur de recette ——— */
+.calc .card-head { flex-wrap: wrap; }
+.calc-list { display: grid; }
+.calc-row { display: flex; align-items: center; gap: 12px; padding: 8px 6px; border-top: 1px solid var(--line); flex-wrap: wrap; border-radius: 8px; }
+.calc-row:first-child { border-top: 0; }
+.calc-row .main-txt { flex: 1 1 200px; display: grid; gap: 1px; }
+.calc-row .main-txt b { font-size: 13px; font-weight: 600; }
+.calc-row.limitant { background: var(--peach); border-top-color: transparent; }
+.calc-row.limitant .main-txt b::after { content: " · limitant"; color: var(--peach-ink); font-size: 11px; font-weight: 700; }
+.calc-input { display: flex; align-items: center; gap: 6px; }
+.calc-input input { width: 90px; height: 36px; border: 1px solid var(--line); border-radius: 9px; padding: 0 10px; font-size: 14px; font-weight: 600; text-align: right; outline: 0; }
+.calc-input input:focus { border-color: var(--purple); }
+.calc-input select { height: 36px; border: 1px solid var(--line); border-radius: 9px; padding: 0 6px; background: var(--card); }
+.calc-input i { font-style: normal; color: var(--muted); font-size: 12.5px; min-width: 40px; }
+.calc-result { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 12px; padding: 14px; border-radius: 12px; background: var(--lavender); }
+.calc-result > div:first-child { display: grid; gap: 2px; }
+.calc-result > div:first-child > b { font-size: 26px; letter-spacing: -.8px; color: var(--purple-ink); }
+.calc-adjust { display: grid; gap: 6px; justify-items: end; }
+.calc-cost { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+.calc-cost-head { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 8px; }
+.calc-cost-head > span { display: grid; gap: 2px; }
+.calc-cost-head b { font-size: 22px; letter-spacing: -.6px; font-variant-numeric: tabular-nums; }
+.calc-cost-table td { padding: 7px 8px; font-size: 12.5px; }

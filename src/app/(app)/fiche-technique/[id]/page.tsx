@@ -9,6 +9,8 @@ import { ALLERGENES, COLONNES_FICHE, coutIngredient, coutsFiche, euros, qte, ton
 import type { Fiche } from "@/lib/fiches";
 import type { Produit } from "@/lib/stock";
 import EditeurFiche from "@/components/fiches/EditeurFiche";
+import Calculateur from "@/components/fiches/Calculateur";
+import { useStock } from "@/lib/useStock";
 
 export default function PageFiche() {
   const { id } = useParams<{ id: string }>();
@@ -22,7 +24,7 @@ export default function PageFiche() {
   const [categories, setCategories] = useState<string[]>([]);
   const [edition, setEdition] = useState(nouvelle);
   const [version, setVersion] = useState(0);
-  const [voulu, setVoulu] = useState<string>("");
+  const [facteur, setFacteur] = useState(1);
   const [photo, setPhoto] = useState(0);
   const [supprimer, setSupprimer] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -45,6 +47,13 @@ export default function PageFiche() {
     };
   }, [id, nouvelle, etablissement.id, gestion, version]);
 
+  // Tarifs toujours à jour : on relit le catalogue quand on revient sur l'onglet.
+  useEffect(() => {
+    const retour = () => document.visibilityState === "visible" && !edition && setVersion((v) => v + 1);
+    document.addEventListener("visibilitychange", retour);
+    return () => document.removeEventListener("visibilitychange", retour);
+  }, [edition]);
+
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 2600);
@@ -52,6 +61,13 @@ export default function PageFiche() {
   }, [toast]);
 
   const parId = useMemo(() => new Map(produits.map((x) => [x.id, x])), [produits]);
+  const { d: stockD, stocks } = useStock(etablissement.id);
+  const stockIngredients = useMemo(() => {
+    if (!gestion || !stockD) return undefined;
+    const m = new Map<string, { quantite: number | null; unite: string }>();
+    for (const p of stockD.produits) m.set(p.id, { quantite: stocks.get(p.id)?.quantite ?? null, unite: p.unite });
+    return m;
+  }, [gestion, stockD, stocks]);
 
   if (edition && gestion) {
     return (
@@ -88,8 +104,6 @@ export default function PageFiche() {
   }
 
   const base = Number(fiche.portions) > 0 ? Number(fiche.portions) : 1;
-  const cible = Number(voulu.replace(",", "."));
-  const facteur = voulu.trim() && Number.isFinite(cible) && cible > 0 ? cible / base : 1;
   const couts = coutsFiche(fiche, parId);
 
   async function dupliquer() {
@@ -141,20 +155,16 @@ export default function PageFiche() {
 
       <div className="fiche-grid">
         <div style={{ display: "grid", gap: 14, alignContent: "start", minWidth: 0 }}>
+          <Calculateur fiche={fiche} stock={stockIngredients} produits={gestion ? parId : undefined} onFacteur={setFacteur} />
           <section className="card">
             <div className="card-head">
               <h2>Ingrédients</h2>
-              <label className="scale print-hide">
-                Pour
-                <input inputMode="decimal" value={voulu} onChange={(e) => setVoulu(e.target.value)} placeholder={qte(base)} aria-label="Nombre de portions voulu" />
-                portion(s)
-              </label>
+              {facteur !== 1 && (
+                <span className="pill t-lav">
+                  × {facteur.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} · {qte(Math.round(base * facteur * 100) / 100)} portion(s)
+                </span>
+              )}
             </div>
-            {facteur !== 1 && (
-              <p className="hint" style={{ margin: "-6px 0 10px" }}>
-                Quantités × {facteur.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} pour {qte(cible)} portions.
-              </p>
-            )}
             {!(fiche.ingredients ?? []).length ? (
               <div className="empty">Aucun ingrédient.</div>
             ) : (

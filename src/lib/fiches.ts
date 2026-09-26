@@ -124,3 +124,34 @@ export function tonRatio(r: number | null) {
 
 export const euros = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 export const qte = (n: number) => Number(n).toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+
+/**
+ * Calculateur « avec ce qu'il me reste » : pour chaque ingrédient dont on indique la quantité
+ * disponible, combien de recettes il permet ; le plus rare fixe le maximum faisable.
+ * `dispo` : quantité disponible exprimée dans l'unité `unite` (convertie vers celle de la recette).
+ */
+export function analyserRestes(
+  ingredients: Ingredient[],
+  dispo: Record<number, { valeur: number; unite: string } | undefined>,
+  portionsBase: number,
+  portionsEntieres: boolean,
+) {
+  const lignes = ingredients.map((ing, k) => {
+    const d = dispo[k];
+    const q = Number(ing.qty);
+    const enUniteRecette = d && Number.isFinite(d.valeur) && q > 0 ? convertir(d.valeur, d.unite, ing.unit) : null;
+    return { ing, k, dispoRecette: enUniteRecette, recettes: enUniteRecette !== null ? enUniteRecette / q : null };
+  });
+  const renseignes = lignes.filter((l) => l.recettes !== null);
+  const limitant = renseignes.length ? renseignes.reduce((a, b) => (b.recettes! < a.recettes! ? b : a)) : null;
+  let maxRecettes = limitant ? limitant.recettes! : null;
+  if (maxRecettes !== null && portionsEntieres) maxRecettes = Math.floor(maxRecettes * portionsBase + 1e-9) / portionsBase;
+  return { lignes, renseignes, limitant, maxRecettes };
+}
+
+/** Ce qui manque pour appliquer un facteur donné, vu les quantités disponibles. */
+export function manquesPour(lignes: ReturnType<typeof analyserRestes>["lignes"], facteur: number) {
+  return lignes
+    .filter((l) => l.dispoRecette !== null && Number(l.ing.qty) * facteur > l.dispoRecette + 1e-9)
+    .map((l) => ({ ing: l.ing, manque: Number(l.ing.qty) * facteur - l.dispoRecette! }));
+}
