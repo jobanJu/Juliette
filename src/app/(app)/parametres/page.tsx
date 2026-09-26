@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabase";
 import { initiales, nomComplet, ROLE_LABEL, useConnecte, useSession } from "@/lib/session";
 import { emailValide } from "@/lib/personnel";
 
-type Onglet = "compte" | "restaurant" | "emails";
+type Onglet = "compte" | "restaurant" | "pointeuse" | "emails";
 
 type Etab = {
   id: string;
@@ -74,13 +75,18 @@ export default function Parametres() {
             Restaurant
           </button>
           {compte.role === "directeur" && (
+            <button role="tab" aria-selected={onglet === "pointeuse"} className={onglet === "pointeuse" ? "on" : ""} onClick={() => setOnglet("pointeuse")}>
+              Pointeuse
+            </button>
+          )}
+          {compte.role === "directeur" && (
             <button role="tab" aria-selected={onglet === "emails"} className={onglet === "emails" ? "on" : ""} onClick={() => setOnglet("emails")}>
               E-mails automatiques
             </button>
           )}
         </div>
       </div>
-      {onglet === "compte" ? <MonCompte onToast={setToast} /> : onglet === "restaurant" ? <Restaurant onToast={setToast} /> : <Emails />}
+      {onglet === "compte" ? <MonCompte onToast={setToast} /> : onglet === "restaurant" ? <Restaurant onToast={setToast} /> : onglet === "pointeuse" ? <Pointeuse onToast={setToast} /> : <Emails />}
       {toast && (
         <div className="toast" role="status">
           {toast}
@@ -470,5 +476,123 @@ function Emails() {
         </div>
       )}
     </section>
+  );
+}
+
+type Appareil = { id: string; nom: string; created_at: string; derniere_activite: string | null; revoquee_at: string | null };
+
+function Pointeuse({ onToast }: { onToast: (m: string) => void }) {
+  const { etablissement, compte } = useConnecte();
+  const sb = getSupabaseClient()!;
+  const [defini, setDefini] = useState<boolean | null>(null);
+  const [appareils, setAppareils] = useState<Appareil[]>([]);
+  const [mdp, setMdp] = useState("");
+  const [mdp2, setMdp2] = useState("");
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [version, setVersion] = useState(0);
+
+  useEffect(() => {
+    Promise.all([sb.rpc("pointeuse_mdp_defini", { p_etablissement_id: etablissement.id }), sb.rpc("badgeuses_liste", { p_etablissement_id: etablissement.id })]).then(([d, l]) => {
+      setDefini(Boolean(d.data));
+      setAppareils((l.data ?? []) as Appareil[]);
+    });
+  }, [sb, etablissement.id, version]);
+
+  async function enregistrer() {
+    setErreur(null);
+    if (mdp.length < 6) return setErreur("Au moins 6 caractères.");
+    if (mdp !== mdp2) return setErreur("Les deux mots de passe ne sont pas identiques.");
+    const { error } = await sb.rpc("definir_mdp_pointeuse", { p_etablissement_id: etablissement.id, p_mdp: mdp });
+    if (error) return setErreur("Enregistrement refusé.");
+    setMdp("");
+    setMdp2("");
+    onToast("Mot de passe de la pointeuse enregistré");
+    setVersion((v) => v + 1);
+  }
+
+  async function revoquer(a: Appareil) {
+    const { error } = await sb.rpc("badgeuse_revoquer", { p_id: a.id });
+    onToast(error ? "Révocation refusée" : `« ${a.nom} » ne peut plus pointer`);
+    setVersion((v) => v + 1);
+  }
+
+  const actifs = appareils.filter((a) => !a.revoquee_at);
+  return (
+    <div className="fiche-grid">
+      <section className="card">
+        <div className="card-head">
+          <h2>Mot de passe de la pointeuse</h2>
+          {defini !== null && <span className={`pill ${defini ? "t-mint" : "t-yellow"}`}>{defini ? "Défini" : "À définir"}</span>}
+        </div>
+        <p className="hint" style={{ fontSize: 13, lineHeight: 1.55 }}>
+          Il sert uniquement à <b>activer une tablette ou un téléphone en pointeuse</b>, avec le code établissement <b>{etablissement.code}</b> et ton e-mail (<b>{compte.email}</b>). Choisis-le différent de ton mot de passe personnel.
+        </p>
+        <div className="form-2">
+          <div className="field">
+            <label htmlFor="p-mdp">{defini ? "Nouveau mot de passe" : "Mot de passe"}</label>
+            <input id="p-mdp" type="password" autoComplete="new-password" value={mdp} onChange={(e) => setMdp(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="p-mdp2">Confirmation</label>
+            <input id="p-mdp2" type="password" autoComplete="new-password" value={mdp2} onChange={(e) => setMdp2(e.target.value)} />
+          </div>
+        </div>
+        {erreur && (
+          <div className="error" role="alert">
+            {erreur}
+          </div>
+        )}
+        <button className="btn btn-primary" onClick={enregistrer} disabled={!mdp} style={{ justifySelf: "start" }}>
+          Enregistrer
+        </button>
+      </section>
+
+      <div style={{ display: "grid", gap: 14, alignContent: "start" }}>
+        <section className="card">
+          <div className="card-head">
+            <h2>Installer une pointeuse</h2>
+          </div>
+          <ol style={{ margin: 0, paddingLeft: 20, display: "grid", gap: 6, fontSize: 13, lineHeight: 1.5 }}>
+            <li>Sur la tablette ou le téléphone de l&apos;entrée, ouvre l&apos;adresse de Juliette et touche « Pointeuse » (ou va directement sur <code>/borne</code>).</li>
+            <li>Saisis le code établissement, ton e-mail et le mot de passe de la pointeuse.</li>
+            <li>Ajoute la page à l&apos;écran d&apos;accueil de la tablette (Partager → « Sur l&apos;écran d&apos;accueil ») pour l&apos;ouvrir en plein écran.</li>
+            <li>Chaque salarié pointe avec <b>son code à 6 chiffres</b>, visible dans sa fiche Équipe.</li>
+          </ol>
+          <Link className="btn" href="/borne" style={{ marginTop: 12, justifySelf: "start" }}>
+            Ouvrir la pointeuse sur cet appareil
+          </Link>
+        </section>
+
+        <section className="card">
+          <div className="card-head">
+            <h2>Appareils activés · {actifs.length}</h2>
+          </div>
+          {!appareils.length ? (
+            <p className="hint">Aucun appareil pour l&apos;instant.</p>
+          ) : (
+            <div className="rows">
+              {appareils.map((a) => (
+                <div key={a.id} className="row">
+                  <span className="main-txt">
+                    <b style={{ textDecoration: a.revoquee_at ? "line-through" : undefined }}>{a.nom}</b>
+                    <small>
+                      activé le {new Date(a.created_at).toLocaleDateString("fr-FR")}
+                      {a.derniere_activite ? ` · dernière activité ${new Date(a.derniere_activite).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}
+                    </small>
+                  </span>
+                  {a.revoquee_at ? (
+                    <span className="pill t-lav">Révoqué</span>
+                  ) : (
+                    <button className="btn btn-danger-ghost" style={{ height: 34 }} onClick={() => revoquer(a)}>
+                      Révoquer
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
   );
 }

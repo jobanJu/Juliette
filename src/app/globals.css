@@ -1025,3 +1025,73 @@ tr.row-choisi td { background: var(--lavender); }
   .acc-cell { min-width: 44px; height: 40px; }
   .acc-table td, .acc-table th { padding: 8px 6px; }
 }
+
+/* ——— Pointeuse (borne) ——— */
+.borne { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px)); background: radial-gradient(120% 70% at 50% 0%, #f1edfd 0%, var(--paper) 60%); }
+.borne-attente { margin: auto; color: var(--muted); }
+.borne-haut { width: 100%; max-width: 560px; display: flex; justify-content: space-between; align-items: center; }
+.borne-heure { margin: 3vh 0 1vh; text-align: center; font-size: clamp(56px, 16vw, 104px); font-weight: 800; letter-spacing: -3px; line-height: 1; font-variant-numeric: tabular-nums; }
+.borne-heure small { display: block; font-size: 15px; letter-spacing: 0; font-weight: 600; color: var(--muted); margin-top: 8px; text-transform: capitalize; }
+.borne-zone { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; margin-top: 2vh; }
+.borne-invite { margin: 0; color: var(--ink-2); font-size: 15px; font-weight: 600; text-align: center; }
+.borne-points { display: flex; gap: 12px; margin: 18px 0 6px; }
+.borne-points span { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #cfc8dc; }
+.borne-points span.plein { background: var(--purple); border-color: var(--purple); }
+.borne-erreur { min-height: 22px; margin: 4px 0 8px; color: var(--red-ink); font-weight: 600; font-size: 14px; text-align: center; }
+.borne-clavier { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.borne-clavier button { height: clamp(60px, 9vh, 78px); border-radius: 18px; border: 1px solid var(--line); background: var(--card); font: inherit; font-size: 28px; font-weight: 650; cursor: pointer; box-shadow: 0 1px 2px #27243510; touch-action: manipulation; }
+.borne-clavier button:active { background: var(--lavender); transform: scale(.97); }
+.borne-clavier button.fonction { font-size: 20px; color: var(--muted); background: transparent; box-shadow: none; }
+.borne-bonjour { margin: 0 0 6px; font-size: 30px; font-weight: 800; letter-spacing: -1px; text-align: center; }
+.borne-actions { width: 100%; display: grid; gap: 12px; margin-top: 22px; }
+.borne-action { height: 92px; border-radius: 22px; border: 0; font: inherit; font-size: 24px; font-weight: 750; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 14px; touch-action: manipulation; }
+.borne-action span { font-size: 26px; }
+.borne-action.arrivee { background: #2f8a5b; }
+.borne-action.depart { background: var(--purple); }
+.borne-action.pause { background: #b8932e; }
+.borne-action:active { transform: scale(.98); filter: brightness(.95); }
+.borne-ok { margin-top: 6vh; animation: toast-in .2s ease; }
+.borne-coche { width: 110px; height: 110px; border-radius: 50%; display: grid; place-items: center; font-size: 60px; color: #fff; margin-bottom: 18px; background: #2f8a5b; }
+.borne-ok.depart .borne-coche { background: var(--purple); }
+.borne-ok.pause .borne-coche { background: #b8932e; }
+
+/* ——— Page d'accueil ——— */
+.accueil { min-height: 100vh; background: radial-gradient(90% 60% at 80% 0%, #efe9ff 0%, transparent 60%), var(--paper); padding: 0 20px; }
+.acc-haut { max-width: 1120px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: calc(16px + env(safe-area-inset-top, 0px)) 0 16px; }
+.acc-nav { display: flex; gap: 8px; }
+.acc-hero { max-width: 820px; margin: 7vh auto 0; text-align: center; display: grid; gap: 16px; justify-items: center; }
+.acc-hero h1 { margin: 0; font-size: clamp(34px, 6vw, 60px); line-height: 1.05; letter-spacing: -2px; font-weight: 800; }
+.acc-intro { margin: 0; max-width: 620px; font-size: 17px; line-height: 1.55; color: var(--ink-2); }
+.acc-cta { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+.acc-gros { height: 52px; padding: 0 22px; font-size: 15px; border-radius: 14px; }
+.acc-section { max-width: 1120px; margin: 72px auto 0; }
+.acc-section > h2 { font-size: clamp(22px, 3vw, 30px); letter-spacing: -.8px; text-align: center; margin: 0 0 22px; }
+.acc-familles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.acc-famille { display: grid; gap: 8px; align-content: start; padding: 20px; }
+.acc-famille .chip-ic { width: 42px; height: 42px; font-size: 20px; border-radius: 12px; }
+.acc-famille h3 { margin: 4px 0 0; font-size: 18px; }
+.acc-famille ul { margin: 0; padding-left: 18px; display: grid; gap: 5px; font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
+.acc-trois { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.acc-trois > div { padding: 4px 6px; }
+.acc-trois b { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--purple); color: #fff; font-size: 16px; }
+.acc-trois h3 { margin: 12px 0 6px; font-size: 16px; }
+.acc-trois p, .acc-atouts p, .acc-bientot p { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.55; }
+.acc-atouts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.acc-atouts h3 { margin: 0 0 8px; font-size: 15px; }
+.acc-bientot { display: grid; gap: 10px; justify-items: start; padding: 26px; background: linear-gradient(135deg, #f5f1ff, #fff); border-color: #ddd4f7; }
+.acc-bientot h2 { margin: 0; font-size: 22px; letter-spacing: -.5px; }
+.acc-pied { max-width: 1120px; margin: 72px auto 0; padding: 24px 0 calc(24px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+@media (max-width: 900px) {
+  .acc-familles, .acc-trois { grid-template-columns: minmax(0, 1fr); }
+  .acc-atouts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .accueil { padding: 0 14px; }
+  .acc-nav .btn:first-child { display: none; }
+  .acc-hero { margin-top: 5vh; }
+  .acc-intro { font-size: 15px; }
+  .acc-cta { width: 100%; }
+  .acc-cta .btn { width: 100%; }
+  .acc-atouts { grid-template-columns: minmax(0, 1fr); }
+  .acc-section { margin-top: 48px; }
+}
