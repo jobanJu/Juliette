@@ -814,3 +814,30 @@ tr.clickable { cursor: pointer; }
 .suivi-etape { flex: 1; text-align: center; font-size: 11.5px; font-weight: 650; padding: 8px 4px; border-radius: 8px; background: var(--paper); color: var(--muted); }
 .suivi-etape.fait { background: var(--mint); color: var(--mint-ink); }
 .suivi-etape.actuelle { background: var(--mint-ink); color: #fff; }
+
+/* ——— Événements ——— */
+.cal-mois { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal-mois-head { font-size: 10.5px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); text-align: center; padding: 4px 0; font-weight: 650; }
+.cal-jour { min-height: 92px; border: 1px solid var(--line); border-radius: 10px; padding: 5px; display: flex; flex-direction: column; gap: 3px; min-width: 0; background: var(--card); }
+.cal-jour.hors { background: var(--paper); opacity: .55; }
+.cal-jour.today { border-color: var(--purple); box-shadow: inset 0 0 0 1px var(--purple); }
+.cal-num { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.cal-jour.today .cal-num { color: var(--purple-ink); }
+.cal-evt { display: block; width: 100%; text-align: left; font-size: 10.5px; font-weight: 600; line-height: 1.3; padding: 2px 5px; border-radius: 5px; border: 0; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: inherit; }
+.cal-evt.hausse { background: var(--yellow); color: var(--yellow-ink); }
+.cal-evt.baisse { background: var(--blue); color: var(--blue-ink); }
+.cal-evt.impact-fort, .cal-evt.impact-exceptionnel { box-shadow: inset 3px 0 0 currentColor; }
+.cal-evt.repere { background: transparent; border: 1px dashed #d8d3e0; color: var(--muted); cursor: default; }
+@media (max-width: 700px) {
+  .cal-jour { min-height: 58px; padding: 3px; }
+  .cal-evt { font-size: 0; padding: 0; height: 6px; }
+}
+
+/* ——— Accréditations ——— */
+.acc-table th, .acc-table td { white-space: nowrap; }
+.acc-cell { display: inline-grid; place-items: center; min-width: 38px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); font-weight: 700; cursor: pointer; font-size: 13px; padding: 0 6px; }
+.acc-cell.oui { background: var(--mint); color: var(--mint-ink); border-color: #cfe9da; }
+.acc-cell.non { background: var(--red); color: var(--red-ink); border-color: #f1c7c2; }
+.acc-cell.defaut { color: #b9b3c4; border-style: dashed; }
+.acc-seg { display: inline-grid; grid-template-columns: repeat(3, auto); padding: 3px; }
+.acc-seg button { height: 28px; padding: 0 9px; font-size: 11.5px; }

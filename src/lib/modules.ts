@@ -14,7 +14,7 @@ export type ModuleJuliette = {
 export const MODULES: ModuleJuliette[] = [
   { module: "dashboard", href: "/dashboard", label: "Tableau de bord", sub: "Vue d'ensemble", icon: "⌂", groupe: "Pilotage", pret: true },
   { module: "finance", href: "/finance", label: "Finance", sub: "Ventes, pertes et estimations", icon: "€", groupe: "Pilotage", pret: false },
-  { module: "evenements", href: "/evenements", label: "Événements", sub: "Concerts, matchs, marchés", icon: "✦", groupe: "Pilotage", pret: false },
+  { module: "evenements", href: "/evenements", label: "Événements", sub: "Concerts, matchs, marchés", icon: "✦", groupe: "Pilotage", pret: true },
 
   { module: "pointeuse", href: "/pointeuse", label: "Pointage", sub: "Arrivées & départs", icon: "◷", groupe: "Équipe", pret: true },
   { module: "planning", href: "/planning", label: "Planning", sub: "Horaires de la semaine", icon: "▦", groupe: "Équipe", pret: true },
@@ -35,7 +35,7 @@ export const MODULES: ModuleJuliette[] = [
 
   { module: "fiche-technique", href: "/fiche-technique", label: "Fiches techniques", sub: "Recettes & coûts matière", icon: "❏", groupe: "Établissement", pret: true },
   { module: "documentation", href: "/documentation", label: "Documentation", sub: "Procédures & archives", icon: "▢", groupe: "Établissement", pret: false },
-  { module: "accreditations", href: "/accreditations", label: "Accréditations", sub: "Comptes & niveaux d'accès", icon: "⚿", groupe: "Établissement", pret: false },
+  { module: "accreditations", href: "/accreditations", label: "Accréditations", sub: "Comptes & niveaux d'accès", icon: "⚿", groupe: "Établissement", pret: true },
 ];
 
 export const GROUPES = ["Pilotage", "Équipe", "HACCP", "Stock & achats", "Salle", "Établissement"] as const;
