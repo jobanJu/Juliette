@@ -31,7 +31,7 @@ export type Fournisseur = { id: string; nom: string; email: string | null; tva_p
 export type ALigneListe = { produit_id: string; quantite: number; added_at: string };
 
 export type LigneCommande = { produit_id?: string; nom: string; unite: string; quantite: number; prixUnitaireHT: number; reference?: string | null };
-export type Commande = { id: string; fournisseur_id: string | null; fournisseur_nom: string; fournisseur_email: string | null; envoyee_at: string; lignes: LigneCommande[]; created_by: string | null };
+export type Commande = { id: string; fournisseur_id: string | null; fournisseur_nom: string; fournisseur_email: string | null; envoyee_at: string; lignes: LigneCommande[]; created_by: string | null; email_statut?: string; email_erreur?: string | null; email_envoye_at?: string | null };
 
 export type EtatReception = "conforme" | "manquant" | "incomplet" | "abime" | "refuse";
 export type LigneReception = {

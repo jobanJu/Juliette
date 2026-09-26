@@ -849,3 +849,8 @@ tr.clickable { cursor: pointer; }
 .doc-body { display: grid; gap: 4px; min-width: 0; }
 .doc-body b { font-size: 14px; }
 .doc-texte { white-space: pre-wrap; font-size: 14px; line-height: 1.6; background: var(--paper); border-radius: 11px; padding: 12px 14px; max-height: 50vh; overflow-y: auto; }
+
+/* ——— Paramètres ——— */
+.profile-link { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; border-radius: 10px; padding: 2px; }
+.profile-link:hover b { color: var(--purple-ink); }
+.cover { height: 140px; border-radius: 12px; background: var(--lavender) center / cover no-repeat; display: grid; place-items: end start; padding: 10px; }

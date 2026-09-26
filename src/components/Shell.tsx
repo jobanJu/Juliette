@@ -99,11 +99,13 @@ export default function Shell({ children }: { children: ReactNode }) {
         {!visibles.length && <div className="empty">Aucun module trouvé.</div>}
 
         <div className="profile">
-          <span className="avatar">{compte.avatar_url ? <img src={compte.avatar_url} alt="" /> : initiales(compte)}</span>
-          <span className="who">
-            <b>{nomComplet(compte)}</b>
-            <small>{ROLE_LABEL[compte.role]}</small>
-          </span>
+          <Link href="/parametres" className="profile-link" title="Mon compte" onClick={() => setMenuOuvert(false)}>
+            <span className="avatar">{compte.avatar_url ? <img src={compte.avatar_url} alt="" /> : initiales(compte)}</span>
+            <span className="who">
+              <b>{nomComplet(compte)}</b>
+              <small>{ROLE_LABEL[compte.role]}</small>
+            </span>
+          </Link>
           <button className="icon-btn" onClick={deconnexion} title="Se déconnecter" aria-label="Se déconnecter">
             ⎋
           </button>

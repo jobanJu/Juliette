@@ -35,6 +35,7 @@ export const MODULES: ModuleJuliette[] = [
 
   { module: "fiche-technique", href: "/fiche-technique", label: "Fiches techniques", sub: "Recettes & coûts matière", icon: "❏", groupe: "Établissement", pret: true },
   { module: "documentation", href: "/documentation", label: "Documentation", sub: "Procédures & archives", icon: "▢", groupe: "Établissement", pret: true },
+  { module: "parametres", href: "/parametres", label: "Paramètres", sub: "Mon compte & restaurant", icon: "⚙", groupe: "Établissement", pret: true },
   { module: "accreditations", href: "/accreditations", label: "Accréditations", sub: "Comptes & niveaux d'accès", icon: "⚿", groupe: "Établissement", pret: true },
 ];
 

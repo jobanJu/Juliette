@@ -92,6 +92,8 @@ async function chargerModules(etablissementId: string, role: Role): Promise<Set<
   autorises.add("dashboard");
   // Les relevés HACCP sont ouverts à tout membre actif (RLS des tables haccp_*), quel que soit le poste.
   autorises.add("haccp");
+  // Chacun gère son propre compte ; la page réserve la partie restaurant au directeur.
+  autorises.add("parametres");
   return autorises;
 }
 

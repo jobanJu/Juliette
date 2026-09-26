@@ -172,7 +172,7 @@ export default function Commandes() {
           )}
         </div>
       ) : onglet === "envoyees" ? (
-        <Envoyees commandes={d.commandes} receptions={d.receptions} />
+        <Envoyees commandes={d.commandes} receptions={d.receptions} onRenvoi={(m) => { setToast(m); recharger(); }} />
       ) : (
         <section className="card" style={{ padding: "16px 6px 6px" }}>
           {doublons.length > 0 && (
@@ -226,6 +226,19 @@ export default function Commandes() {
       )}
     </>
   );
+}
+
+/** Appelle la route serveur d'envoi (Resend) avec la session de l'utilisateur. */
+async function envoyerParEmail(commandeId: string): Promise<{ ok: boolean; message: string }> {
+  const { data } = await getSupabaseClient()!.auth.getSession();
+  const jeton = data.session?.access_token;
+  if (!jeton) return { ok: false, message: "session expirée" };
+  const r = await fetch("/api/commandes/envoyer", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${jeton}` }, body: JSON.stringify({ commandeId }) }).catch(() => null);
+  if (!r) return { ok: false, message: "serveur injoignable" };
+  if (r.ok) return { ok: true, message: "" };
+  const j = (await r.json().catch(() => ({}))) as { erreur?: string; message?: string };
+  const libelles: Record<string, string> = { non_configure: "envoi automatique non branché", sans_email: "pas d'e-mail pour ce fournisseur", interdit: "réservé aux responsables", echec_envoi: j.message ?? "refusé par le prestataire" };
+  return { ok: false, message: libelles[j.erreur ?? ""] ?? "erreur inconnue" };
 }
 
 function totaux(g: Groupe) {
@@ -340,21 +353,38 @@ function ModalEnvoi({ g, etablissementId, etablissementNom, compteId, signataire
     .filter((l, i, a) => !(l === "" && a[i - 1] === ""))
     .join("\n");
   const email = g.fournisseur?.email ?? "";
+  const [auto, setAuto] = useState<boolean | null>(null);
+  useEffect(() => {
+    fetch("/api/commandes/envoyer")
+      .then((r) => r.json())
+      .then((j) => setAuto(Boolean(j.configure)))
+      .catch(() => setAuto(false));
+  }, []);
   const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(`Commande ${etablissementNom} du ${new Date().toLocaleDateString("fr-FR")}`)}&body=${encodeURIComponent(texte)}`;
 
-  async function marquerEnvoyee() {
+  /** Enregistre la commande (et la sort de la liste), puis l'envoie par e-mail si c'est possible. */
+  async function valider(mode: "auto" | "manuel") {
     setErreur(null);
     setEnvoi(true);
     const sb = getSupabaseClient()!;
     const lignes: LigneCommande[] = g.lignes.map((l) => ({ produit_id: l.p.id, nom: l.p.nom, unite: l.p.unite, quantite: l.quantite, prixUnitaireHT: Number(l.p.prix_unitaire ?? 0), reference: l.p.reference_fournisseur }));
-    const { error } = await sb.from("commandes_envoyees").insert({ etablissement_id: etablissementId, fournisseur_id: g.fournisseur?.id ?? null, fournisseur_nom: g.nom, fournisseur_email: email || null, lignes, created_by: compteId });
-    if (error) {
+    const { data, error } = await sb
+      .from("commandes_envoyees")
+      .insert({ etablissement_id: etablissementId, fournisseur_id: g.fournisseur?.id ?? null, fournisseur_nom: g.nom, fournisseur_email: email || null, lignes, created_by: compteId, email_statut: mode === "manuel" ? "manuel" : "non_envoye" })
+      .select("id")
+      .single();
+    if (error || !data) {
       setEnvoi(false);
       return setErreur("Enregistrement refusé : réservé aux responsables.");
     }
     await sb.from("commande_liste").delete().eq("etablissement_id", etablissementId).in("produit_id", g.lignes.map((l) => l.p.id));
+    if (mode === "manuel") {
+      setEnvoi(false);
+      return onSaved(`Commande ${g.nom} enregistrée comme envoyée`);
+    }
+    const r = await envoyerParEmail(data.id);
     setEnvoi(false);
-    onSaved(`Commande ${g.nom} enregistrée comme envoyée`);
+    onSaved(r.ok ? `Commande envoyée à ${g.nom} (${email})` : `Commande ${g.nom} enregistrée, mais l'e-mail n'est pas parti : ${r.message}. Renvoie-la depuis « Envoyées ».`);
   }
 
   return (
@@ -367,9 +397,15 @@ function ModalEnvoi({ g, etablissementId, etablissementNom, compteId, signataire
           <button className="btn" onClick={() => navigator.clipboard.writeText(texte).then(() => setCopie(true))} style={{ marginRight: "auto" }}>
             {copie ? "✓ Copié" : "Copier le texte"}
           </button>
-          <button className="btn btn-primary" onClick={marquerEnvoyee} disabled={envoi}>
-            {envoi ? "Enregistrement…" : "Marquer comme envoyée"}
-          </button>
+          {auto && email ? (
+            <button className="btn btn-primary" onClick={() => valider("auto")} disabled={envoi}>
+              {envoi ? "Envoi…" : `✉ Envoyer à ${g.nom}`}
+            </button>
+          ) : (
+            <button className="btn btn-primary" onClick={() => valider("manuel")} disabled={envoi || auto === null}>
+              {envoi ? "Enregistrement…" : "Je l'ai envoyée : enregistrer"}
+            </button>
+          )}
         </>
       }
     >
@@ -377,14 +413,21 @@ function ModalEnvoi({ g, etablissementId, etablissementNom, compteId, signataire
       <pre className="invite-msg" style={{ maxHeight: 280, overflowY: "auto" }}>
         {texte}
       </pre>
-      {email ? (
-        <a className="btn" href={mailto}>
-          ✉ Ouvrir dans ma messagerie ({email})
-        </a>
+      {auto && email ? (
+        <p className="hint">
+          La commande part automatiquement à <b>{email}</b> ; les réponses du fournisseur arrivent sur l&apos;e-mail de contact du restaurant (Paramètres).
+        </p>
+      ) : email ? (
+        <>
+          {auto === false && <p className="hint">L&apos;envoi automatique n&apos;est pas encore branché (clé Resend à ajouter) : envoie-la depuis ta messagerie.</p>}
+          <a className="btn" href={mailto}>
+            ✉ Ouvrir dans ma messagerie ({email})
+          </a>
+        </>
       ) : (
         <p className="hint">Pas d&apos;e-mail pour ce fournisseur : copie le texte (SMS, WhatsApp, commande en ligne…) ou renseigne son e-mail dans l&apos;onglet Fournisseurs.</p>
       )}
-      <p className="hint">Une fois la commande passée, clique sur « Marquer comme envoyée » : elle sort de la liste et t&apos;attendra dans Réception.</p>
+      <p className="hint">Une fois enregistrée, la commande sort de la liste et t&apos;attend dans Réception.</p>
       {erreur && (
         <div className="error" role="alert">
           {erreur}
@@ -394,7 +437,21 @@ function ModalEnvoi({ g, etablissementId, etablissementNom, compteId, signataire
   );
 }
 
-function Envoyees({ commandes, receptions }: { commandes: Commande[]; receptions: { commande_id: string | null; received_at: string; lignes: { etat: string }[] }[] }) {
+const STATUT_EMAIL: Record<string, { label: string; ton: string }> = {
+  envoye: { label: "✉ Envoyée par e-mail", ton: "t-mint" },
+  manuel: { label: "Envoyée à la main", ton: "t-lav" },
+  echec: { label: "⚠ E-mail en échec", ton: "t-red" },
+  non_envoye: { label: "E-mail non parti", ton: "t-yellow" },
+};
+
+function Envoyees({ commandes, receptions, onRenvoi }: { commandes: (Commande & { email_statut?: string; email_erreur?: string | null; email_envoye_at?: string | null })[]; receptions: { commande_id: string | null; received_at: string; lignes: { etat: string }[] }[]; onRenvoi: (m: string) => void }) {
+  const [envoi, setEnvoi] = useState<string | null>(null);
+  async function renvoyer(id: string) {
+    setEnvoi(id);
+    const r = await envoyerParEmail(id);
+    setEnvoi(null);
+    onRenvoi(r.ok ? "Commande renvoyée par e-mail" : `Envoi impossible : ${r.message}`);
+  }
   if (!commandes.length) return <section className="card empty">Aucune commande envoyée ces 6 derniers mois.</section>;
   return (
     <section className="card" style={{ padding: "16px 6px 6px" }}>
@@ -406,6 +463,7 @@ function Envoyees({ commandes, receptions }: { commandes: Commande[]; receptions
               <th>Fournisseur</th>
               <th style={{ textAlign: "right" }}>Produits</th>
               <th style={{ textAlign: "right" }}>Montant HT</th>
+              <th>Transmission</th>
               <th>Réception</th>
             </tr>
           </thead>
@@ -422,6 +480,23 @@ function Envoyees({ commandes, receptions }: { commandes: Commande[]; receptions
                   </td>
                   <td style={{ textAlign: "right" }}>{c.lignes?.length ?? 0}</td>
                   <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{euros((c.lignes ?? []).reduce((s, l) => s + Number(l.quantite) * Number(l.prixUnitaireHT ?? 0), 0))}</td>
+                  <td>
+                    {(() => {
+                      const st = STATUT_EMAIL[c.email_statut ?? "manuel"] ?? STATUT_EMAIL.manuel;
+                      return (
+                        <span style={{ display: "grid", gap: 3, justifyItems: "start" }}>
+                          <span className={`pill ${st.ton}`} title={c.email_erreur ?? undefined}>
+                            {st.label}
+                          </span>
+                          {(c.email_statut === "echec" || c.email_statut === "non_envoye") && (
+                            <button className="link-btn" onClick={() => renvoyer(c.id)} disabled={envoi === c.id}>
+                              {envoi === c.id ? "Envoi…" : "Renvoyer"}
+                            </button>
+                          )}
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td>
                     {r ? (
                       <span className={`pill ${anomalies ? "t-peach" : "t-mint"}`}>

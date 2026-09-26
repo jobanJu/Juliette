@@ -43,7 +43,7 @@ export function useStock(etablissementId: string) {
       sb.from("receptions").select("id, commande_id, fournisseur_nom, fournisseur_email, received_at, received_by, temperature_camion, lignes, signalement_envoye").eq("etablissement_id", e).gte("received_at", depuis).order("received_at", { ascending: false }),
       sb.from("fournisseurs").select("id, nom, email, tva_pct, minimum_commande").eq("etablissement_id", e).order("nom"),
       sb.from("commande_liste").select("produit_id, quantite, added_at").eq("etablissement_id", e),
-      sb.from("commandes_envoyees").select("id, fournisseur_id, fournisseur_nom, fournisseur_email, envoyee_at, lignes, created_by").eq("etablissement_id", e).gte("envoyee_at", depuis).order("envoyee_at", { ascending: false }),
+      sb.from("commandes_envoyees").select("id, fournisseur_id, fournisseur_nom, fournisseur_email, envoyee_at, lignes, created_by, email_statut, email_erreur, email_envoye_at").eq("etablissement_id", e).gte("envoyee_at", depuis).order("envoyee_at", { ascending: false }),
     ]).then(([pr, zo, pz, re, pe, mo, rc, fo, li, co]) => {
       if (!vivant) return;
       setD({
