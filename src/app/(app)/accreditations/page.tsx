@@ -4,17 +4,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { initiales, nomComplet, ROLE_LABEL, useConnecte } from "@/lib/session";
 import type { Compte } from "@/lib/session";
-import { ORDRE_POSTES, POSTES } from "@/lib/planning";
-import { accesEffectif, LIBELLE_SOURCE, MODULES_ACCES, parDefaut } from "@/lib/accreditations";
+import { POSTES } from "@/lib/planning";
+import { accesEffectif, LIBELLE_SOURCE, MODULES_ACCES, NIVEAUX, parDefaut } from "@/lib/accreditations";
 import type { Regle } from "@/lib/accreditations";
 
-type Onglet = "postes" | "personnes";
+type Onglet = "niveaux" | "personnes";
 
 export default function Accreditations() {
   const { compte, etablissement } = useConnecte();
   const directeur = compte.role === "directeur";
   const sb = getSupabaseClient()!;
-  const [onglet, setOnglet] = useState<Onglet>("postes");
+  const [onglet, setOnglet] = useState<Onglet>("niveaux");
   const [regles, setRegles] = useState<Regle[] | null>(null);
   const [equipe, setEquipe] = useState<Compte[]>([]);
   const [choisi, setChoisi] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export default function Accreditations() {
   useEffect(() => {
     let vivant = true;
     Promise.all([
-      sb.from("accreditations_acces").select("module, autorise, poste, compte_id").eq("etablissement_id", etablissement.id),
+      sb.from("accreditations_acces").select("module, autorise, poste, compte_id, niveau").eq("etablissement_id", etablissement.id),
       sb.from("comptes").select("id, etablissement_id, prenom, nom, email, role, statut, poste, avatar_url").eq("etablissement_id", etablissement.id).neq("statut", "parti"),
     ]).then(([r, c]) => {
       if (!vivant) return;
@@ -44,18 +44,26 @@ export default function Accreditations() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  /** Pose (ou retire, valeur null) un réglage pour un poste ou une personne. */
-  async function regler(module: string, cible: { poste?: string; compte_id?: string }, valeur: boolean | null) {
-    const cle = `${module}|${cible.poste ?? cible.compte_id}`;
+  /** Pose (ou retire, valeur null) un réglage pour un niveau hiérarchique ou une personne. */
+  async function regler(module: string, cible: { niveau?: string; compte_id?: string }, valeur: boolean | null) {
+    const cle = `${module}|${cible.niveau ?? cible.compte_id}`;
     setEnvoi(cle);
     let q = sb.from("accreditations_acces").delete().eq("etablissement_id", etablissement.id).eq("module", module);
-    q = cible.poste ? q.eq("poste", cible.poste).is("compte_id", null) : q.eq("compte_id", cible.compte_id!).is("poste", null);
+    q = cible.niveau ? q.eq("niveau", cible.niveau) : q.eq("compte_id", cible.compte_id!);
     const { error: e1 } = await q;
-    const e2 = !e1 && valeur !== null ? (await sb.from("accreditations_acces").insert({ etablissement_id: etablissement.id, module, autorise: valeur, poste: cible.poste ?? null, compte_id: cible.compte_id ?? null })).error : null;
+    const e2 = !e1 && valeur !== null ? (await sb.from("accreditations_acces").insert({ etablissement_id: etablissement.id, module, autorise: valeur, niveau: cible.niveau ?? null, compte_id: cible.compte_id ?? null })).error : null;
     setEnvoi(null);
     if (e1 || e2) setToast("Modification refusée : réservée au directeur");
     recharger();
   }
+
+  async function effacerZones() {
+    const { error } = await sb.from("accreditations_acces").delete().eq("etablissement_id", etablissement.id).not("poste", "is", null);
+    setToast(error ? "Suppression refusée" : "Anciens réglages par zone effacés");
+    recharger();
+  }
+
+  const reglesZones = (regles ?? []).filter((r) => r.poste);
 
   const suivant = (v: boolean | undefined): boolean | null => (v === undefined ? true : v ? false : null);
   const nonDirecteurs = equipe.filter((p) => p.role !== "directeur");
@@ -86,7 +94,7 @@ export default function Accreditations() {
         <div>
           <p className="eyebrow">Établissement</p>
           <h1>Accréditations</h1>
-          <p>Qui voit quel module. Le directeur voit tout ; les autres suivent le réglage de leur poste, sauf réglage personnel.</p>
+          <p>Qui voit quel module, selon la hiérarchie. Le directeur voit tout ; responsables et salariés suivent le réglage de leur niveau, sauf exception pour une personne.</p>
         </div>
       </div>
 
@@ -109,10 +117,22 @@ export default function Accreditations() {
         </section>
       )}
 
+      {reglesZones.length > 0 && (
+        <div className="banner" style={{ background: "var(--yellow)", borderColor: "#eedda6" }}>
+          <span>
+            <b>{reglesZones.length} ancien(s) réglage(s) par zone de travail</b> (hérités de l&apos;ancien site : {[...new Set(reglesZones.map((r) => POSTES[r.poste!]?.label ?? r.poste))].join(", ")}). Ils
+            s&apos;appliquent encore quand ni la personne ni son niveau n&apos;ont de réglage.
+          </span>
+          <button className="btn" onClick={effacerZones}>
+            Les effacer
+          </button>
+        </div>
+      )}
+
       <div className="week-nav">
         <div className="seg seg-inline" role="tablist">
-          <button role="tab" aria-selected={onglet === "postes"} className={onglet === "postes" ? "on" : ""} onClick={() => setOnglet("postes")}>
-            Par poste
+          <button role="tab" aria-selected={onglet === "niveaux"} className={onglet === "niveaux" ? "on" : ""} onClick={() => setOnglet("niveaux")}>
+            Par niveau
           </button>
           <button role="tab" aria-selected={onglet === "personnes"} className={onglet === "personnes" ? "on" : ""} onClick={() => setOnglet("personnes")}>
             Par personne
@@ -123,22 +143,25 @@ export default function Accreditations() {
 
       {!regles ? (
         <div className="skeleton" style={{ height: 300, borderRadius: 14 }} />
-      ) : onglet === "postes" ? (
+      ) : onglet === "niveaux" ? (
         <section className="card" style={{ padding: "12px 6px 6px" }}>
           <div className="table-wrap">
             <table className="data acc-table">
               <thead>
                 <tr>
                   <th>Module</th>
-                  {ORDRE_POSTES.map((p) => (
-                    <th key={p}>{POSTES[p].label}</th>
+                  <th style={{ textAlign: "center" }}>Directeur</th>
+                  {NIVEAUX.map((n) => (
+                    <th key={n.cle} style={{ textAlign: "center" }}>
+                      {n.label}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {groupes.map((g) => [
                   <tr key={g}>
-                    <td colSpan={ORDRE_POSTES.length + 1} className="nav-label" style={{ paddingTop: 14 }}>
+                    <td colSpan={NIVEAUX.length + 2} className="nav-label" style={{ paddingTop: 14 }}>
                       {g}
                     </td>
                   </tr>,
@@ -148,16 +171,21 @@ export default function Accreditations() {
                         {m.label}
                         {m.sensible && <small className="pill t-peach" style={{ marginLeft: 6 }}>sensible</small>}
                       </td>
-                      {ORDRE_POSTES.map((p) => {
-                        const r = regles.find((x) => x.module === m.cle && x.poste === p && !x.compte_id);
-                        const def = parDefaut("salarie", m.cle);
+                      <td style={{ textAlign: "center" }}>
+                        <span className="acc-cell oui" title="Le directeur a toujours accès à tout" style={{ cursor: "default", opacity: 0.7 }}>
+                          ✓
+                        </span>
+                      </td>
+                      {NIVEAUX.map((n) => {
+                        const r = regles.find((x) => x.module === m.cle && x.niveau === n.cle);
+                        const def = parDefaut(n.cle, m.cle);
                         return (
-                          <td key={p} style={{ textAlign: "center" }}>
+                          <td key={n.cle} style={{ textAlign: "center" }}>
                             <button
                               className={`acc-cell ${r ? (r.autorise ? "oui" : "non") : "defaut"}`}
-                              onClick={() => regler(m.cle, { poste: p }, suivant(r?.autorise))}
-                              disabled={envoi === `${m.cle}|${p}`}
-                              title={r ? (r.autorise ? "Autorisé pour ce poste" : "Refusé pour ce poste") : `Par défaut (salarié : ${def ? "oui" : "non"} ; responsable : ${parDefaut("responsable", m.cle) ? "oui" : "non"})`}
+                              onClick={() => regler(m.cle, { niveau: n.cle }, suivant(r?.autorise))}
+                              disabled={envoi === `${m.cle}|${n.cle}`}
+                              title={r ? (r.autorise ? `Autorisé pour les ${n.label.toLowerCase()}s` : `Refusé pour les ${n.label.toLowerCase()}s`) : `Valeur par défaut : ${def ? "autorisé" : "refusé"}`}
                             >
                               {r ? (r.autorise ? "✓" : "✕") : def ? "·✓" : "·"}
                             </button>
@@ -171,8 +199,8 @@ export default function Accreditations() {
             </table>
           </div>
           <p className="hint" style={{ padding: "8px 12px" }}>
-            <span className="acc-cell oui">✓</span> autorisé · <span className="acc-cell non">✕</span> refusé · <span className="acc-cell defaut">·✓</span> par défaut (ouvert aux salariés) ·{" "}
-            <span className="acc-cell defaut">·</span> par défaut (fermé aux salariés)
+            <span className="acc-cell oui">✓</span> autorisé · <span className="acc-cell non">✕</span> refusé · <span className="acc-cell defaut">·✓</span> ouvert par défaut ·{" "}
+            <span className="acc-cell defaut">·</span> fermé par défaut
           </p>
         </section>
       ) : !nonDirecteurs.length ? (
@@ -215,7 +243,7 @@ export default function Accreditations() {
                       </span>
                       <span className="seg acc-seg">
                         {([
-                          [null, "Suivre le poste"],
+                          [null, "Suivre son niveau"],
                           [true, "Autoriser"],
                           [false, "Refuser"],
                         ] as const).map(([v, l]) => (
