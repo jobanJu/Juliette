@@ -728,3 +728,89 @@ tr.clickable { cursor: pointer; }
 .calc-cost-head > span { display: grid; gap: 2px; }
 .calc-cost-head b { font-size: 22px; letter-spacing: -.6px; font-variant-numeric: tabular-nums; }
 .calc-cost-table td { padding: 7px 8px; font-size: 12.5px; }
+
+/* ——— Salle : plan, prise de commande, cuisine ——— */
+.plan-salle { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.table-card { display: grid; gap: 4px; justify-items: start; text-align: left; padding: 14px; min-height: 120px; border-radius: 16px; border: 1.5px solid var(--line); background: var(--card); cursor: pointer; font: inherit; color: inherit; }
+.table-card:hover { border-color: #d9d0f5; box-shadow: var(--shadow); }
+.table-card .table-num { font-size: 22px; font-weight: 800; letter-spacing: -.8px; }
+.table-card b { font-size: 15px; font-variant-numeric: tabular-nums; }
+.table-card small { color: var(--muted); font-size: 11.5px; }
+.table-card.occupee { background: var(--lavender); border-color: #d9d0f5; }
+.table-card.attente { background: var(--peach); border-color: #f3cdb5; }
+.table-card.comptoir { border-style: dashed; }
+.modal.pos { max-width: 1040px; height: calc(100vh - 32px); }
+.pos-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr); }
+.pos-carte { padding: 12px 18px 18px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; border-right: 1px solid var(--line); }
+.pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.pos-item { display: grid; gap: 4px; align-content: start; text-align: left; min-height: 84px; padding: 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); cursor: pointer; font: inherit; color: inherit; }
+.pos-item:hover:not(:disabled) { border-color: var(--purple); background: var(--lavender); }
+.pos-item:active:not(:disabled) { transform: scale(.98); }
+.pos-item b { font-size: 13.5px; line-height: 1.25; }
+.pos-item span { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pos-item .pill { justify-self: start; }
+.pos-item.pos-rupture { opacity: .45; cursor: not-allowed; }
+.pos-ticket { padding: 12px 18px 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; background: var(--paper); }
+.ticket-bon { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 6px; }
+.ticket-draft { border-color: #d9d0f5; box-shadow: 0 0 0 3px #7357d90f; }
+.ticket-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; }
+.ticket-line { display: flex; align-items: center; gap: 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.ticket-line > span:last-child { margin-left: auto; white-space: nowrap; }
+.muted-line { color: var(--ink-2); }
+.qty-ctrl { display: inline-flex; align-items: center; gap: 6px; }
+.qty-ctrl button { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); cursor: pointer; font-size: 15px; line-height: 1; }
+.qty-ctrl b { min-width: 16px; text-align: center; }
+.ticket-note { height: 36px; border: 1px solid var(--line); border-radius: 9px; padding: 0 10px; font-size: 12.5px; outline: 0; margin-top: 4px; background: var(--card); }
+.ticket-total { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 2px; font-size: 13px; }
+.ticket-total b { font-size: 22px; letter-spacing: -.6px; font-variant-numeric: tabular-nums; }
+.ticket-actions { display: grid; gap: 8px; margin-top: auto; }
+.kds { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; align-items: start; }
+.kds-bon { display: grid; gap: 8px; border-width: 2px; }
+.kds-attention { border-color: #f0d38a; }
+.kds-retard { border-color: #eaa29a; background: #fff8f7; }
+.kds-head { display: flex; justify-content: space-between; align-items: center; }
+.kds-head b { font-size: 18px; letter-spacing: -.4px; }
+.kds-timer { font-weight: 800; font-variant-numeric: tabular-nums; font-size: 15px; }
+.kds-retard .kds-timer { color: var(--red-ink); }
+.kds-lignes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 15px; }
+.kds-lignes b { display: inline-block; min-width: 26px; font-size: 16px; }
+.kds-note { margin: 0; padding: 8px 10px; border-radius: 9px; background: var(--yellow); color: var(--yellow-ink); font-size: 13px; font-weight: 600; }
+.chip-off { opacity: .45; text-decoration: line-through; }
+@media (max-width: 860px) {
+  .modal.pos { height: calc(100vh - 16px); max-width: none; }
+  .pos-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .pos-carte { border-right: 0; border-bottom: 1px solid var(--line); }
+  .pos-ticket { max-height: 48vh; }
+  .pos-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ——— Réservations ——— */
+.week-strip { display: flex; gap: 6px; align-items: stretch; overflow-x: auto; padding-bottom: 4px; margin-bottom: 8px; }
+.week-strip > .btn { width: 38px; padding: 0; height: auto; flex-shrink: 0; }
+.week-strip .select-sm { height: auto; flex-shrink: 0; }
+.week-strip .day { flex: 1 0 74px; display: grid; justify-items: center; gap: 1px; padding: 8px 4px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); cursor: pointer; font: inherit; color: inherit; }
+.week-strip .day small { font-size: 10.5px; color: var(--muted); text-transform: uppercase; }
+.week-strip .day b { font-size: 18px; }
+.week-strip .day span { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.week-strip .day.today b { color: var(--purple-ink); }
+.week-strip .day.on { background: var(--purple); border-color: var(--purple); color: #fff; }
+.week-strip .day.on small, .week-strip .day.on span, .week-strip .day.on b { color: #fff; }
+.resa-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
+.resa-row { flex-wrap: wrap; }
+.resa-heure { font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; min-width: 48px; }
+.resa-main { border: 0; background: transparent; text-align: left; cursor: pointer; padding: 0; font: inherit; color: inherit; }
+.resa-main:hover b { color: var(--purple-ink); }
+.resa-actions { display: flex; gap: 6px; }
+.resa-row.barre .resa-main b, .resa-row.barre .resa-heure { text-decoration: line-through; color: var(--muted); }
+@media (max-width: 1000px) { .resa-grid { grid-template-columns: minmax(0, 1fr); } }
+.ventes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+.vente-card { display: grid; gap: 6px; }
+.vente-card small { font-size: 12px; }
+.vente-top { display: flex; align-items: center; gap: 8px; }
+.vente-top b { flex: 1; font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vente-adresse { color: var(--ink-2); font-weight: 600; }
+.vente-retard { border-color: #eaa29a; background: #fff8f7; }
+.suivi { display: flex; gap: 4px; }
+.suivi-etape { flex: 1; text-align: center; font-size: 11.5px; font-weight: 650; padding: 8px 4px; border-radius: 8px; background: var(--paper); color: var(--muted); }
+.suivi-etape.fait { background: var(--mint); color: var(--mint-ink); }
+.suivi-etape.actuelle { background: var(--mint-ink); color: #fff; }

@@ -30,8 +30,8 @@ export const MODULES: ModuleJuliette[] = [
   { module: "aide-commande", href: "/aide-commande", label: "Commandes", sub: "Quoi commander aujourd'hui", icon: "↗", groupe: "Stock & achats", pret: true },
   { module: "reception", href: "/reception", label: "Réception", sub: "Livraisons conformes à la commande", icon: "✓", groupe: "Stock & achats", pret: true },
 
-  { module: "commandes-clients", href: "/commandes-clients", label: "Commandes clients", sub: "Tables & commandes en cours", icon: "◫", groupe: "Salle", pret: false },
-  { module: "reservations", href: "/reservations", label: "Réservations", sub: "Accueil & briefing", icon: "▣", groupe: "Salle", pret: false },
+  { module: "commandes-caisse", href: "/commandes-clients", label: "Commandes clients", sub: "Tables & commandes en cours", icon: "◫", groupe: "Salle", pret: true },
+  { module: "reservations", href: "/reservations", label: "Réservations", sub: "Accueil & briefing", icon: "▣", groupe: "Salle", pret: true },
 
   { module: "fiche-technique", href: "/fiche-technique", label: "Fiches techniques", sub: "Recettes & coûts matière", icon: "❏", groupe: "Établissement", pret: true },
   { module: "documentation", href: "/documentation", label: "Documentation", sub: "Procédures & archives", icon: "▢", groupe: "Établissement", pret: false },
