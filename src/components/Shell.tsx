@@ -33,6 +33,47 @@ export default function Shell({ children }: { children: ReactNode }) {
   }, [modules, recherche]);
 
   const courant = moduleDeRoute(pathname);
+
+  // Barre du bas (téléphone) : les usages du quotidien, à portée de pouce.
+  const barreBas = useMemo(() => {
+    const preferes = ["dashboard", "pointeuse", "planning", "messagerie", "commandes-caisse", "haccp", "fiche-technique"];
+    return preferes
+      .map((cle) => MODULES.find((m) => m.module === cle))
+      .filter((m): m is (typeof MODULES)[number] => !!m && modules.has(m.module))
+      .slice(0, 4);
+  }, [modules]);
+
+  // Tableaux lisibles sur téléphone : chaque cellule reçoit le titre de sa colonne (data-label),
+  // que la feuille de style affiche quand le tableau se transforme en fiches.
+  const refContenu = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const racine = refContenu.current;
+    if (!racine) return;
+    let attente = 0;
+    const etiqueter = () => {
+      attente = 0;
+      for (const table of racine.querySelectorAll<HTMLTableElement>("table.data")) {
+        const tetes = table.tHead?.rows[table.tHead.rows.length - 1];
+        if (!tetes) continue;
+        const labels = [...tetes.cells].map((c) => c.textContent?.trim() ?? "");
+        for (const tr of table.tBodies[0]?.rows ?? []) {
+          [...tr.cells].forEach((td, i) => {
+            if (td.colSpan > 1) td.dataset.groupe = "1";
+            else if (labels[i] && td.dataset.label !== labels[i]) td.dataset.label = labels[i];
+          });
+        }
+      }
+    };
+    const obs = new MutationObserver(() => {
+      if (!attente) attente = requestAnimationFrame(etiqueter);
+    });
+    obs.observe(racine, { childList: true, subtree: true });
+    etiqueter();
+    return () => {
+      obs.disconnect();
+      cancelAnimationFrame(attente);
+    };
+  }, []);
   const aujourdhui = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
   return (
@@ -131,8 +172,23 @@ export default function Shell({ children }: { children: ReactNode }) {
             </span>
           </div>
         </header>
-        <main className="content">{children}</main>
+        <main className="content" ref={refContenu}>
+          {children}
+        </main>
       </div>
+
+      <nav className="barre-bas" aria-label="Accès rapide">
+        {barreBas.map((m) => (
+          <Link key={m.href} href={m.href} className={courant?.href === m.href ? "on" : ""}>
+            <span aria-hidden>{m.icon}</span>
+            {m.module === "dashboard" ? "Accueil" : m.module === "pointeuse" ? "Pointer" : m.module === "messagerie" ? "Messages" : m.module === "commandes-caisse" ? "Commandes" : m.label}
+          </Link>
+        ))}
+        <button onClick={() => setMenuOuvert(true)} className={menuOuvert ? "on" : ""}>
+          <span aria-hidden>☰</span>
+          Menu
+        </button>
+      </nav>
     </div>
   );
 }

@@ -55,6 +55,7 @@ export default function Planning() {
   const [personne, setPersonne] = useState<Membre | null>(null);
   const [copie, setCopie] = useState<{ etat: "confirmer" | "encours" } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [jourMobile, setJourMobile] = useState<string | null>(null);
 
   const jours = useMemo(() => joursDeLaSemaine(semaine), [semaine]);
   const aujourdhui = iso(new Date());
@@ -345,6 +346,21 @@ export default function Planning() {
 
       {erreur && <div className="error">Impossible de charger le planning. Vérifie ta connexion puis recharge la page.</div>}
 
+      {d && d.membres.length > 0 && (
+        <JourMobile
+          jours={jours}
+          jour={jourMobile && jours.includes(jourMobile) ? jourMobile : jours.includes(aujourdhui) ? aujourdhui : jours[0]}
+          onJour={setJourMobile}
+          groupes={groupes}
+          parCellule={parCellule}
+          conges={d.conges}
+          gestion={gestion}
+          moiId={compte.id}
+          reel={reel ? reelParCellule : null}
+          onCellule={(compteId, date) => setCellule({ compteId, date })}
+        />
+      )}
+
       <section className="card planning-card">
         {!d ? (
           <div style={{ display: "grid", gap: 10, padding: 16 }}>
@@ -532,5 +548,73 @@ function Slot({ c }: { c: Creneau }) {
     <span className="slot slot-conge" title={c.note ?? undefined}>
       {MOTIFS_ABSENCE[c.motif ?? "autre"] ?? "Absence"}
     </span>
+  );
+}
+
+/** Téléphone : le planning d'un jour à la fois, l'équipe en liste, un toucher pour modifier. */
+function JourMobile(p: {
+  jours: string[];
+  jour: string;
+  onJour: (j: string) => void;
+  groupes: { cle: string; label: string; ton: string; membres: Membre[] }[];
+  parCellule: Map<string, Creneau[]>;
+  conges: CongeValide[];
+  gestion: boolean;
+  moiId: string;
+  reel: Map<string, number> | null;
+  onCellule: (compteId: string, date: string) => void;
+}) {
+  const total = p.groupes.flatMap((g) => g.membres).reduce((t, m) => t + (p.parCellule.get(`${m.id}|${p.jour}`) ?? []).reduce((s, c) => s + dureeCreneau(c), 0), 0);
+  const presents = p.groupes.flatMap((g) => g.membres).filter((m) => (p.parCellule.get(`${m.id}|${p.jour}`) ?? []).some((c) => c.type === "shift")).length;
+  return (
+    <div className="planning-mobile">
+      <div className="jours-mobile">
+        {p.jours.map((j, i) => {
+          const n = p.groupes.flatMap((g) => g.membres).filter((m) => (p.parCellule.get(`${m.id}|${j}`) ?? []).some((c) => c.type === "shift")).length;
+          return (
+            <button key={j} className={j === p.jour ? "on" : ""} onClick={() => p.onJour(j)}>
+              <small>{JOURS_COURTS[i]}</small>
+              <b>{depuisIso(j).getDate()}</b>
+              <i>{n ? `${n} pers.` : "—"}</i>
+            </button>
+          );
+        })}
+      </div>
+      <p className="hint" style={{ margin: "10px 2px" }}>
+        <b style={{ textTransform: "capitalize" }}>{depuisIso(p.jour).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}</b> · {presents} personne(s) · {formatDuree(total)}
+      </p>
+      {p.groupes.map((g) => (
+        <section key={g.cle} className="card" style={{ padding: "8px 12px", marginBottom: 10 }}>
+          <div className="pg-group" style={{ border: 0, padding: "6px 0" }}>
+            <span className={`dot ${g.ton}`} />
+            {g.label}
+          </div>
+          {g.membres.map((m) => {
+            const l = p.parCellule.get(`${m.id}|${p.jour}`) ?? [];
+            const conge = !l.length ? congeLe(p.conges, m.id, p.jour) : undefined;
+            const fait = p.reel?.get(`${m.id}|${p.jour}`) ?? 0;
+            return (
+              <button key={m.id} className="jour-ligne" onClick={() => p.gestion && p.onCellule(m.id, p.jour)} disabled={!p.gestion}>
+                <span className="avatar">{m.avatar_url ? <img src={m.avatar_url} alt="" /> : initiales(m)}</span>
+                <span className="jour-nom">
+                  <b>
+                    {nomComplet(m)}
+                    {m.id === p.moiId ? " (moi)" : ""}
+                  </b>
+                  {p.reel && fait > 0 && <small>réel {formatDuree(fait)}</small>}
+                </span>
+                <span className="jour-slots">
+                  {l.map((c) => (
+                    <Slot key={c.id} c={c} />
+                  ))}
+                  {conge && <span className="slot slot-conge slot-rh">Congé · RH</span>}
+                  {!l.length && !conge && <span className="hint">{p.gestion ? "+ ajouter" : "—"}</span>}
+                </span>
+              </button>
+            );
+          })}
+        </section>
+      ))}
+    </div>
   );
 }
