@@ -841,3 +841,11 @@ tr.clickable { cursor: pointer; }
 .acc-cell.defaut { color: #b9b3c4; border-style: dashed; }
 .acc-seg { display: inline-grid; grid-template-columns: repeat(3, auto); padding: 3px; }
 .acc-seg button { height: 28px; padding: 0 9px; font-size: 11.5px; }
+
+/* ——— Documentation ——— */
+.doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.doc-card { display: flex; gap: 12px; align-items: flex-start; }
+.doc-ic { font-size: 26px; width: 46px; height: 46px; border-radius: 12px; background: var(--paper); display: grid; place-items: center; flex-shrink: 0; }
+.doc-body { display: grid; gap: 4px; min-width: 0; }
+.doc-body b { font-size: 14px; }
+.doc-texte { white-space: pre-wrap; font-size: 14px; line-height: 1.6; background: var(--paper); border-radius: 11px; padding: 12px 14px; max-height: 50vh; overflow-y: auto; }
