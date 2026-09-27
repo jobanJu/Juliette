@@ -41,7 +41,7 @@ type Etat =
 type Session = {
   etat: Etat;
   connexion: (code: string, email: string, motDePasse: string) => Promise<string | null>;
-  /** Première connexion d'un salarié invité. Renvoie null, un message d'erreur, ou "CONFIRMER_EMAIL". */
+  /** Première connexion d'un salarié invité. */
   activation: (code: string, email: string, motDePasse: string) => Promise<string | null>;
   deconnexion: () => Promise<void>;
   changerEtablissement: (etablissementId: string) => void;
@@ -158,14 +158,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     async (code: string, email: string, motDePasse: string) => {
       const sb = getSupabaseClient();
       if (!sb) return "Connexion au serveur indisponible.";
-      const { data, error } = await sb.auth.signUp({ email: email.trim().toLowerCase(), password: motDePasse });
-      if (error && !/already|registered|exists/i.test(error.message)) {
-        return /password/i.test(error.message) ? "Mot de passe trop faible : 8 caractères minimum, avec des lettres et des chiffres." : "Activation impossible pour le moment. Réessaie dans un instant.";
+      const adresse = email.trim().toLowerCase();
+      const { data: session } = await sb.auth.getSession();
+      if (!session.session) {
+        const reponse = await fetch("/api/activer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: code.trim(), email: adresse, motDePasse }),
+        });
+        const resultat = await reponse.json().catch(() => null);
+        if (!reponse.ok) return resultat?.erreur ?? "Activation impossible pour le moment. Réessaie dans un instant.";
+        const { error } = await sb.auth.signInWithPassword({ email: adresse, password: motDePasse });
+        if (error) return "Compte créé, mais connexion impossible. Essaie de te connecter avec ton mot de passe.";
       }
-      if (!error && !data.session) return "CONFIRMER_EMAIL";
-      // Compte déjà existant (ou session ouverte) : la connexion rattache l'invitation.
-      const err = await connexion(code, email, motDePasse);
-      if (err && error) return "Cet e-mail a déjà un compte Juliette : connecte-toi avec ton mot de passe habituel.";
+      // La connexion rattache l'invitation au compte Auth.
+      const err = await connexion(code, adresse, motDePasse);
       if (err) return "Aucune invitation ne correspond à ce code et cet e-mail. Vérifie-les avec ton responsable.";
       return null;
     },

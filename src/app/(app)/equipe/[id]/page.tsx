@@ -183,7 +183,7 @@ export default function FicheCollaborateur() {
   }
 
   const lien = typeof window !== "undefined" ? `${window.location.origin}/activer` : "/activer";
-  const message = `Bonjour ${m.prenom ?? ""}, ton accès à Juliette (${etablissement.nom}) est prêt.\n\n1. Va sur ${lien}\n2. Code établissement : ${etablissement.code}\n3. E-mail : ${m.email ?? ""}\n4. Choisis ton mot de passe.`;
+  const message = `Bonjour ${m.prenom ?? ""}, ton accès à Juliette (${etablissement.nom}) est prêt.\n\n1. Va sur ${lien}\n2. Code établissement : ${etablissement.code}\n3. E-mail : ${m.email ?? ""}\n4. Choisis ton mot de passe.\n5. Ton code de pointeuse : ${m.code_badgeuse ?? "il sera disponible dans ta fiche après activation"}.`;
   const minutesSemaine = (semaine ?? []).reduce((s, c) => s + dureeCreneau(c), 0);
   const mensuel = taux && b.heures_contrat ? Number(taux.replace(",", ".")) * Number(b.heures_contrat.replace(",", ".")) * (52 / 12) : null;
 
@@ -221,7 +221,7 @@ export default function FicheCollaborateur() {
       {m.statut === "invite" && gestion && (
         <div className="banner">
           <span>
-            <b>{m.prenom} n&apos;a pas encore activé son compte.</b> Transmets-lui le lien, le code <b>{etablissement.code}</b> et son e-mail <b>{m.email}</b>.
+            <b>{m.prenom} n&apos;a pas encore activé son compte.</b> Transmets-lui le lien, le code <b>{etablissement.code}</b>, son e-mail <b>{m.email}</b> et son code de pointeuse <b>{m.code_badgeuse ?? "à communiquer après activation"}</b>.
           </span>
           <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button className="btn" onClick={() => navigator.clipboard.writeText(message).then(() => setCopie(true))}>

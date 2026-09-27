@@ -148,7 +148,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             </span>
           </Link>
           <button className="icon-btn" onClick={deconnexion} title="Se déconnecter" aria-label="Se déconnecter">
-            ⎋
+            ⎋ <span className="hide-sm">Se déconnecter</span>
           </button>
         </div>
       </aside>

@@ -15,7 +15,6 @@ export default function Activer() {
   const [mdp, setMdp] = useState("");
   const [mdp2, setMdp2] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
-  const [confirmer, setConfirmer] = useState(false);
   const [envoi, setEnvoi] = useState(false);
 
   useEffect(() => {
@@ -30,8 +29,7 @@ export default function Activer() {
     setEnvoi(true);
     const r = await activation(code, email, mdp);
     setEnvoi(false);
-    if (r === "CONFIRMER_EMAIL") setConfirmer(true);
-    else if (r) setErreur(r);
+    if (r) setErreur(r);
   }
 
   return (
@@ -48,18 +46,7 @@ export default function Activer() {
       </aside>
 
       <div className="login-form">
-        {confirmer ? (
-          <div style={{ maxWidth: 360, display: "grid", gap: 14 }}>
-            <h1 style={{ margin: 0, fontSize: 24 }}>Vérifie ta boîte mail</h1>
-            <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.55 }}>
-              Un lien de confirmation vient d&apos;être envoyé à <b>{email}</b>. Clique dessus, puis connecte-toi avec le code <b>{code.toUpperCase()}</b>, ton e-mail et le mot de passe que tu viens de choisir.
-            </p>
-            <Link className="btn btn-primary" href="/login" style={{ height: 44 }}>
-              Aller à la connexion
-            </Link>
-          </div>
-        ) : (
-          <form onSubmit={valider}>
+        <form onSubmit={valider}>
             <div className="brand" style={{ marginBottom: 10 }}>
               <span className="brand-mark">J</span>Juliette
             </div>
@@ -94,8 +81,7 @@ export default function Activer() {
             <p className="hint" style={{ textAlign: "center" }}>
               Déjà un compte ? <Link href="/login" style={{ color: "var(--purple-ink)", fontWeight: 600 }}>Se connecter</Link>
             </p>
-          </form>
-        )}
+        </form>
       </div>
     </div>
   );
