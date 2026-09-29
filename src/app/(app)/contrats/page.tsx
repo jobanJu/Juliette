@@ -1,15 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { InputHTMLAttributes } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { nomComplet, useConnecte } from "@/lib/session";
-import { chargerMembres, FONCTIONS } from "@/lib/personnel";
+import { chargerMembres } from "@/lib/personnel";
 import type { Membre } from "@/lib/personnel";
-import { iso } from "@/lib/planning";
-import { alertes, DONNEES_VIDES, essaiPropose, genererContrat, MODELES, MOTIFS_CDD, salaireMensuel, STATUTS_FR } from "@/lib/contrats";
-import type { Donnees, ModeleCle } from "@/lib/contrats";
-import DocumentContrat from "@/components/contrats/DocumentContrat";
+import { MODELES, nomContrat } from "@/lib/contrats";
+import type { Donnees, ModeleCle, Reglages } from "@/lib/contrats";
+import DocumentContrat, { imprimerContrat } from "@/components/contrats/DocumentContrat";
+import Editeur from "@/components/contrats/Editeur";
 import SignaturePad from "@/components/contrats/SignaturePad";
 
 type Contrat = {
@@ -46,6 +45,7 @@ export default function Contrats() {
   const [membres, setMembres] = useState<Membre[]>([]);
   const [taux, setTaux] = useState<Map<string, number>>(new Map());
   const [etab, setEtab] = useState<Etab | null>(null);
+  const [reglages, setReglages] = useState<Reglages>({ postes: [], defauts: {} });
   const [vue, setVue] = useState<{ id: string | null } | null>(null);
   const [version, setVersion] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
@@ -66,6 +66,15 @@ export default function Contrats() {
       .eq("id", etablissement.id)
       .single()
       .then(({ data }) => setEtab(data as Etab));
+    if (directeur)
+      sb.from("contrats_reglages")
+        .select("data")
+        .eq("etablissement_id", etablissement.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          const r = (data?.data ?? {}) as Partial<Reglages>;
+          setReglages({ postes: r.postes ?? [], defauts: r.defauts ?? {} });
+        });
     if (directeur)
       sb.from("comptes_remuneration")
         .select("compte_id, taux_brut")
@@ -101,7 +110,23 @@ export default function Contrats() {
     if (directeur)
       return (
         <>
-          <Editeur contrat={c} membres={membres} taux={taux} etab={etab} directeurNom={nomComplet(compte)} etablissementId={etablissement.id} auteurId={compte.id} onRetour={() => setVue(null)} onFini={fini} />
+          <Editeur
+            key={c?.id ?? "nouveau"}
+            contrat={c}
+            membres={membres}
+            taux={taux}
+            etab={etab}
+            reglages={reglages}
+            directeurNom={nomComplet(compte)}
+            etablissementId={etablissement.id}
+            auteurId={compte.id}
+            onRetour={() => setVue(null)}
+            onFini={fini}
+            onReglages={(r, m) => {
+              setReglages(r);
+              setToast(m);
+            }}
+          />
           {toast && <div className="toast" role="status">{toast}</div>}
         </>
       );
@@ -162,7 +187,10 @@ export default function Contrats() {
                       </td>
                     )}
                     <td>
-                      {MODELES[c.modele]?.label ?? c.modele} <small className="hint">· {MODELES[c.modele]?.pays === "BE" ? "🇧🇪" : "🇫🇷"}</small>
+                      <b className="ct-nom">{nomContrat(c.modele, c.donnees)}</b>
+                      <small className="justif">
+                        {MODELES[c.modele]?.label ?? c.modele} · {MODELES[c.modele]?.pays === "BE" ? "🇧🇪" : "🇫🇷"}
+                      </small>
                     </td>
                     <td>{c.donnees.date_debut ? new Date(c.donnees.date_debut + "T12:00").toLocaleDateString("fr-FR") : "—"}</td>
                     <td>
@@ -189,355 +217,6 @@ export default function Contrats() {
         </p>
       )}
       {toast && <div className="toast" role="status">{toast}</div>}
-    </>
-  );
-}
-
-function Editeur({
-  contrat,
-  membres,
-  taux,
-  etab,
-  directeurNom,
-  etablissementId,
-  auteurId,
-  onRetour,
-  onFini,
-}: {
-  contrat: Contrat | null;
-  membres: Membre[];
-  taux: Map<string, number>;
-  etab: Etab | null;
-  directeurNom: string;
-  etablissementId: string;
-  auteurId: string;
-  onRetour: () => void;
-  onFini: (m: string, garderOuvert?: string) => void;
-}) {
-  const sb = getSupabaseClient()!;
-  const [compteId, setCompteId] = useState(contrat?.compte_id ?? "");
-  const [modele, setModele] = useState<ModeleCle>(contrat?.modele ?? "fr_cdi");
-  const [d, setD] = useState<Donnees>(() => ({ ...DONNEES_VIDES, ...(contrat?.donnees ?? {}) }));
-  const [essaiManuel, setEssaiManuel] = useState(!!contrat?.donnees.essai);
-  // Téléphone : formulaire et aperçu en alternance plutôt qu'empilés.
-  const [vueMobile, setVueMobile] = useState<"remplir" | "apercu">("remplir");
-  const [envoi, setEnvoi] = useState(false);
-  const [erreur, setErreur] = useState<string | null>(null);
-  const pays = MODELES[modele].pays;
-  const set = <K extends keyof Donnees>(k: K, v: Donnees[K]) => setD((x) => ({ ...x, [k]: v }));
-
-  const donnees = useMemo(() => ({ ...d, essai: essaiManuel ? d.essai : essaiPropose(modele, d) }), [d, essaiManuel, modele]);
-  const texte = useMemo(() => genererContrat(modele, donnees), [modele, donnees]);
-  const avertissements = alertes(modele, donnees);
-  const mensuel = salaireMensuel(donnees);
-
-  function choisirSalarie(id: string) {
-    setCompteId(id);
-    const m = membres.find((x) => x.id === id);
-    if (!m) return;
-    setD((x) => ({
-      ...x,
-      prenom: m.prenom ?? "",
-      nom: m.nom ?? "",
-      date_naissance: m.date_naissance ?? x.date_naissance,
-      fonction: m.fonction ? FONCTIONS[m.fonction] ?? m.fonction : x.fonction,
-      heures_hebdo: m.heures_contrat != null ? String(m.heures_contrat) : x.heures_hebdo,
-      taux_horaire: taux.has(id) ? String(taux.get(id)) : x.taux_horaire,
-      date_debut: m.date_embauche ?? x.date_debut,
-      statut: m.fonction && ["directeur", "directeur_adjoint", "chef_cuisine"].includes(m.fonction) ? "cadre" : m.fonction && ["manager", "second"].includes(m.fonction) ? "maitrise" : x.statut,
-      employeur: x.employeur || etab?.nom || "",
-      employeur_adresse: x.employeur_adresse || etab?.adresse || "",
-      employeur_numero: x.employeur_numero || etab?.siret || "",
-      representant: x.representant || directeurNom,
-      lieu_travail: x.lieu_travail || [etab?.nom, etab?.adresse].filter(Boolean).join(", "),
-      fait_a: x.fait_a || etab?.ville || "",
-      fait_le: x.fait_le || iso(new Date()),
-    }));
-  }
-
-  function changerModele(m: ModeleCle) {
-    setModele(m);
-    const be = MODELES[m].pays === "BE";
-    setD((x) => ({ ...x, statut: be ? (x.statut === "ouvrier" ? "ouvrier" : "employe") : x.statut === "ouvrier" ? "employe" : x.statut, heures_hebdo: x.heures_hebdo || (be ? "38" : "35"), nationalite: x.nationalite || (be ? "belge" : "française") }));
-  }
-
-  async function sauver(presenter: boolean) {
-    setErreur(null);
-    if (!compteId) return setErreur("Choisis le salarié concerné.");
-    setEnvoi(true);
-    const ligne = { compte_id: compteId, modele, donnees, contenu: texte };
-    let id = contrat?.id;
-    if (id) {
-      const { error } = await sb.from("contrats_travail").update(ligne).eq("id", id);
-      if (error) {
-        setEnvoi(false);
-        return setErreur("Enregistrement refusé : réservé au directeur.");
-      }
-    } else {
-      const { data, error } = await sb.from("contrats_travail").insert({ ...ligne, etablissement_id: etablissementId, created_by: auteurId }).select("id").single();
-      if (error || !data) {
-        setEnvoi(false);
-        return setErreur("Enregistrement refusé : réservé au directeur.");
-      }
-      id = data.id;
-    }
-    if (presenter) {
-      const { error } = await sb.from("contrats_travail").update({ statut: "a_signer", contenu: texte }).eq("id", id!);
-      setEnvoi(false);
-      if (error) return setErreur("Impossible de présenter le contrat.");
-      return onFini("Contrat figé et présenté au salarié : il peut le signer depuis son compte", id);
-    }
-    setEnvoi(false);
-    onFini("Brouillon enregistré");
-  }
-
-  async function supprimer() {
-    if (!contrat || !confirm("Supprimer ce brouillon ?")) return;
-    const { error } = await sb.from("contrats_travail").delete().eq("id", contrat.id);
-    if (error) return setErreur("Suppression refusée.");
-    onFini("Brouillon supprimé");
-  }
-
-  const champ = (k: keyof Donnees, label: string, props: InputHTMLAttributes<HTMLInputElement> = {}) => (
-    <div className="field">
-      <label htmlFor={`ct-${k}`}>{label}</label>
-      <input id={`ct-${k}`} value={String(donnees[k] ?? "")} onChange={(e) => set(k, e.target.value as never)} {...props} />
-    </div>
-  );
-
-  return (
-    <>
-      <div className="page-head print-hide">
-        <div>
-          <p className="eyebrow">Contrats de travail</p>
-          <h1>{contrat ? "Modifier le contrat" : "Nouveau contrat"}</h1>
-          <p>Les informations connues sont pré-remplies. L&apos;aperçu se met à jour en direct.</p>
-        </div>
-        <div className="toolbar">
-          <button className="btn" onClick={onRetour}>
-            ← Retour
-          </button>
-          <button className="btn" onClick={() => window.print()}>
-            ⎙ Imprimer / PDF
-          </button>
-        </div>
-      </div>
-
-      <div className="seg seg-inline contrat-bascule print-hide" role="tablist" aria-label="Affichage">
-        <button role="tab" aria-selected={vueMobile === "remplir"} className={vueMobile === "remplir" ? "on" : ""} onClick={() => setVueMobile("remplir")}>
-          ✎ Remplir
-        </button>
-        <button role="tab" aria-selected={vueMobile === "apercu"} className={vueMobile === "apercu" ? "on" : ""} onClick={() => setVueMobile("apercu")}>
-          👁 Aperçu du contrat
-        </button>
-      </div>
-      <div className={`contrat-editeur vue-${vueMobile}`}>
-        <div className="contrat-form print-hide">
-          <section className="card">
-            <div className="form-2">
-              <div className="field">
-                <label htmlFor="ct-salarie">Salarié</label>
-                <select id="ct-salarie" value={compteId} onChange={(e) => choisirSalarie(e.target.value)}>
-                  <option value="">— Choisir —</option>
-                  {membres.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {nomComplet(m)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="field">
-                <label htmlFor="ct-modele">Modèle</label>
-                <select id="ct-modele" value={modele} onChange={(e) => changerModele(e.target.value as ModeleCle)}>
-                  <optgroup label="🇫🇷 France (HCR)">
-                    {(Object.keys(MODELES) as ModeleCle[]).filter((k) => MODELES[k].pays === "FR").map((k) => (
-                      <option key={k} value={k}>
-                        {MODELES[k].label}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="🇧🇪 Belgique (CP 302)">
-                    {(Object.keys(MODELES) as ModeleCle[]).filter((k) => MODELES[k].pays === "BE").map((k) => (
-                      <option key={k} value={k}>
-                        {MODELES[k].label}
-                      </option>
-                    ))}
-                  </optgroup>
-                </select>
-              </div>
-            </div>
-            <p className="hint" style={{ margin: 0 }}>{MODELES[modele].description}</p>
-          </section>
-
-          <section className="card contrat-section">
-            <h3>Salarié</h3>
-            <div className="form-2">
-              <div className="field">
-                <label htmlFor="ct-civ">Civilité</label>
-                <select id="ct-civ" value={donnees.civilite} onChange={(e) => set("civilite", e.target.value as Donnees["civilite"])}>
-                  <option>M.</option>
-                  <option>Mme</option>
-                </select>
-              </div>
-              {champ("nationalite", "Nationalité")}
-            </div>
-            <div className="form-2">
-              {champ("prenom", "Prénom")}
-              {champ("nom", "Nom")}
-            </div>
-            <div className="form-2">
-              {champ("date_naissance", "Date de naissance", { type: "date" })}
-              {champ("lieu_naissance", "Lieu de naissance")}
-            </div>
-            {champ("adresse", "Adresse")}
-            {champ("numero_securite", pays === "FR" ? "N° de sécurité sociale" : "N° de registre national")}
-          </section>
-
-          <section className="card contrat-section">
-            <h3>Emploi</h3>
-            <div className="form-2">
-              {champ("fonction", "Emploi occupé", { placeholder: "ex. Chef de partie" })}
-              <div className="field">
-                <label htmlFor="ct-statut">Statut</label>
-                <select id="ct-statut" value={donnees.statut} onChange={(e) => set("statut", e.target.value)}>
-                  {pays === "FR" ? (
-                    Object.entries(STATUTS_FR).map(([k, v]) => (
-                      <option key={k} value={k}>
-                        {v.label}
-                      </option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="employe">Employé</option>
-                      <option value="ouvrier">Ouvrier</option>
-                    </>
-                  )}
-                </select>
-              </div>
-            </div>
-            {pays === "FR" && (
-              <div className="form-2">
-                {champ("niveau", "Niveau (grille HCR)", { placeholder: "I à V" })}
-                {champ("echelon", "Échelon", { placeholder: "1 à 3" })}
-              </div>
-            )}
-            {modele === "fr_cdd" && (
-              <div className="form-2">
-                <div className="field">
-                  <label htmlFor="ct-motif">Motif du CDD</label>
-                  <select id="ct-motif" value={donnees.motif} onChange={(e) => set("motif", e.target.value)}>
-                    {Object.entries(MOTIFS_CDD).map(([k, v]) => (
-                      <option key={k} value={k}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {champ("motif_detail", donnees.motif === "remplacement" ? "Salarié remplacé (nom, qualification)" : "Précision (facultatif)")}
-              </div>
-            )}
-            <div className="form-2">
-              {champ("date_debut", modele.endsWith("extra") ? "Date de la mission" : "Date de début", { type: "date" })}
-              {modele !== "fr_cdi" && modele !== "be_cdi" && champ("date_fin", modele.endsWith("extra") ? "Fin (si plusieurs jours)" : "Date de fin", { type: "date" })}
-            </div>
-            {modele === "fr_cdd" && donnees.motif === "remplacement" && !donnees.date_fin && champ("duree_minimale", "Durée minimale (sans date de fin)", { placeholder: "ex. 1 mois" })}
-            {modele.endsWith("extra") && champ("horaires_mission", "Horaires de la mission", { placeholder: "ex. de 18h à 23h30" })}
-            {champ("lieu_travail", "Lieu de travail")}
-            {(modele === "fr_cdi" || modele === "fr_cdd") && (
-              <div className="field">
-                <label htmlFor="ct-essai">
-                  Période d&apos;essai <span className="hint">· proposée : {essaiPropose(modele, d)}</span>
-                </label>
-                <input
-                  id="ct-essai"
-                  value={donnees.essai}
-                  onChange={(e) => {
-                    setEssaiManuel(true);
-                    set("essai", e.target.value);
-                  }}
-                />
-              </div>
-            )}
-          </section>
-
-          <section className="card contrat-section">
-            <h3>Temps de travail et rémunération</h3>
-            {!modele.endsWith("extra") && (
-              <>
-                {champ("heures_hebdo", "Heures par semaine", { inputMode: "decimal" })}
-                {champ("repartition", "Répartition / horaires", { placeholder: "ex. du mardi au samedi, 10h-15h et 18h-23h" })}
-              </>
-            )}
-            <div className="form-2">
-              {champ("taux_horaire", "Taux horaire brut (€)", { inputMode: "decimal" })}
-              <div className="field">
-                <label>Salaire mensuel brut</label>
-                <input value={mensuel && !modele.endsWith("extra") ? mensuel.toLocaleString("fr-FR", { style: "currency", currency: "EUR" }) : "—"} disabled />
-              </div>
-            </div>
-            {pays === "FR" && (
-              <label className="coupure-toggle">
-                <input type="checkbox" checked={donnees.avantage_nourriture} onChange={(e) => set("avantage_nourriture", e.target.checked)} />
-                <span>
-                  <b>Avantage en nature nourriture</b>
-                  <small>Repas pris dans l&apos;établissement (convention HCR)</small>
-                </span>
-              </label>
-            )}
-            {champ("mutuelle", "Mutuelle / prévoyance (facultatif)", { placeholder: "ex. Alan, contrat n°…" })}
-            <div className="field">
-              <label htmlFor="ct-clauses">Clauses particulières (facultatif)</label>
-              <textarea id="ct-clauses" rows={3} value={donnees.clauses} onChange={(e) => set("clauses", e.target.value)} placeholder="Tenue fournie, clause de mobilité…" />
-            </div>
-          </section>
-
-          <section className="card contrat-section">
-            <h3>Employeur et signature</h3>
-            {champ("employeur", "Raison sociale")}
-            <div className="form-2">
-              {champ("employeur_numero", pays === "FR" ? "SIRET" : "N° d'entreprise")}
-              {champ("employeur_adresse", "Adresse du siège")}
-            </div>
-            <div className="form-2">
-              {champ("representant", "Représenté par")}
-              {champ("representant_qualite", "En qualité de")}
-            </div>
-            <div className="form-2">
-              {champ("fait_a", "Fait à")}
-              {champ("fait_le", "Le", { type: "date" })}
-            </div>
-          </section>
-
-          {avertissements.length > 0 && (
-            <div className="banner" style={{ background: "var(--yellow)", borderColor: "#eedda6", margin: 0 }}>
-              <span>⚠ {avertissements.join(" ")}</span>
-            </div>
-          )}
-          {erreur && (
-            <div className="error" role="alert">
-              {erreur}
-            </div>
-          )}
-          <div className="contrat-actions">
-            {contrat && (
-              <button className="btn btn-danger-ghost" onClick={supprimer} disabled={envoi}>
-                Supprimer
-              </button>
-            )}
-            <span style={{ flex: 1 }} />
-            <button className="btn" onClick={() => sauver(false)} disabled={envoi}>
-              Enregistrer le brouillon
-            </button>
-            <button className="btn btn-primary" onClick={() => sauver(true)} disabled={envoi || !compteId}>
-              Figer et faire signer
-            </button>
-          </div>
-        </div>
-
-        <div className="contrat-apercu">
-          <DocumentContrat texte={texte} employeur={donnees.employeur || "L'employeur"} salarie={`${donnees.prenom} ${donnees.nom}`.trim() || "Le salarié"} />
-        </div>
-      </div>
     </>
   );
 }
@@ -583,7 +262,7 @@ function VueContrat({ c, directeur, moi, employeur, salarie, onRetour, onFini }:
           <button className="btn" onClick={onRetour}>
             ← Retour
           </button>
-          <button className="btn" onClick={() => window.print()}>
+          <button className="btn" onClick={() => imprimerContrat(nomContrat(c.modele, c.donnees))}>
             ⎙ Imprimer / PDF
           </button>
           {directeur && c.statut === "a_signer" && (
@@ -621,7 +300,7 @@ function VueContrat({ c, directeur, moi, employeur, salarie, onRetour, onFini }:
         </section>
       )}
 
-      <DocumentContrat texte={c.contenu ?? ""} employeur={employeur} salarie={salarie} sig={c} />
+      <DocumentContrat texte={c.contenu ?? ""} employeur={employeur} salarie={salarie} sig={c} paraphe={c.donnees.paraphe !== false} feminin={c.donnees.civilite === "Mme"} />
     </>
   );
 }
