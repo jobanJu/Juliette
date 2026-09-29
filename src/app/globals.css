@@ -1890,3 +1890,11 @@ tr.row-choisi td { background: var(--lavender); }
   .contrat-doc { border: 0; box-shadow: none; padding: 0; font-size: 11.5pt; }
   .contrat-signatures { break-inside: avoid; }
 }
+
+/* ── Console équipe Juliette ── */
+.console-fiche { max-width: 760px; }
+.console-usage { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.console-usage span { display: grid; padding: 10px; border-radius: 10px; background: var(--paper); font-size: 11.5px; color: var(--ink-2); }
+.console-usage b { font-size: 18px; color: var(--ink); }
+.console-h { margin: 8px 0 0; font-size: 13.5px; }
+@media (max-width: 600px) { .console-usage { grid-template-columns: 1fr 1fr; } }

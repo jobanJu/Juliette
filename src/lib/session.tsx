@@ -36,6 +36,8 @@ type Etat =
       etablissement: Etablissement;
       sites: { compte: Compte; etablissement: Etablissement }[];
       modules: Set<string>;
+      /** Établissement suspendu par l'équipe Juliette : l'application est bloquée. */
+      suspendu: boolean;
     };
 
 type Session = {
@@ -124,8 +126,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
     const choisi = sites.find((s) => s.etablissement.id === siteVoulu) ?? sites[0];
     ecrireSite(choisi.etablissement.id);
-    const modules = await chargerModules(choisi.etablissement.id, choisi.compte.role);
-    setEtat({ statut: "connecte", compte: choisi.compte, etablissement: choisi.etablissement, sites, modules });
+    const [modules, suspension] = await Promise.all([
+      chargerModules(choisi.etablissement.id, choisi.compte.role),
+      getSupabaseClient()!.rpc("etablissement_suspendu", { p_etablissement_id: choisi.etablissement.id }),
+    ]);
+    setEtat({ statut: "connecte", compte: choisi.compte, etablissement: choisi.etablissement, sites, modules, suspendu: suspension.data === true });
     return true;
   }, []);
 
