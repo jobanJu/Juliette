@@ -20,6 +20,7 @@ export const MODULES_ACCES: { cle: string; label: string; groupe: string; sensib
   { cle: "equipe", label: "Équipe (annuaire)", groupe: "Équipe" },
   { cle: "rh-conges", label: "RH & congés", groupe: "Équipe" },
   { cle: "contrats", label: "Contrats (voir et signer les siens)", groupe: "Équipe" },
+  { cle: "documents-rh", label: "Documents RH (voir et signer les siens)", groupe: "Équipe" },
   { cle: "messagerie", label: "Messagerie", groupe: "Équipe" },
   { cle: "haccp", label: "HACCP (relevés du quotidien)", groupe: "HACCP" },
   { cle: "haccp-parametres", label: "HACCP · paramètres (frigos, produits DLC, nettoyage, traçabilité)", groupe: "HACCP", sensible: true },
@@ -37,8 +38,8 @@ export const MODULES_ACCES: { cle: string; label: string; groupe: string; sensib
   { cle: "accreditations", label: "Accréditations", groupe: "Établissement", sensible: true },
 ];
 
-const DEFAUT_RESPONSABLE = ["dashboard", "commandes-caisse", "configuration-commandes", "inventaire", "perte", "aide-commande", "reception", "evenements", "fiche-technique", "pointeuse", "planning", "messagerie", "equipe", "rh-conges", "reservations", "haccp", "haccp-parametres", "haccp-historique", "documentation", "outils", "boite-mail", "contrats"];
-const DEFAUT_SALARIE = ["dashboard", "commandes-caisse", "fiche-technique", "pointeuse", "planning", "messagerie", "equipe", "rh-conges", "reservations", "haccp", "documentation", "contrats"];
+const DEFAUT_RESPONSABLE = ["dashboard", "commandes-caisse", "configuration-commandes", "inventaire", "perte", "aide-commande", "reception", "evenements", "fiche-technique", "pointeuse", "planning", "messagerie", "equipe", "rh-conges", "reservations", "haccp", "haccp-parametres", "haccp-historique", "documentation", "outils", "boite-mail", "contrats", "documents-rh"];
+const DEFAUT_SALARIE = ["dashboard", "commandes-caisse", "fiche-technique", "pointeuse", "planning", "messagerie", "equipe", "rh-conges", "reservations", "haccp", "documentation", "contrats", "documents-rh"];
 
 export function parDefaut(role: Role, module: string) {
   if (role === "directeur") return true;

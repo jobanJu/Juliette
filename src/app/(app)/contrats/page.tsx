@@ -112,6 +112,7 @@ export default function Contrats() {
 
   if (vue && contrats) {
     const c = vue.id ? contrats.find((x) => x.id === vue.id) ?? null : null;
+    if (vue.id && !c) return <div className="skeleton" style={{ height: 320, borderRadius: 14 }} />;
     // Avenant : nouveau (depuis un contrat signé) ou brouillon à reprendre.
     const parentId = vue.avenantDe ?? (c?.type_document === "avenant" && c.statut === "brouillon" ? c.contrat_parent : null);
     const parent = parentId ? contrats.find((x) => x.id === parentId) : null;

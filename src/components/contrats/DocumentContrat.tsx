@@ -28,21 +28,21 @@ function Riche({ texte }: { texte: string }) {
   );
 }
 
-function Signature({ role, nom, image, le }: { role: string; nom: string; image: string | null; le: string | null }) {
+function Signature({ role, nom, image, le, mention = "Lu et approuvé" }: { role: string; nom: string; image: string | null; le: string | null; mention?: string }) {
   return (
     <div className="contrat-sig">
       <small>{role}</small>
       <b>{nom}</b>
       {image ? (
         <>
-          <span className="contrat-sig-lu">Lu et approuvé</span>
+          <span className="contrat-sig-lu">{mention}</span>
           <img src={image} alt={`Signature : ${role}`} />
           <small>Signé électroniquement le {horodatage(le!)}</small>
         </>
       ) : (
         <>
           <span className="contrat-sig-ligne">Date : </span>
-          <span className="contrat-sig-mention">Mention manuscrite « Lu et approuvé » puis signature :</span>
+          <span className="contrat-sig-mention">Mention manuscrite « {mention} » puis signature :</span>
           <span className="contrat-sig-vide" />
         </>
       )}
@@ -62,7 +62,9 @@ export function initialesDe(nom: string) {
 type Unite = { cle: string; contenu: ReactNode; /** titre d'article : ne jamais le laisser seul en bas de page */ colle?: boolean };
 
 /** Découpe le texte en unités insécables (un titre, un paragraphe, un encadré…). */
-function unites(texte: string, employeur: string, salarie: string, sig: SignaturesContrat | undefined, feminin: boolean): Unite[] {
+type OptionsSignature = { roleSalarie: string | null; mentionSalarie: string };
+
+function unites(texte: string, employeur: string, salarie: string, sig: SignaturesContrat | undefined, feminin: boolean, opt: OptionsSignature): Unite[] {
   const liste = blocs(texte);
   const res: Unite[] = [];
   // Anciens contrats (mise en page précédente) : bandeau d'en-tête conservé.
@@ -162,9 +164,9 @@ function unites(texte: string, employeur: string, salarie: string, sig: Signatur
     cle: "signatures",
     contenu: (
       <>
-        <div className="contrat-signatures">
-          <Signature role="Pour l'employeur" nom={employeur} image={sig?.signature_employeur ?? null} le={sig?.signe_employeur_at ?? null} />
-          <Signature role={feminin ? "La salariée" : "Le salarié"} nom={salarie} image={sig?.signature_salarie ?? null} le={sig?.signe_salarie_at ?? null} />
+        <div className={`contrat-signatures${opt.roleSalarie === null ? " seule" : ""}`}>
+          <Signature role="Pour l'employeur" nom={employeur} image={sig?.signature_employeur ?? null} le={sig?.signe_employeur_at ?? null} mention={opt.roleSalarie === null ? "Signature et cachet" : "Lu et approuvé"} />
+          {opt.roleSalarie !== null && <Signature role={opt.roleSalarie || (feminin ? "La salariée" : "Le salarié")} nom={salarie} image={sig?.signature_salarie ?? null} le={sig?.signe_salarie_at ?? null} mention={opt.mentionSalarie} />}
         </div>
         {sig?.empreinte && (
           <p className="contrat-preuve">
@@ -193,7 +195,7 @@ function paginer(hauteurs: number[], colle: boolean[]) {
   return pages;
 }
 
-function PiedDePage({ n, total, paraphe, initiales }: { n: number; total: number; paraphe: boolean; initiales: { employeur?: string; salarie?: string } }) {
+function PiedDePage({ n, total, paraphe, initiales, salarieSigne }: { n: number; total: number; paraphe: boolean; initiales: { employeur?: string; salarie?: string }; salarieSigne: boolean }) {
   return (
     <footer className="contrat-pied">
       <span>
@@ -201,7 +203,13 @@ function PiedDePage({ n, total, paraphe, initiales }: { n: number; total: number
       </span>
       {paraphe && (
         <span className="contrat-pied-paraphes">
-          Initiales employeur <i>{initiales.employeur}</i> Initiales salarié <i>{initiales.salarie}</i>
+          Initiales employeur <i>{initiales.employeur}</i>
+          {salarieSigne && (
+            <>
+              {" "}
+              Initiales salarié <i>{initiales.salarie}</i>
+            </>
+          )}
         </span>
       )}
     </footer>
@@ -218,6 +226,8 @@ export default function DocumentContrat({
   paraphe = true,
   feminin = false,
   signataires,
+  roleSalarie = "",
+  mentionSalarie = "Lu et approuvé",
 }: {
   texte: string;
   employeur: string;
@@ -227,13 +237,16 @@ export default function DocumentContrat({
   feminin?: boolean;
   /** Noms des signataires, pour reporter leurs initiales sur chaque page une fois signé. */
   signataires?: { employeur: string; salarie: string };
+  /** Libellé du bloc salarié ; null = seul l'employeur signe (certificat, attestation…). */
+  roleSalarie?: string | null;
+  mentionSalarie?: string;
 }) {
   // Signature électronique : les initiales du signataire sont reportées sur chaque page.
   const initiales = {
     employeur: sig?.signature_employeur && signataires ? initialesDe(signataires.employeur) : undefined,
     salarie: sig?.signature_salarie && signataires ? initialesDe(signataires.salarie) : undefined,
   };
-  const liste = useMemo(() => unites(texte, employeur, salarie, sig, feminin), [texte, employeur, salarie, sig, feminin]);
+  const liste = useMemo(() => unites(texte, employeur, salarie, sig, feminin, { roleSalarie, mentionSalarie }), [texte, employeur, salarie, sig, feminin, roleSalarie, mentionSalarie]);
   const mesure = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<number[][] | null>(null);
 
@@ -283,7 +296,7 @@ export default function DocumentContrat({
                 </div>
               ))}
             </div>
-            <PiedDePage n={n + 1} total={pages.length} paraphe={paraphe} initiales={initiales} />
+            <PiedDePage n={n + 1} total={pages.length} paraphe={paraphe} initiales={initiales} salarieSigne={roleSalarie !== null} />
           </section>
         ))}
       </div>

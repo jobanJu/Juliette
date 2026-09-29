@@ -18,7 +18,7 @@ export type ModuleJuliette = {
 export type SectionCle = "equipe" | "stock" | "salle";
 
 export const SECTIONS: Record<SectionCle, { label: string; icon: string; sub: string }> = {
-  equipe: { label: "Équipe", icon: "☺", sub: "Pointage, personnel, RH & congés" },
+  equipe: { label: "Ressources humaines", icon: "☺", sub: "Pointage, personnel, congés, contrats et documents" },
   stock: { label: "Stock & commandes", icon: "▤", sub: "Stocks, pertes, commandes, réception" },
   salle: { label: "Salle", icon: "◫", sub: "Commandes clients & réservations" },
 };
@@ -34,6 +34,7 @@ export const MODULES: ModuleJuliette[] = [
   { module: "equipe", href: "/equipe", label: "Équipe", sub: "Annuaire du personnel", icon: "☺", groupe: "Équipe", pret: true, section: "equipe" },
   { module: "rh-conges", href: "/rh-conges", label: "RH & congés", sub: "Demandes & absences", icon: "✎", groupe: "Équipe", pret: true, section: "equipe" },
   { module: "contrats", href: "/contrats", label: "Contrats", sub: "Contrats de travail à signer", icon: "✍", groupe: "Équipe", pret: true, section: "equipe" },
+  { module: "documents-rh", href: "/documents-rh", label: "Documents RH", sub: "Fiches de poste, matériel, règlement…", icon: "🗂", groupe: "Équipe", pret: true, section: "equipe" },
   { module: "messagerie", href: "/messagerie", label: "Messagerie", sub: "Fil de messages d'équipe", icon: "✉", groupe: "Équipe", pret: true, horsMenu: true },
 
   // HACCP : module autonome, sans lien avec le stock ni les achats (tables haccp_* dédiées).
