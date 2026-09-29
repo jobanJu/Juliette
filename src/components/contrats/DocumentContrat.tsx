@@ -65,14 +65,15 @@ type Unite = { cle: string; contenu: ReactNode; /** titre d'article : ne jamais 
 function unites(texte: string, employeur: string, salarie: string, sig: SignaturesContrat | undefined, feminin: boolean): Unite[] {
   const liste = blocs(texte);
   const res: Unite[] = [];
-  const entete = (
+  // Anciens contrats (mise en page précédente) : bandeau d'en-tête conservé.
+  const entete = texte.includes("\n| ") ? (
     <div className="contrat-entete">
       <b>{employeur}</b>
       <span>
         {texte.startsWith("# Avenant") ? "Avenant au contrat de travail" : "Contrat de travail"} · {salarie}
       </span>
     </div>
-  );
+  ) : null;
   for (let i = 0; i < liste.length; i++) {
     const b = liste[i];
     const cle = `u${i}`;
@@ -127,25 +128,7 @@ function unites(texte: string, employeur: string, salarie: string, sig: Signatur
           </section>
         ),
       });
-    else if (b.type === "article") {
-      const m = b.texte.match(/^Article (\d+) – (.*)$/);
-      res.push({
-        cle,
-        colle: true,
-        contenu: (
-          <h2>
-            {m ? (
-              <>
-                <span className="contrat-num">{m[1]}</span>
-                {m[2]}
-              </>
-            ) : (
-              b.texte
-            )}
-          </h2>
-        ),
-      });
-    } else if (b.type === "liste")
+    else if (b.type === "article") res.push({ cle, colle: true, contenu: <h2>{b.texte}</h2> }); else if (b.type === "liste")
       res.push({
         cle,
         contenu: (

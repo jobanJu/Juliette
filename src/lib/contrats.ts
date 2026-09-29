@@ -213,6 +213,11 @@ const ou = (v: string, defaut = "[à compléter]") => (v?.trim() ? v.trim() : de
 const e = (d: Donnees) => (d.civilite === "Mme" ? "e" : "");
 const leSalarie = (d: Donnees) => (d.civilite === "Mme" ? "la salariée" : "le salarié");
 const LeSalarie = (d: Donnees) => (d.civilite === "Mme" ? "La salariée" : "Le salarié");
+/** Intitulé du poste accordé à la personne : « Serveur / Serveuse » → « Serveuse » pour Madame. */
+const poste = (d: Donnees) => {
+  const f = d.fonction.split(" / ");
+  return f.length === 2 ? f[d.civilite === "Mme" ? 1 : 0] : d.fonction;
+};
 const pronom = (d: Donnees) => (d.civilite === "Mme" ? "elle" : "il");
 
 /** Convention applicable (France) et son intitulé complet. */
@@ -303,40 +308,17 @@ export function alertes(modele: ModeleCle, d: Donnees): string[] {
 
 // ——— Blocs de texte ———
 
-function enBref(modele: ModeleCle, d: Donnees) {
-  const pays = MODELES[modele].pays;
-  const h = num(d.heures_hebdo);
-  const plein = pays === "FR" ? 35 : 38;
-  const m = salaireMensuel(d);
-  const t = num(d.taux_horaire);
-  const statut = pays === "FR" ? `${STATUTS_FR[d.statut]?.label ?? "Employé"}, niveau ${ou(d.niveau)}, échelon ${ou(d.echelon)}` : d.statut === "ouvrier" ? "Ouvrier" : "Employé";
-  const extra = modele.endsWith("extra");
-  const duree = modele.endsWith("cdi") ? "Indéterminée" : d.date_fin ? `Jusqu'au ${date(d.date_fin)}` : d.duree_minimale ? `Durée minimale : ${d.duree_minimale}` : "[à compléter]";
-  const lignes: string[][] = [
-    ["Emploi", `${ou(d.fonction)} · ${statut}`],
-    [extra ? "Date de la mission" : "Date d'entrée", date(d.date_debut)],
-    ...(extra ? [["Horaires", ou(d.horaires_mission, "communiqués à l'embauche")]] : [["Durée du contrat", duree], ["Temps de travail", h ? `${heures(h)} h par semaine (${h < plein ? "temps partiel" : "temps plein"})` : "[à compléter]"]]),
-    ["Rémunération", !t ? "[à compléter]" : !extra && m ? `${eur(m)} brut par mois (${eur(t)} de l'heure)` : `${eur(t)} brut de l'heure`],
-    ...(d.essai && !extra ? [["Période d'essai", `${d.essai}${modele === "fr_cdi" ? (d.essai_renouvelable ? ", renouvelable une fois" : ", non renouvelable") : ""}`]] : []),
-    ["Lieu de travail", ou(d.lieu_travail)],
-    ...(pays === "FR" ? [["Convention collective", conventionDe(d).cle === "autre" ? ou(d.convention_libre) : `${LIBELLE_COURT[conventionDe(d).cle]} (IDCC ${conventionDe(d).idcc})`]] : []),
-  ];
-  return lignes.map(([l, v]) => `| ${l} | ${v}`).join("\n");
-}
 
-const LIBELLE_COURT: Record<string, string> = { hcr: "Hôtels, cafés, restaurants", rapide: "Restauration rapide", collective: "Restauration de collectivités" };
-
+/** Comparution des parties, rédigée comme dans un contrat classique. */
 function parties(d: Donnees, pays: Pays) {
+  const fem = d.civilite === "Mme";
   return [
-    ["@ L'employeur", `**${ou(d.employeur)}**`, pays === "FR" ? `SIRET ${ou(d.employeur_numero)}` : `N° d'entreprise ${ou(d.employeur_numero)}`, ou(d.employeur_adresse), `Représenté par ${ou(d.representant)}, ${ou(d.representant_qualite)}`].join("\n"),
-    [
-      `@ ${LeSalarie(d)}`,
-      `**${d.civilite} ${ou(d.prenom)} ${ou(d.nom)}**`,
-      `Né${e(d)} le ${date(d.date_naissance)} à ${ou(d.lieu_naissance)}`,
-      `Nationalité ${ou(d.nationalite)}`,
-      ou(d.adresse),
-      `${pays === "FR" ? "N° de sécurité sociale" : "N° de registre national"} : ${ou(d.numero_securite)}`,
-    ].join("\n"),
+    "**ENTRE LES SOUSSIGNÉS :**",
+    `**${ou(d.employeur)}**, ${pays === "FR" ? `immatriculée sous le numéro SIRET ${ou(d.employeur_numero)}` : `inscrite sous le numéro d'entreprise ${ou(d.employeur_numero)}`}, dont le siège est situé ${ou(d.employeur_adresse)}, représentée par ${ou(d.representant)}, agissant en qualité de ${ou(d.representant_qualite)},`,
+    "ci-après dénommée « l'Employeur », d'une part,",
+    "**ET :**",
+    `**${d.civilite === "Mme" ? "Madame" : "Monsieur"} ${ou(d.prenom)} ${ou(d.nom).toUpperCase()}**, né${e(d)} le ${date(d.date_naissance)} à ${ou(d.lieu_naissance)}, de nationalité ${ou(d.nationalite)}, demeurant ${ou(d.adresse)}, ${pays === "FR" ? "immatriculé" + e(d) + " à la Sécurité sociale sous le numéro" : "inscrit" + e(d) + " au Registre national sous le numéro"} ${ou(d.numero_securite)},`,
+    `ci-après dénommé${e(d)} « ${fem ? "la Salariée" : "le Salarié"} », d'autre part.`,
   ].join("\n\n");
 }
 
@@ -453,7 +435,7 @@ export function genererContrat(modele: ModeleCle, brut: Donnees): string {
     `Contrat de travail d'${d.statut === "ouvrier" ? "ouvrier" : "employé"} à durée ${modele === "be_cdi" ? "indéterminée" : "déterminée"}`;
   const sousTitre = pays === "FR" ? conv.intituleComplet : "Commission paritaire 302 – Industrie hôtelière";
 
-  const tete = [`# ${titre}`, `#> ${sousTitre}`, enBref(modele, d), parties(d, pays), "**Il a été convenu ce qui suit :**"];
+  const tete = [`# ${titre}`, `#> ${sousTitre}`, parties(d, pays), "**IL A ÉTÉ CONVENU ET ARRÊTÉ CE QUI SUIT :**"];
   const avantages = () => [art("Repas", ...repas(d, pays)), art("Tenue et matériel", ...tenue(d)), ...(transport(d, pays) ? [art("Frais de transport", transport(d, pays))] : [])];
   const clauses = () => (d.clauses.trim() ? [art("Dispositions particulières", d.clauses.trim())] : []);
   const fait = `Fait à ${ou(d.fait_a)}, le ${date(d.fait_le)}, en deux exemplaires originaux dont un remis à ${leSalarie(d)}.`;
@@ -473,7 +455,7 @@ export function genererContrat(modele: ModeleCle, brut: Donnees): string {
           : `${LeSalarie(d)} est engagé${e(d)} à compter du ${date(d.date_debut)} pour une durée indéterminée, sous réserve des résultats de la visite d'information et de prévention.`,
         `Le présent contrat est régi par la ${conv.intituleComplet.charAt(0).toLowerCase() + conv.intituleComplet.slice(1)}, tenue à disposition dans l'établissement.`,
       ),
-      art("Fonctions et qualification", `${LeSalarie(d)} occupe l'emploi de **${ou(d.fonction)}**, ${qualif}.`, !cdd && "Ces fonctions pourront évoluer selon les nécessités de l'entreprise, sans modification de la qualification."),
+      art("Fonctions et qualification", `${LeSalarie(d)} occupe l'emploi de **${ou(poste(d))}**, ${qualif}.`, !cdd && "Ces fonctions pourront évoluer selon les nécessités de l'entreprise, sans modification de la qualification."),
       art(
         "Période d'essai",
         cdd
@@ -508,7 +490,7 @@ export function genererContrat(modele: ModeleCle, brut: Donnees): string {
     return [
       ...tete,
       art("Motif", "Le présent contrat est conclu en application des articles L. 1242-2 3° et D. 1242-1 du Code du travail, l'emploi d'extra relevant d'un usage constant dans le secteur des hôtels, cafés, restaurants, en raison de la nature de l'activité et du caractère par nature temporaire de cet emploi."),
-      art("Mission", `${LeSalarie(d)} est engagé${e(d)} en qualité de **${ou(d.fonction)}** (${qualif}) pour la mission suivante : le ${date(d.date_debut)}${d.date_fin && d.date_fin !== d.date_debut ? ` au ${date(d.date_fin)}` : ""}, ${ou(d.horaires_mission, "horaires communiqués à l'embauche")}.`, `Lieu : ${ou(d.lieu_travail)}.`),
+      art("Mission", `${LeSalarie(d)} est engagé${e(d)} en qualité de **${ou(poste(d))}** (${qualif}) pour la mission suivante : le ${date(d.date_debut)}${d.date_fin && d.date_fin !== d.date_debut ? ` au ${date(d.date_fin)}` : ""}, ${ou(d.horaires_mission, "horaires communiqués à l'embauche")}.`, `Lieu : ${ou(d.lieu_travail)}.`),
       art("Rémunération", ...remuneration(d, pays, false), "Conformément à l'usage, le contrat d'extra ne donne pas lieu à l'indemnité de fin de contrat. L'indemnité compensatrice de congés payés (10 %) est versée à l'issue de la mission."),
       ...avantages(),
       art("Protection sociale", ...protection(d)),
@@ -524,7 +506,7 @@ export function genererContrat(modele: ModeleCle, brut: Donnees): string {
   if (extra) {
     return [
       ...tete,
-      art("Objet", `L'employeur engage ${leSalarie(d)} en qualité de travailleur occasionnel (extra) dans le secteur Horeca (CP 302), en tant que **${ou(d.fonction)}**, conformément à l'article 31ter de l'arrêté royal du 28 novembre 1969.`),
+      art("Objet", `L'employeur engage ${leSalarie(d)} en qualité de travailleur occasionnel (extra) dans le secteur Horeca (CP 302), en tant que **${ou(poste(d))}**, conformément à l'article 31ter de l'arrêté royal du 28 novembre 1969.`),
       art("Durée et horaire", `Le contrat est conclu pour le ${date(d.date_debut)}${d.date_fin && d.date_fin !== d.date_debut ? ` au ${date(d.date_fin)}` : ""}, ${ou(d.horaires_mission, "selon l'horaire convenu")}. Une déclaration Dimona est effectuée avant le début des prestations. Le travailleur occasionnel ne peut être occupé plus de 50 jours par année civile sous ce régime.`),
       art("Rémunération", ...remuneration(d, pays, false)),
       ...avantages(),
@@ -535,7 +517,7 @@ export function genererContrat(modele: ModeleCle, brut: Donnees): string {
   }
   return [
     ...tete,
-    art("Engagement", `L'employeur engage ${leSalarie(d)} en qualité de **${ou(d.fonction)}**, ${qualif}, à partir du ${date(d.date_debut)}${modele === "be_cdd" ? ` jusqu'au ${date(d.date_fin)}` : " pour une durée indéterminée"}.`, "Le contrat est régi par la loi du 3 juillet 1978 relative aux contrats de travail et par les conventions collectives de la commission paritaire 302."),
+    art("Engagement", `L'employeur engage ${leSalarie(d)} en qualité de **${ou(poste(d))}**, ${qualif}, à partir du ${date(d.date_debut)}${modele === "be_cdd" ? ` jusqu'au ${date(d.date_fin)}` : " pour une durée indéterminée"}.`, "Le contrat est régi par la loi du 3 juillet 1978 relative aux contrats de travail et par les conventions collectives de la commission paritaire 302."),
     art("Lieu de travail", ou(d.lieu_travail)),
     art("Durée du travail", `${LeSalarie(d)} est occupé${e(d)} ${regime}. L'horaire de travail figure au règlement de travail.`),
     art("Rémunération", ...remuneration(d, pays, true), "La rémunération est payée par virement, au plus tard le quatrième jour ouvrable qui suit la période de paie. Elle suit l'indexation prévue par la commission paritaire."),

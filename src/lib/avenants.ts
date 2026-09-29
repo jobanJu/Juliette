@@ -156,9 +156,9 @@ export function genererAvenant(modeleParent: ModeleCle, brut: Donnees, a: Avenan
   return [
     `# Avenant n° ${numero} au contrat de travail`,
     `#> Contrat ${MODELES[modeleParent].court} du ${dateLongue(dateContrat)} · ${ou(c.fonction)}`,
-    [`| Objet | ${objet || "[à compléter]"}`, `| Date d'effet | ${effet}`, `| Contrat modifié | ${MODELES[modeleParent].label}, conclu le ${dateLongue(dateContrat)}`].join("\n"),
     parties(c, pays),
-    a.motif.trim() ? `**Préambule :** ${a.motif.trim()}` : `**Il a été convenu ce qui suit, d'un commun accord entre les parties :**`,
+    `**PRÉAMBULE :** Les parties sont liées par un contrat de travail (${MODELES[modeleParent].label.toLowerCase()}) conclu le ${dateLongue(dateContrat)}. Elles sont convenues de le modifier sur les points suivants : ${objet || "[à compléter]"}, à compter du ${effet}.${a.motif.trim() ? ` ${a.motif.trim()}` : ""}`,
+    "**IL A ÉTÉ CONVENU ET ARRÊTÉ CE QUI SUIT :**",
     ...articles,
     art("Autres clauses", "Toutes les autres clauses du contrat de travail initial et de ses éventuels avenants demeurent inchangées et continuent de s'appliquer."),
     `Fait à ${ou(a.fait_a)}, le ${dateLongue(a.fait_le)}, en deux exemplaires originaux dont un remis à ${leSalarie(c)}.`,
