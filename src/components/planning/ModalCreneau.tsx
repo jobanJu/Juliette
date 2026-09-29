@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Modal from "@/components/Modal";
 import { getSupabaseClient } from "@/lib/supabase";
-import { depuisIso, dureeCreneau, formatDuree, hm, JOURS_COURTS, MOTIFS_ABSENCE } from "@/lib/planning";
+import { alertesCoupure, coupuresDuJour, depuisIso, dureeCreneau, formatDuree, hm, JOURS_COURTS, MOTIFS_ABSENCE } from "@/lib/planning";
 import type { Creneau, TypeCreneau } from "@/lib/planning";
 
 type Frequent = { debut: string; fin: string; pause: number };
@@ -22,6 +22,12 @@ type Props = {
 };
 
 const PAUSES = [0, 15, 30, 45, 60];
+/** Journées en coupure les plus courantes : service du midi + service du soir. */
+const COUPURES = [
+  { debut: "10:00", fin: "15:00", debut2: "18:00", fin2: "23:00" },
+  { debut: "11:00", fin: "14:30", debut2: "18:30", fin2: "23:00" },
+  { debut: "09:00", fin: "14:00", debut2: "18:00", fin2: "22:00" },
+];
 
 function intervalle(debut: string, fin: string) {
   const [a, b] = [debut, fin].map((h) => Number(h.slice(0, 2)) * 60 + Number(h.slice(3, 5)));
@@ -35,6 +41,10 @@ export default function ModalCreneau(p: Props) {
   const [debut, setDebut] = useState("09:00");
   const [fin, setFin] = useState("15:00");
   const [pause, setPause] = useState(0);
+  // Coupure : un second service le même jour (ex. 10h–15h puis 18h–23h).
+  const [coupure, setCoupure] = useState(false);
+  const [debut2, setDebut2] = useState("18:00");
+  const [fin2, setFin2] = useState("23:00");
   const [motif, setMotif] = useState("conge_paye");
   const [note, setNote] = useState("");
   const [autresJours, setAutresJours] = useState<string[]>([]);
@@ -46,6 +56,7 @@ export default function ModalCreneau(p: Props) {
 
   function charger(c: Creneau | null) {
     setEdite(c);
+    setCoupure(false);
     setErreur(null);
     setAutresJours([]);
     if (!c) return;
@@ -70,6 +81,14 @@ export default function ModalCreneau(p: Props) {
   async function enregistrer() {
     setErreur(null);
     if (type === "shift" && debut === fin) return setErreur("L'heure de fin doit être différente de l'heure de début.");
+    const avecCoupure = type === "shift" && coupure && !edite;
+    if (avecCoupure) {
+      if (debut2 === fin2) return setErreur("Second service : l'heure de fin doit être différente de l'heure de début.");
+      const [a, b] = intervalle(debut, fin);
+      const [x, y] = intervalle(debut2, fin2);
+      if (x < b && a < y) return setErreur("Les deux services se chevauchent : la coupure doit les séparer.");
+      if (x < a) return setErreur("Le second service doit commencer après le premier.");
+    }
     if (type === "shift" && dureeCreneau({ type, heure_debut: debut, heure_fin: fin, pause_minutes: pause }) <= 0)
       return setErreur("La pause est plus longue que le créneau.");
 
@@ -80,11 +99,11 @@ export default function ModalCreneau(p: Props) {
       if (type === "shift") {
         // Un créneau de travail remplace un repos ou une absence, mais ne doit pas chevaucher un autre créneau.
         aSupprimer.push(...autres.filter((c) => c.type !== "shift").map((c) => c.id));
-        const [a, b] = intervalle(debut, fin);
+        const plages = avecCoupure ? [intervalle(debut, fin), intervalle(debut2, fin2)] : [intervalle(debut, fin)];
         const conflit = autres.find((c) => {
           if (c.type !== "shift" || !c.heure_debut || !c.heure_fin) return false;
           const [x, y] = intervalle(hm(c.heure_debut), hm(c.heure_fin));
-          return a < y && x < b;
+          return plages.some(([a, b]) => a < y && x < b);
         });
         if (conflit) {
           const j = jour === p.date ? "ce jour-là" : depuisIso(jour).toLocaleDateString("fr-FR", { weekday: "long" });
@@ -111,14 +130,27 @@ export default function ModalCreneau(p: Props) {
     setEnvoi(true);
     const { error } = edite
       ? await sb.from("planning_creneaux").update(ligne).eq("id", edite.id)
-      : await sb.from("planning_creneaux").insert(jours.map((date) => ({ ...ligne, date, created_by: p.auteurId })));
+      : await sb.from("planning_creneaux").insert(
+          jours.flatMap((date) => [
+            { ...ligne, date, created_by: p.auteurId },
+            ...(avecCoupure ? [{ ...ligne, heure_debut: debut2, heure_fin: fin2, pause_minutes: null, date, created_by: p.auteurId }] : []),
+          ]),
+        );
     if (!error && aSupprimer.length) await sb.from("planning_creneaux").delete().in("id", aSupprimer);
     setEnvoi(false);
     if (error) return setErreur("Enregistrement refusé. Seuls les responsables peuvent modifier le planning.");
-    p.onSaved(edite ? "Créneau modifié" : jours.length > 1 ? `${jours.length} créneaux ajoutés` : "Créneau ajouté");
+    p.onSaved(edite ? "Créneau modifié" : avecCoupure ? `Journée en coupure ajoutée${jours.length > 1 ? ` sur ${jours.length} jours` : ""}` : jours.length > 1 ? `${jours.length} créneaux ajoutés` : "Créneau ajouté");
   }
 
-  const duree = type === "shift" ? dureeCreneau({ type, heure_debut: debut, heure_fin: fin, pause_minutes: pause }) : 0;
+  const service2 = { type: "shift" as const, heure_debut: debut2, heure_fin: fin2, pause_minutes: 0 };
+  const duree = type === "shift" ? dureeCreneau({ type, heure_debut: debut, heure_fin: fin, pause_minutes: pause }) + (coupure && !edite ? dureeCreneau(service2) : 0) : 0;
+  // Ce que donnera la journée (créneaux déjà posés + ce qui est saisi), pour vérifier coupure et amplitude.
+  const journee = [
+    ...duJour.filter((c) => c.type === "shift" && c.id !== edite?.id),
+    ...(type === "shift" ? [{ type: "shift" as const, heure_debut: debut, heure_fin: fin }, ...(coupure && !edite ? [service2] : [])] : []),
+  ];
+  const { coupures, amplitude } = coupuresDuJour(journee);
+  const alertes = alertesCoupure(journee);
 
   return (
     <Modal
@@ -221,10 +253,60 @@ export default function ModalCreneau(p: Props) {
               />
             </div>
           </div>
+          {!edite && (
+            <label className="coupure-toggle">
+              <input type="checkbox" checked={coupure} onChange={(e) => setCoupure(e.target.checked)} />
+              <span>
+                <b>Journée en coupure</b>
+                <small>Deux services le même jour, avec une coupure entre les deux</small>
+              </span>
+            </label>
+          )}
+          {coupure && !edite && (
+            <div className="coupure-bloc">
+              <div className="chips">
+                {COUPURES.map((c) => (
+                  <button
+                    key={`${c.debut}${c.debut2}`}
+                    className={`chip${debut === c.debut && fin === c.fin && debut2 === c.debut2 && fin2 === c.fin2 ? " on" : ""}`}
+                    onClick={() => {
+                      setDebut(c.debut);
+                      setFin(c.fin);
+                      setDebut2(c.debut2);
+                      setFin2(c.fin2);
+                    }}
+                  >
+                    {c.debut}–{c.fin} / {c.debut2}–{c.fin2}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div className="field">
+                  <label htmlFor="debut2">Second service : début</label>
+                  <input id="debut2" type="time" step={300} value={debut2} onChange={(e) => setDebut2(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label htmlFor="fin2">Fin</label>
+                  <input id="fin2" type="time" step={300} value={fin2} onChange={(e) => setFin2(e.target.value)} />
+                </div>
+              </div>
+            </div>
+          )}
           <p className="hint">
             Temps travaillé : <b>{formatDuree(duree)}</b>
             {fin <= debut && debut !== fin ? " · finit le lendemain" : ""}
+            {coupures.length > 0 && (
+              <>
+                {" "}
+                · coupure <b>{coupures.map((c) => formatDuree(c.minutes)).join(" + ")}</b> · amplitude {formatDuree(amplitude)}
+              </>
+            )}
           </p>
+          {alertes.length > 0 && (
+            <div className="banner" style={{ background: "var(--yellow)", borderColor: "#eedda6", margin: 0 }}>
+              <span>⚠ {alertes.join(" · ")}. À vérifier avec ta convention collective.</span>
+            </div>
+          )}
         </>
       )}
 

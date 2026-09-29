@@ -83,6 +83,36 @@ export function dureeCreneau(c: Pick<Creneau, "type" | "heure_debut" | "heure_fi
   return Math.max(0, d - (c.pause_minutes ?? 0));
 }
 
+/** Coupures d'une journée : les temps morts entre deux services successifs (en minutes). */
+export function coupuresDuJour(l: Pick<Creneau, "type" | "heure_debut" | "heure_fin">[]) {
+  const services = l
+    .filter((c) => c.type === "shift" && c.heure_debut && c.heure_fin)
+    .map((c) => {
+      const a = minutes(c.heure_debut!);
+      let b = minutes(c.heure_fin!);
+      if (b <= a) b += 1440;
+      return [a, b] as const;
+    })
+    .sort((x, y) => x[0] - y[0]);
+  const res: { apres: number; minutes: number }[] = [];
+  for (let i = 1; i < services.length; i++) {
+    const trou = services[i][0] - services[i - 1][1];
+    if (trou > 0) res.push({ apres: i - 1, minutes: trou });
+  }
+  const amplitude = services.length ? services[services.length - 1][1] - services[0][0] : 0;
+  return { coupures: res, amplitude };
+}
+
+/** Repères HCR (convention collective hôtels-cafés-restaurants) : une seule coupure par jour, amplitude 13 h max. */
+export const AMPLITUDE_MAX_MIN = 13 * 60;
+export function alertesCoupure(l: Pick<Creneau, "type" | "heure_debut" | "heure_fin">[]) {
+  const { coupures, amplitude } = coupuresDuJour(l);
+  const a: string[] = [];
+  if (coupures.length > 1) a.push(`${coupures.length} coupures dans la journée (1 maximum en HCR)`);
+  if (amplitude > AMPLITUDE_MAX_MIN) a.push(`amplitude de ${formatDuree(amplitude)} (13h maximum)`);
+  return a;
+}
+
 export function hm(h: string | null) {
   return h ? h.slice(0, 5) : "";
 }

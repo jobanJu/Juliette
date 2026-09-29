@@ -1719,3 +1719,29 @@ tr.row-choisi td { background: var(--lavender); }
 .hnav-menu b { display: block; font-size: 13px; font-weight: 650; }
 .hnav-menu small { display: block; font-size: 11px; color: var(--muted); }
 .hnav-profil { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-weight: 600; text-decoration: none; }
+
+/* ── Planning : journées en coupure ── */
+.slot-coupure { display: block; margin: 2px auto; padding: 1px 6px; border-top: 1px dashed #b9b4c6; border-bottom: 1px dashed #b9b4c6; font-size: 10px; font-weight: 650; color: var(--ink-2); text-align: center; white-space: nowrap; }
+.legend .slot-coupure { display: inline-block; margin: 0 4px 0 0; }
+.slot-coupure.alerte { color: var(--peach-ink); border-color: var(--peach-ink); }
+.coupure-toggle { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 11px; cursor: pointer; }
+.coupure-toggle input { width: 20px; height: 20px; accent-color: var(--purple); }
+.coupure-toggle span { display: grid; gap: 2px; }
+.coupure-toggle b { font-size: 13px; }
+.coupure-toggle small { font-size: 11.5px; color: var(--muted); }
+.coupure-bloc { display: grid; gap: 10px; padding: 12px; border-radius: 11px; background: var(--paper); }
+
+/* ── Planning : suggestion ── */
+.sugg-evts { display: flex; flex-wrap: wrap; gap: 6px; }
+.sugg-liste { display: grid; gap: 12px; max-height: 58vh; overflow-y: auto; }
+.sugg-personne { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.sugg-tete { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
+.sugg-tete b { font-size: 14px; }
+.sugg-ligne { display: grid; grid-template-columns: 22px 64px minmax(0, 1fr); align-items: center; gap: 2px 8px; padding: 7px 6px; border-radius: 9px; cursor: pointer; }
+.sugg-ligne input { width: 18px; height: 18px; accent-color: var(--purple); }
+.sugg-ligne:not(.on) { opacity: .55; }
+.sugg-ligne.on { background: var(--lavender); }
+.sugg-jour { font-size: 12.5px; font-weight: 700; text-transform: capitalize; }
+.sugg-horaires { font-size: 13px; font-weight: 650; color: var(--ink); }
+.sugg-raison { grid-column: 3; font-size: 11.5px; color: var(--ink-2); }
+.modal:has(.sugg-liste) { max-width: 680px; }

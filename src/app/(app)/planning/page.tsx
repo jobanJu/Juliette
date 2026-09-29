@@ -7,7 +7,9 @@ import { initiales, nomComplet, useConnecte } from "@/lib/session";
 import type { Compte } from "@/lib/session";
 import {
   ajouterJours,
+  alertesCoupure,
   congeLe,
+  coupuresDuJour,
   creneauxFrequents,
   depuisIso,
   dureeCreneau,
@@ -26,6 +28,10 @@ import {
 import type { CongeValide, Creneau, Pointage } from "@/lib/planning";
 import ModalCreneau from "@/components/planning/ModalCreneau";
 import ModalPersonne from "@/components/planning/ModalPersonne";
+import ModalSuggestion from "@/components/planning/ModalSuggestion";
+import { suggererSemaine } from "@/lib/suggestion";
+import type { JourEvenement } from "@/lib/suggestion";
+import { COLONNES_EVT, reperes } from "@/lib/evenements";
 
 type Membre = Compte & { heures_contrat: number | null };
 
@@ -36,6 +42,7 @@ type Donnees = {
   pointages: Pointage[] | null;
   conges: CongeValide[];
   taux: Map<string, number> | null;
+  evenements: JourEvenement[];
 };
 
 const COLONNES = "id, compte_id, date, type, heure_debut, heure_fin, pause_minutes, motif, note";
@@ -56,6 +63,7 @@ export default function Planning() {
   const [copie, setCopie] = useState<{ etat: "confirmer" | "encours" } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [jourMobile, setJourMobile] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState(false);
 
   const jours = useMemo(() => joursDeLaSemaine(semaine), [semaine]);
   const aujourdhui = iso(new Date());
@@ -77,8 +85,9 @@ export default function Planning() {
         : null,
       sb.from("conges").select("compte_id, date_debut, date_fin, motif").eq("etablissement_id", etablissement.id).eq("type", "conge").eq("statut", "validee").lte("date_debut", fin).gte("date_fin", semaine),
       compte.role === "directeur" ? sb.from("comptes_remuneration").select("compte_id, taux_brut").eq("etablissement_id", etablissement.id) : null,
+      sb.from("evenements").select(COLONNES_EVT).eq("etablissement_id", etablissement.id).lte("date", fin).or(`date_fin.gte.${semaine},date.gte.${semaine}`),
     ])
-      .then(([membres, creneaux, historique, pointages, conges, taux]) => {
+      .then(([membres, creneaux, historique, pointages, conges, taux, evts]) => {
         if (!actif) return;
         if (membres.error || creneaux.error) throw new Error();
         setD({
@@ -88,6 +97,11 @@ export default function Planning() {
           pointages: pointages && !pointages.error ? (pointages.data as Pointage[]) : null,
           conges: (conges.data ?? []) as CongeValide[],
           taux: taux && !taux.error ? new Map(taux.data.map((t) => [t.compte_id, Number(t.taux_brut)])) : null,
+          // Événements saisis + repères calculés (fériés, Braderie…) : ils pèsent sur la suggestion.
+          evenements: [
+            ...((evts.data ?? []) as JourEvenement[]),
+            ...[...new Set([semaine, fin].map((j) => Number(j.slice(0, 4))))].flatMap((a) => reperes(a)).filter((e) => e.date <= fin && (e.date_fin ?? e.date) >= semaine),
+          ],
         });
         setErreur(false);
       })
@@ -220,6 +234,11 @@ export default function Planning() {
           <button className="btn" onClick={() => window.print()}>
             ⎙ Imprimer
           </button>
+          {gestion && (
+            <button className="btn" onClick={() => setSuggestion(true)} disabled={!d} title="Proposer la semaine d'après les habitudes de l'équipe, les contrats, les congés et les événements">
+              ✨ Suggestion
+            </button>
+          )}
           {gestion && (
             <button className="btn btn-primary" onClick={() => setCopie({ etat: "confirmer" })} disabled={!d || copie?.etat === "encours"}>
               ⧉ Copier la semaine précédente
@@ -422,9 +441,7 @@ export default function Planning() {
                               disabled={!gestion}
                               aria-label={`${nomComplet(m)}, ${depuisIso(j).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric" })}`}
                             >
-                              {l.map((c) => (
-                                <Slot key={c.id} c={c} />
-                              ))}
+                              <Slots l={l} />
                               {conge && (
                                 <span className="slot slot-conge slot-rh" title="Congé validé dans RH & congés">
                                   {MOTIFS_ABSENCE[conge.motif ?? ""] ?? "Congé"} · RH
@@ -476,6 +493,9 @@ export default function Planning() {
           <span className="slot slot-shift">09:00 – 15:00</span> Travail
         </span>
         <span>
+          <span className="slot-coupure">coupure 3h</span> Coupure entre deux services
+        </span>
+        <span>
           <span className="slot slot-repos">Repos</span> Repos
         </span>
         <span>
@@ -499,6 +519,24 @@ export default function Planning() {
           onClose={() => setCellule(null)}
           onSaved={(msg) => {
             setCellule(null);
+            setToast(msg);
+            recharger();
+          }}
+        />
+      )}
+
+      {suggestion && d && (
+        <ModalSuggestion
+          etablissementId={etablissement.id}
+          auteurId={compte.id}
+          semaine={jours}
+          membres={d.membres.map((m) => ({ id: m.id, nom: nomComplet(m), heures_contrat: m.heures_contrat }))}
+          propositions={suggererSemaine({ semaine: jours, membres: d.membres, historique: d.historique, existants: d.creneaux, conges: d.conges, evenements: d.evenements })}
+          existants={d.creneaux}
+          evenements={d.evenements}
+          onClose={() => setSuggestion(false)}
+          onSaved={(msg) => {
+            setSuggestion(false);
             setToast(msg);
             recharger();
           }}
@@ -531,6 +569,31 @@ export default function Planning() {
 
 function GroupeLignes({ children }: { children: ReactNode }) {
   return <>{children}</>;
+}
+
+/** Les créneaux d'une case, avec la coupure affichée entre deux services. */
+function Slots({ l }: { l: Creneau[] }) {
+  const { coupures } = coupuresDuJour(l);
+  const shifts = l.filter((c) => c.type === "shift");
+  const alertes = alertesCoupure(l);
+  return (
+    <>
+      {l.map((c) => {
+        const i = shifts.indexOf(c);
+        const cp = i >= 0 ? coupures.find((x) => x.apres === i) : undefined;
+        return (
+          <span key={c.id} style={{ display: "contents" }}>
+            <Slot c={c} />
+            {cp && (
+              <span className={`slot-coupure${alertes.length ? " alerte" : ""}`} title={alertes.length ? alertes.join(" · ") : "Coupure entre deux services"}>
+                {alertes.length ? "⚠ " : ""}coupure {formatDuree(cp.minutes)}
+              </span>
+            )}
+          </span>
+        );
+      })}
+    </>
+  );
 }
 
 function Slot({ c }: { c: Creneau }) {
@@ -604,9 +667,7 @@ function JourMobile(p: {
                   {p.reel && fait > 0 && <small>réel {formatDuree(fait)}</small>}
                 </span>
                 <span className="jour-slots">
-                  {l.map((c) => (
-                    <Slot key={c.id} c={c} />
-                  ))}
+                  <Slots l={l} />
                   {conge && <span className="slot slot-conge slot-rh">Congé · RH</span>}
                   {!l.length && !conge && <span className="hint">{p.gestion ? "+ ajouter" : "—"}</span>}
                 </span>
