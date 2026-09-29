@@ -1821,3 +1821,37 @@ tr.row-choisi td { background: var(--lavender); }
 .catalogue-item { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-radius: 10px; cursor: pointer; }
 .catalogue-item input { width: 20px; height: 20px; accent-color: var(--purple); flex-shrink: 0; }
 .catalogue-item.on { background: var(--lavender); }
+
+/* ── Boîte mail ── */
+.attente-domaine { margin-bottom: 14px; border-color: #eedda6; background: #fffdf4; }
+.attente-domaine p { margin: 0 0 8px; font-size: 13.5px; line-height: 1.5; }
+.attente-domaine ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; line-height: 1.5; }
+.attente-domaine code { padding: 1px 5px; border-radius: 5px; background: var(--paper); font-size: 12px; }
+.mail-barre { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.mail-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
+.mail-grid.lecture { grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); }
+.mail-liste { padding: 6px; display: grid; gap: 2px; max-height: 72vh; overflow-y: auto; }
+.mail-item { display: grid; gap: 3px; padding: 10px 12px; border: 0; border-radius: 10px; background: transparent; text-align: left; cursor: pointer; }
+.mail-item:hover { background: var(--paper); }
+.mail-item.on { background: var(--lavender); }
+.mail-de { display: flex; align-items: center; gap: 6px; }
+.mail-de b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
+.mail-item.non-lu .mail-de b, .mail-item.non-lu .mail-sujet { font-weight: 750; color: var(--ink); }
+.mail-de small { font-size: 11px; color: var(--muted); }
+.mail-point { width: 8px; height: 8px; border-radius: 50%; background: var(--purple); flex-shrink: 0; }
+.mail-sujet { font-size: 12.5px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-extrait { display: flex; gap: 6px; align-items: center; font-size: 11.5px; color: var(--muted); overflow: hidden; white-space: nowrap; }
+.mail-lecture { display: grid; gap: 12px; }
+.mail-lecture-tete h2 { margin: 0 0 4px; font-size: 18px; }
+.mail-lecture-tete p { margin: 0 0 8px; }
+.mail-badges, .mail-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.mail-retour { display: none; margin-bottom: 8px; }
+.mail-pj { display: flex; flex-wrap: wrap; gap: 8px; }
+.mail-pj-item { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); cursor: pointer; font-size: 12.5px; }
+.mail-corps { width: 100%; min-height: 50vh; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.mail-texte { margin: 0; padding: 12px; border-radius: 10px; background: var(--paper); white-space: pre-wrap; word-break: break-word; font-family: inherit; font-size: 13.5px; line-height: 1.55; }
+@media (max-width: 860px) {
+  .mail-grid.lecture { grid-template-columns: minmax(0, 1fr); }
+  .mail-grid.lecture .mail-liste { display: none; }
+  .mail-retour { display: inline-flex; }
+}

@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { htmlCommande, sujetCommande, texteCommande } from "@/lib/emailCommande";
 import type { LigneEmail } from "@/lib/emailCommande";
+import { adresseReception, refCommande } from "@/lib/boiteMail";
 
 export const runtime = "nodejs";
 
@@ -20,6 +21,9 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const cle = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const mailjetCle = process.env.MAILJET_API_KEY;
 const mailjetSecret = process.env.MAILJET_API_SECRET;
+
+// Boîte mail Juliette : une fois le domaine de réception branché, les réponses y arrivent.
+const domaineReception = process.env.INBOUND_EMAIL_DOMAIN?.trim().toLowerCase() || null;
 
 const configure = () => Boolean(mailjetCle?.trim() && mailjetSecret?.trim());
 
@@ -52,7 +56,7 @@ export async function POST(request: Request) {
   if (!cmd.fournisseur_email) return NextResponse.json({ erreur: "sans_email" }, { status: 422 });
 
   const [{ data: etab }, { data: auteur }] = await Promise.all([
-    sb.from("etablissements").select("nom, adresse, telephone, email_contact, email_expediteur").eq("id", cmd.etablissement_id).single(),
+    sb.from("etablissements").select("nom, code, adresse, telephone, email_contact, email_expediteur, boite_mail_jeton").eq("id", cmd.etablissement_id).single(),
     sb.from("comptes").select("prenom, nom").eq("etablissement_id", cmd.etablissement_id).eq("auth_user_id", user.user.id).maybeSingle(),
   ]);
   if (!etab?.email_expediteur || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(etab.email_expediteur)) {
@@ -79,10 +83,13 @@ export async function POST(request: Request) {
         {
           From: { Email: etab.email_expediteur.trim(), Name: etab.nom.replace(/[\r\n<>]/g, "").trim() || "Restaurant" },
           To: [{ Email: cmd.fournisseur_email }],
-          ...(etab.email_contact || user.user.email
-            ? { ReplyTo: { Email: etab.email_contact || user.user.email } }
-            : {}),
-          Subject: sujetCommande(donnees),
+          ...(domaineReception && etab.boite_mail_jeton
+            ? { ReplyTo: { Email: adresseReception(etab.code, etab.boite_mail_jeton, domaineReception), Name: etab.nom.replace(/[\r\n<>]/g, "").trim() || "Restaurant" } }
+            : etab.email_contact || user.user.email
+              ? { ReplyTo: { Email: etab.email_contact || user.user.email } }
+              : {}),
+          // La référence permet de rattacher la réponse du fournisseur à cette commande.
+          Subject: domaineReception ? `${sujetCommande(donnees)} · réf. ${refCommande(cmd.id)}` : sujetCommande(donnees),
           TextPart: texteCommande(donnees),
           HTMLPart: htmlCommande(donnees),
         },

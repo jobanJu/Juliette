@@ -26,6 +26,7 @@ export const SECTIONS: Record<SectionCle, { label: string; icon: string; sub: st
 export const MODULES: ModuleJuliette[] = [
   { module: "dashboard", href: "/dashboard", label: "Tableau de bord", sub: "Vue d'ensemble", icon: "⌂", groupe: "Pilotage", pret: true },
   { module: "finance", href: "/finance", label: "Finance", sub: "Ventes, pertes et estimations", icon: "€", groupe: "Pilotage", pret: true },
+  { module: "boite-mail", href: "/boite-mail", label: "Boîte mail", sub: "Réponses des fournisseurs", icon: "📥", groupe: "Pilotage", pret: true },
   { module: "evenements", href: "/evenements", label: "Événements", sub: "Concerts, matchs, marchés", icon: "✦", groupe: "Pilotage", pret: true },
 
   { module: "pointeuse", href: "/pointeuse", label: "Gestion pointage", sub: "Arrivées & départs", icon: "◷", groupe: "Équipe", pret: true, section: "equipe" },
