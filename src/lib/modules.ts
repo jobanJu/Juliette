@@ -33,6 +33,7 @@ export const MODULES: ModuleJuliette[] = [
   { module: "planning", href: "/planning", label: "Planning", sub: "Horaires de la semaine", icon: "▦", groupe: "Équipe", pret: true },
   { module: "equipe", href: "/equipe", label: "Équipe", sub: "Annuaire du personnel", icon: "☺", groupe: "Équipe", pret: true, section: "equipe" },
   { module: "rh-conges", href: "/rh-conges", label: "RH & congés", sub: "Demandes & absences", icon: "✎", groupe: "Équipe", pret: true, section: "equipe" },
+  { module: "contrats", href: "/contrats", label: "Contrats", sub: "Contrats de travail à signer", icon: "✍", groupe: "Équipe", pret: true, section: "equipe" },
   { module: "messagerie", href: "/messagerie", label: "Messagerie", sub: "Fil de messages d'équipe", icon: "✉", groupe: "Équipe", pret: true, horsMenu: true },
 
   // HACCP : module autonome, sans lien avec le stock ni les achats (tables haccp_* dédiées).
