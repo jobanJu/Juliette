@@ -79,13 +79,17 @@ async function chargerSites() {
     .map((c) => ({ compte: c, etablissement: parId.get(c.etablissement_id)! }));
 }
 
+/** Droits fins qui ne sont pas des pages : réglages d'un module, historique, etc. */
+const DROITS_FINS = ["haccp-parametres", "haccp-historique", "configuration-commandes"];
+
 async function chargerModules(etablissementId: string, role: Role): Promise<Set<string>> {
-  if (role === "directeur") return new Set(MODULES.map((m) => m.module));
+  const cles = [...MODULES.map((m) => m.module), ...DROITS_FINS];
+  if (role === "directeur") return new Set(cles);
   const sb = getSupabaseClient();
   if (!sb) return new Set(["dashboard"]);
   const reponses = await Promise.all(
-    MODULES.map((m) =>
-      sb.rpc("acces_module_de", { p_etablissement_id: etablissementId, p_module: m.module }).then((r) => [m.module, r.data === true] as const),
+    cles.map((cle) =>
+      sb.rpc("acces_module_de", { p_etablissement_id: etablissementId, p_module: cle }).then((r) => [cle, r.data === true] as const),
     ),
   );
   const autorises = new Set(reponses.filter(([, ok]) => ok).map(([m]) => m));

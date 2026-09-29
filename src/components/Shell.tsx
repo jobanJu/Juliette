@@ -4,8 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { GROUPES, MODULES, moduleDeRoute } from "@/lib/modules";
+import { GROUPES, MODULES, SECTIONS, moduleDeRoute, pagesDeSection } from "@/lib/modules";
+import type { ModuleJuliette, SectionCle } from "@/lib/modules";
 import { initiales, nomComplet, ROLE_LABEL, useConnecte, useSession } from "@/lib/session";
+import { useDispositionMenu } from "@/lib/preferences";
 
 export default function Shell({ children }: { children: ReactNode }) {
   const { compte, etablissement, sites, modules } = useConnecte();
@@ -15,6 +17,19 @@ export default function Shell({ children }: { children: ReactNode }) {
   const [menuOuvert, setMenuOuvert] = useState(false);
   const [sitesOuverts, setSitesOuverts] = useState(false);
   const refSites = useRef<HTMLDivElement>(null);
+  const [disposition] = useDispositionMenu();
+  const horizontale = disposition === "horizontale";
+  const [groupeOuvert, setGroupeOuvert] = useState<string | null>(null);
+  const refHnav = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!groupeOuvert) return;
+    const fermer = (e: MouseEvent) => {
+      if (!refHnav.current?.contains(e.target as Node)) setGroupeOuvert(null);
+    };
+    document.addEventListener("mousedown", fermer);
+    return () => document.removeEventListener("mousedown", fermer);
+  }, [groupeOuvert]);
 
   useEffect(() => {
     if (!sitesOuverts) return;
@@ -25,14 +40,32 @@ export default function Shell({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("mousedown", fermer);
   }, [sitesOuverts]);
 
-  const visibles = useMemo(() => {
-    const q = recherche.trim().toLowerCase();
-    return MODULES.filter((m) => modules.has(m.module)).filter(
-      (m) => !q || m.label.toLowerCase().includes(q) || m.sub.toLowerCase().includes(q),
-    );
-  }, [modules, recherche]);
-
   const courant = moduleDeRoute(pathname);
+
+  // Menu allégé : une rubrique regroupée (Équipe, Stock & commandes, Salle) n'occupe qu'une ligne,
+  // qui mène à sa première page autorisée. La recherche, elle, retrouve aussi les pages internes.
+  type Entree = { cle: string; href: string; label: string; sub: string; icon: string; groupe: ModuleJuliette["groupe"]; actif: boolean; pret: boolean };
+  const entrees = useMemo(() => {
+    const q = recherche.trim().toLowerCase();
+    const trouve = (m: ModuleJuliette) => !q || m.label.toLowerCase().includes(q) || m.sub.toLowerCase().includes(q);
+    const vus = new Set<SectionCle>();
+    const liste: Entree[] = [];
+    for (const m of MODULES) {
+      if (!modules.has(m.module) || m.horsMenu) continue;
+      if (m.section && !q) {
+        if (vus.has(m.section)) continue;
+        vus.add(m.section);
+        const s = SECTIONS[m.section];
+        liste.push({ cle: m.section, href: m.href, label: s.label, sub: s.sub, icon: s.icon, groupe: m.groupe, actif: courant?.section === m.section, pret: true });
+      } else if (trouve(m)) {
+        liste.push({ cle: m.module, href: m.href, label: m.label, sub: m.sub, icon: m.icon, groupe: m.groupe, actif: courant?.href === m.href, pret: m.pret });
+      }
+    }
+    return liste;
+  }, [modules, recherche, courant]);
+
+  const soeurs = courant?.section ? pagesDeSection(courant.section, modules) : [];
+  const messagerie = modules.has("messagerie");
 
   // Barre du bas (téléphone) : les usages du quotidien, à portée de pouce.
   const barreBas = useMemo(() => {
@@ -77,7 +110,7 @@ export default function Shell({ children }: { children: ReactNode }) {
   const aujourdhui = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
   return (
-    <div className="shell">
+    <div className={`shell${horizontale ? " horizontale" : ""}`}>
       <div className={`scrim${menuOuvert ? " open" : ""}`} onClick={() => setMenuOuvert(false)} />
       <aside className={`sidebar${menuOuvert ? " open" : ""}`} aria-label="Navigation principale">
         <Link href="/dashboard" className="brand" style={{ padding: "0 8px" }}>
@@ -120,13 +153,13 @@ export default function Shell({ children }: { children: ReactNode }) {
         </label>
 
         {GROUPES.map((g) => {
-          const items = visibles.filter((m) => m.groupe === g);
+          const items = entrees.filter((m) => m.groupe === g);
           if (!items.length) return null;
           return (
             <nav key={g} className="nav-group">
               <div className="nav-label">{g}</div>
               {items.map((m) => (
-                <Link key={m.href} href={m.href} className={`nav-item${courant?.href === m.href ? " active" : ""}`} title={m.sub} onClick={() => setMenuOuvert(false)}>
+                <Link key={m.cle} href={m.href} className={`nav-item${m.actif ? " active" : ""}`} title={m.sub} onClick={() => setMenuOuvert(false)}>
                   <span className="ic" aria-hidden>
                     {m.icon}
                   </span>
@@ -137,7 +170,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             </nav>
           );
         })}
-        {!visibles.length && <div className="empty">Aucun module trouvé.</div>}
+        {!entrees.length && <div className="empty">Aucun module trouvé.</div>}
 
         <div className="profile">
           <Link href="/parametres" className="profile-link" title="Mon compte" onClick={() => setMenuOuvert(false)}>
@@ -155,24 +188,90 @@ export default function Shell({ children }: { children: ReactNode }) {
 
       <div className="main">
         <header className="topbar">
+          {horizontale && (
+            <nav className="hnav" ref={refHnav} aria-label="Navigation principale">
+              <Link href="/dashboard" className="brand hnav-brand">
+                <span className="brand-mark">J</span>
+              </Link>
+              {GROUPES.map((g) => {
+                const items = entrees.filter((m) => m.groupe === g);
+                if (!items.length) return null;
+                const actif = items.some((m) => m.actif);
+                if (items.length === 1)
+                  return (
+                    <Link key={g} href={items[0].href} className={`hnav-btn${actif ? " on" : ""}`}>
+                      {items[0].label}
+                    </Link>
+                  );
+                return (
+                  <div key={g} className="hnav-groupe">
+                    <button className={`hnav-btn${actif ? " on" : ""}`} aria-expanded={groupeOuvert === g} onClick={() => setGroupeOuvert((o) => (o === g ? null : g))}>
+                      {g} <span aria-hidden>⌄</span>
+                    </button>
+                    {groupeOuvert === g && (
+                      <div className="hnav-menu" role="menu">
+                        {items.map((m) => (
+                          <Link key={m.cle} href={m.href} role="menuitem" className={m.actif ? "on" : ""} onClick={() => setGroupeOuvert(null)}>
+                            <span className="ic" aria-hidden>
+                              {m.icon}
+                            </span>
+                            <span>
+                              <b>{m.label}</b>
+                              <small>{m.sub}</small>
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
+          )}
           <div className="crumb">
             <button className="icon-btn menu-btn" onClick={() => setMenuOuvert(true)} aria-label="Ouvrir le menu">
               ☰
             </button>
             <span className="hide-sm">{etablissement.nom}</span>
             <span aria-hidden style={{ color: "#cfcad6" }}>/</span>
+            {courant?.section && <span className="hide-sm">{SECTIONS[courant.section].label}</span>}
+            {courant?.section && <span aria-hidden className="hide-sm" style={{ color: "#cfcad6" }}>/</span>}
             <b>{courant?.label ?? "Juliette"}</b>
           </div>
           <div className="top-right">
-            <span className="live">
-              <i /> En ligne
-            </span>
+            {messagerie && (
+              <Link href="/messagerie" className={`btn-messages${courant?.module === "messagerie" ? " on" : ""}`} aria-label="Messagerie" title="Messagerie">
+                <span aria-hidden>✉</span>
+                <span className="hide-sm">Messages</span>
+              </Link>
+            )}
+            {horizontale ? (
+              <Link href="/parametres" className="hnav-profil" title={`${nomComplet(compte)} · ${etablissement.nom}`}>
+                <span className="avatar">{compte.avatar_url ? <img src={compte.avatar_url} alt="" /> : initiales(compte)}</span>
+                <span className="hide-sm">{etablissement.nom}</span>
+              </Link>
+            ) : (
+              <span className="live">
+                <i /> En ligne
+              </span>
+            )}
             <span className="hide-sm" style={{ textTransform: "capitalize" }}>
               {aujourdhui}
             </span>
           </div>
         </header>
         <main className="content" ref={refContenu}>
+          {soeurs.length > 1 && (
+            <div className="tabs-scroll print-hide">
+              <nav className="haccp-tabs section-tabs" aria-label={SECTIONS[courant!.section!].label}>
+                {soeurs.map((m) => (
+                  <Link key={m.href} href={m.href} className={courant?.href === m.href ? "on" : ""} aria-current={courant?.href === m.href ? "page" : undefined}>
+                    <span aria-hidden>{m.icon}</span> {m.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          )}
           {children}
         </main>
       </div>

@@ -11,6 +11,7 @@ type Props = {
   compteId: string;
   equipements: Equipement[];
   releves: Enregistrement<Temperature>[];
+  /** Accréditation « historique HACCP » : peut consulter les relevés passés. */
   historique?: boolean;
   gestion: boolean;
   onConfigurer: () => void;
@@ -481,8 +482,8 @@ export default function Temperatures(p: Props) {
         </button>
       </div>
 
-      {/* Bouton pour afficher/masquer l'historique sur demande */}
-      <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
+      {/* Bouton pour afficher/masquer l'historique sur demande (sur accréditation) */}
+      {p.historique && <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
         <button
           type="button"
           className="btn btn-sm"
@@ -491,10 +492,10 @@ export default function Temperatures(p: Props) {
         >
           {voirHistorique ? "▲ Masquer l’historique des relevés" : "📊 Voir l’historique des relevés (14 jours)"}
         </button>
-      </div>
+      </div>}
 
       {/* Tableau d'historique des 14 derniers jours à la demande */}
-      {voirHistorique && <Historique equipements={equipementsOrdonnes} releves={p.releves} />}
+      {p.historique && voirHistorique && <Historique equipements={equipementsOrdonnes} releves={p.releves} />}
     </div>
   );
 }

@@ -4,10 +4,11 @@ import { useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { ajouterJours, depuisIso, iso } from "@/lib/planning";
 import { csv } from "@/lib/pointage";
-import { formatTemp, refroidissementConforme } from "@/lib/haccp";
-import type { Enregistrement, Etiquette, Nettoyage, Refroidissement, Temperature, TypeEnregistrement } from "@/lib/haccp";
+import { CONSERVATIONS, estTracePhoto, etapeRefroidissementConforme, formatTemp, refroidissementConforme } from "@/lib/haccp";
+import type { Enregistrement, Etiquette, Nettoyage, Production, Refroidissement, Temperature, TypeEnregistrement } from "@/lib/haccp";
+import PhotoHaccp from "@/components/haccp/Photo";
 
-const TYPES: Record<TypeEnregistrement, string> = { temperature: "Température", nettoyage: "Nettoyage", refroidissement: "Refroidissement", tracabilite: "Traçabilité" };
+const TYPES: Record<TypeEnregistrement, string> = { temperature: "Température", nettoyage: "Nettoyage", refroidissement: "Refroidissement", tracabilite: "Traçabilité", production: "Production" };
 
 function detail(e: Enregistrement): { texte: string; conforme: boolean | null } {
   if (e.type === "temperature") {
@@ -16,7 +17,7 @@ function detail(e: Enregistrement): { texte: string; conforme: boolean | null } 
   }
   if (e.type === "nettoyage") {
     const d = e.data as Nettoyage;
-    return { texte: `${d.zone} · ${d.element}${d.remarque ? ` · ${d.remarque}` : ""}`, conforme: true };
+    return { texte: `${d.zone} · ${d.element}${d.non_fait ? " · PAS FAIT" : ""}${d.remarque ? ` · ${d.remarque}` : ""}`, conforme: !d.non_fait };
   }
   if (e.type === "refroidissement") {
     const d = e.data as Refroidissement;
@@ -26,14 +27,26 @@ function detail(e: Enregistrement): { texte: string; conforme: boolean | null } 
       conforme: ok,
     };
   }
+  if (e.type === "production") {
+    const d = e.data as Production;
+    const ok = etapeRefroidissementConforme(d.refroidissement);
+    return {
+      texte: `${d.recette} · lot ${d.lot} · ${d.lignes.length} produit(s)${d.conservation ? ` · ${CONSERVATIONS[d.conservation]?.label ?? d.conservation}` : ""}${d.cloture_at ? "" : " · en cours"}${d.remarque ? ` · ${d.remarque}` : ""}`,
+      conforme: ok,
+    };
+  }
+  if (estTracePhoto(e.data)) {
+    const d = e.data;
+    return { texte: `📷 ${d.produit || "Article non renseigné"}${d.lot ? ` · lot ${d.lot}` : ""}${d.dlc ? ` · DLC ${depuisIso(d.dlc).toLocaleDateString("fr-FR")}` : ""}`, conforme: null };
+  }
   const d = e.data as Etiquette;
   return { texte: `${d.produit}${d.quantite ? ` (${d.quantite})` : ""} · lot ${d.lot} · DLC ${depuisIso(d.dlc).toLocaleDateString("fr-FR")}`, conforme: null };
 }
 
-export default function Registre({ liste, gestion, etablissementCode, onSaved }: { liste: Enregistrement[]; gestion: boolean; etablissementCode: string; onSaved: (m: string) => void }) {
+export default function Registre({ liste, gestion, etablissementCode, typeInitial = "tout", onSaved }: { liste: Enregistrement[]; gestion: boolean; etablissementCode: string; typeInitial?: TypeEnregistrement | "tout"; onSaved: (m: string) => void }) {
   const [du, setDu] = useState(() => ajouterJours(iso(new Date()), -6));
   const [au, setAu] = useState(() => iso(new Date()));
-  const [type, setType] = useState<TypeEnregistrement | "tout">("tout");
+  const [type, setType] = useState<TypeEnregistrement | "tout">(typeInitial);
   const [nonConformes, setNonConformes] = useState(false);
 
   const lignes = useMemo(
@@ -145,7 +158,10 @@ export default function Registre({ liste, gestion, etablissementCode, onSaved }:
                   <tr key={l.e.id}>
                     <td style={{ whiteSpace: "nowrap" }}>{new Date(l.e.created_at).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
                     <td>{TYPES[l.e.type]}</td>
-                    <td>{l.texte}</td>
+                    <td>
+                      {l.texte}
+                      {estTracePhoto(l.e.data) && <PhotoHaccp chemin={l.e.data.photo} className="registre-photo print-hide" alt="" />}
+                    </td>
                     <td>{l.conforme === null ? "—" : <span className={`pill ${l.conforme ? "t-mint" : "t-red"}`}>{l.conforme ? "Conforme" : "Non conforme"}</span>}</td>
                     <td className="hint">{l.e.auteur}</td>
                     {gestion && (

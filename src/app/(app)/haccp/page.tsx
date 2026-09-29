@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { initiales, useConnecte } from "@/lib/session";
 import { ajouterJours, iso } from "@/lib/planning";
-import { COLONNES_ENREG, creneauReleve, joursRestants, periodeDe, PRODUITS_DLC_DEFAUT, REFROID_DUREE_MAX_MIN } from "@/lib/haccp";
-import type { Enregistrement, Equipement, Etiquette, Nettoyage as Fait, ProduitDlcConfig, Refroidissement, Tache, Temperature } from "@/lib/haccp";
+import { COLONNES_ENREG, creneauReleve, estTracePhoto, joursRestants, passages, PRODUITS_DLC_DEFAUT, REFROID_DUREE_MAX_MIN, TRACABILITE_DEFAUT } from "@/lib/haccp";
+import type { Enregistrement, Equipement, Etiquette, Nettoyage as Fait, Production as FicheProduction, ProduitDlcConfig, Refroidissement, Tache, Temperature, TracabiliteConfig, TracePhoto, TypeEnregistrement } from "@/lib/haccp";
 import Temperatures from "@/components/haccp/Temperatures";
 import ModalEquipements from "@/components/haccp/ModalEquipements";
 import ModalProduitsDlc from "@/components/haccp/ModalProduitsDlc";
-import Nettoyage from "@/components/haccp/Nettoyage";
+import Nettoyage, { ModalPlan } from "@/components/haccp/Nettoyage";
+import Tracabilite, { ModalTracabilite } from "@/components/haccp/Tracabilite";
+import Production from "@/components/haccp/Production";
 import Refroidissements from "@/components/haccp/Refroidissements";
 import Etiquettes from "@/components/haccp/Etiquettes";
 import Registre from "@/components/haccp/Registre";
@@ -17,18 +19,25 @@ import Registre from "@/components/haccp/Registre";
 type Onglet = "temperatures" | "tracabilite" | "etiquettes" | "nettoyage" | "refroidissement" | "suivi-production" | "registre" | "jour";
 const JOURS_CHARGES = 90;
 
-type Donnees = { equipements: Equipement[]; plan: Tache[]; enregs: Enregistrement[]; produitsDlc: ProduitDlcConfig[] };
+type Donnees = { equipements: Equipement[]; plan: Tache[]; enregs: Enregistrement[]; produitsDlc: ProduitDlcConfig[]; tracabilite: TracabiliteConfig };
+type Reglage = "equipements" | "dlc" | "tracabilite" | "nettoyage" | null;
+
+/** Rubrique du registre qui correspond à l'onglet ouvert (bouton « Historique »). */
+const TYPE_ONGLET: Partial<Record<Onglet, TypeEnregistrement>> = { temperatures: "temperature", tracabilite: "tracabilite", etiquettes: "tracabilite", nettoyage: "nettoyage", refroidissement: "refroidissement", "suivi-production": "production" };
 
 export default function Haccp() {
-  const { compte, etablissement } = useConnecte();
+  const { compte, etablissement, modules } = useConnecte();
   const gestion = compte.role === "directeur" || compte.role === "responsable";
+  // Paramètres et historique : sur accréditation (Paramètres → Accréditations).
+  const parametres = modules.has("haccp-parametres");
+  const historique = modules.has("haccp-historique");
   const sb = getSupabaseClient()!;
   const [onglet, setOnglet] = useState<Onglet>("temperatures");
   const [d, setD] = useState<Donnees | null>(null);
   const [erreur, setErreur] = useState(false);
   const [version, setVersion] = useState(0);
-  const [equip, setEquip] = useState(false);
-  const [modalDlc, setModalDlc] = useState(false);
+  const [reglage, setReglage] = useState<Reglage>(null);
+  const [typeRegistre, setTypeRegistre] = useState<TypeEnregistrement | "tout">("tout");
   const [toast, setToast] = useState<string | null>(null);
   const [maintenant, setMaintenant] = useState(() => Date.now());
 
@@ -49,15 +58,17 @@ export default function Haccp() {
       sb.from("haccp_enregistrements").select(COLONNES_ENREG).eq("etablissement_id", etablissement.id).gte("created_at", depuis).order("created_at").limit(5000),
       // Refroidissements jamais clôturés, même anciens : ils doivent rester visibles.
       sb.from("haccp_enregistrements").select(COLONNES_ENREG).eq("etablissement_id", etablissement.id).eq("type", "refroidissement").is("data->>fin_at", null).lt("created_at", depuis),
-    ]).then(([c, e, r]) => {
+      sb.from("haccp_enregistrements").select(COLONNES_ENREG).eq("etablissement_id", etablissement.id).eq("type", "production").is("data->>cloture_at", null).lt("created_at", depuis),
+    ]).then(([c, e, r, pr]) => {
       if (!vivant) return;
       if (c.error || e.error) return setErreur(true);
       const conf = new Map((c.data ?? []).map((x) => [x.cle, x.data]));
       setD({
         equipements: (conf.get("equipements") as Equipement[]) ?? [],
         plan: (conf.get("plan_nettoyage") as Tache[]) ?? [],
-        enregs: [...((r.data ?? []) as Enregistrement[]), ...((e.data ?? []) as Enregistrement[])],
+        enregs: [...((r.data ?? []) as Enregistrement[]), ...((pr.data ?? []) as Enregistrement[]), ...((e.data ?? []) as Enregistrement[])],
         produitsDlc: (conf.get("produits_dlc") as ProduitDlcConfig[]) ?? PRODUITS_DLC_DEFAUT,
+        tracabilite: { ...TRACABILITE_DEFAUT, ...((conf.get("tracabilite") as Partial<TracabiliteConfig>) ?? {}) },
       });
       setErreur(false);
       setMaintenant(Date.now());
@@ -79,7 +90,9 @@ export default function Haccp() {
       temperature: e.filter((x) => x.type === "temperature") as Enregistrement<Temperature>[],
       nettoyage: e.filter((x) => x.type === "nettoyage") as Enregistrement<Fait>[],
       refroidissement: (e.filter((x) => x.type === "refroidissement") as Enregistrement<Refroidissement>[]).slice().reverse(),
-      tracabilite: e.filter((x) => x.type === "tracabilite") as Enregistrement<Etiquette>[],
+      tracabilite: e.filter((x) => x.type === "tracabilite" && !estTracePhoto(x.data)) as Enregistrement<Etiquette>[],
+      photos: e.filter((x) => x.type === "tracabilite" && estTracePhoto(x.data)) as Enregistrement<TracePhoto>[],
+      production: e.filter((x) => x.type === "production") as Enregistrement<FicheProduction>[],
     };
   }, [d]);
 
@@ -90,10 +103,12 @@ export default function Haccp() {
     const relevesJour = parType.temperature.filter((r) => iso(new Date(r.created_at)) === jour);
     const faitsCreneau = new Set(relevesJour.filter((r) => creneauReleve(r.created_at) === creneau).map((r) => r.data.equipement_id));
     const nonConformes = relevesJour.filter((r) => !r.data.conforme).length;
-    const quotidien = d.plan.filter((t) => t.frequence === "quotidien");
-    const faitsQuot = quotidien.filter((t) => parType.nettoyage.some((f) => f.data.tache_id === t.id && f.data.periode === periodeDe("quotidien", new Date(maintenant)))).length;
+    const fait = (t: Tache, per: string) => parType.nettoyage.some((f) => f.data.tache_id === t.id && f.data.periode === per && !f.data.non_fait);
+    const quot = d.plan.filter((t) => t.frequence === "quotidien").flatMap((t) => passages(t, new Date(maintenant)).map((per) => fait(t, per)));
+    const quotidien = { length: quot.length };
+    const faitsQuot = quot.filter(Boolean).length;
     const autres = d.plan.filter((t) => t.frequence !== "quotidien");
-    const restentAutres = autres.filter((t) => !parType.nettoyage.some((f) => f.data.tache_id === t.id && f.data.periode === periodeDe(t.frequence, new Date(maintenant)))).length;
+    const restentAutres = autres.filter((t) => passages(t, new Date(maintenant)).some((per) => !fait(t, per))).length;
     const enCours = parType.refroidissement.filter((r) => !r.data.fin_at);
     const depasses = enCours.filter((r) => (maintenant - new Date(r.data.debut_at).getTime()) / 60000 > REFROID_DUREE_MAX_MIN).length;
     const dlc = parType.tracabilite.map((e) => joursRestants(e.data.dlc, jour));
@@ -124,11 +139,16 @@ export default function Haccp() {
     ["nettoyage", "Plan de nettoyage"],
     ["refroidissement", "Refroidissement"],
     ["suivi-production", "Suivi production"],
-    ...(gestion ? [["registre", "Registre"] as [Onglet, string]] : []),
+    ...(historique ? [["registre", "Registre"] as [Onglet, string]] : []),
     ["jour", "Vue du jour"],
   ];
 
   const communs = { etablissementId: etablissement.id, compteId: compte.id, onSaved: sauve };
+  const reglageOnglet: Reglage = onglet === "temperatures" || onglet === "jour" ? "equipements" : onglet === "etiquettes" ? "dlc" : onglet === "tracabilite" ? "tracabilite" : onglet === "nettoyage" ? "nettoyage" : null;
+  const fermerReglage = (m: string) => {
+    setReglage(null);
+    sauve(m);
+  };
 
   return (
     <>
@@ -139,27 +159,20 @@ export default function Haccp() {
           <p>Températures, nettoyage, refroidissements et traçabilité : ton plan de maîtrise sanitaire, à jour et prêt pour un contrôle.</p>
         </div>
         <div className="haccp-page-actions">
-          {gestion && (
-            <button
-              className={`btn ${onglet === "registre" ? "btn-primary" : ""}`}
-              onClick={() => setOnglet("registre")}
-            >
-              📊 Historique & Export
-            </button>
-          )}
-          {gestion && (
+          {historique && onglet !== "registre" && onglet !== "suivi-production" && (
             <button
               className="btn"
               onClick={() => {
-                if (onglet === "etiquettes" || onglet === "tracabilite") {
-                  setModalDlc(true);
-                } else {
-                  setEquip(true);
-                }
+                setTypeRegistre(TYPE_ONGLET[onglet] ?? "tout");
+                setOnglet("registre");
               }}
-              title="Configurer les paramètres de la rubrique"
             >
-              ⚙ {onglet === "etiquettes" || onglet === "tracabilite" ? "Paramètres DLC & Produits" : "Paramètres & Ordre"}
+              📊 Historique & export
+            </button>
+          )}
+          {parametres && reglageOnglet && (
+            <button className="btn" onClick={() => setReglage(reglageOnglet)} title="Paramètres de la rubrique">
+              ⚙ Paramètres
             </button>
           )}
         </div>
@@ -238,67 +251,40 @@ export default function Haccp() {
               </div>
             </button>
           </div>
-          <Temperatures {...communs} equipements={d.equipements} releves={parType.temperature} gestion={gestion} onConfigurer={() => setEquip(true)} />
+          <Temperatures {...communs} equipements={d.equipements} releves={parType.temperature} gestion={parametres} onConfigurer={() => setReglage("equipements")} />
           {parType.refroidissement.some((r) => !r.data.fin_at) && <Refroidissements {...communs} liste={parType.refroidissement} enCoursSeulement />}
-          <Nettoyage {...communs} gestion={gestion} plan={d.plan} faits={parType.nettoyage} duJour />
+          <Nettoyage {...communs} parametres={parametres} plan={d.plan} faits={parType.nettoyage} duJour onConfigurer={() => setReglage("nettoyage")} />
         </div>
       ) : onglet === "temperatures" ? (
-        <Temperatures {...communs} equipements={d.equipements} releves={parType.temperature} gestion={gestion} historique onConfigurer={() => setEquip(true)} />
-      ) : onglet === "tracabilite" || onglet === "etiquettes" ? (
+        <Temperatures {...communs} equipements={d.equipements} releves={parType.temperature} gestion={parametres} historique={historique} onConfigurer={() => setReglage("equipements")} />
+      ) : onglet === "tracabilite" ? (
+        <Tracabilite {...communs} liste={parType.photos} config={d.tracabilite} />
+      ) : onglet === "etiquettes" ? (
         <Etiquettes
           {...communs}
           etablissementNom={etablissement.nom}
           initiales={initiales(compte)}
           liste={parType.tracabilite}
           catalogue={d.produitsDlc}
-          gestion={gestion}
-          onConfigurer={() => setModalDlc(true)}
+          gestion={parametres}
+          onConfigurer={() => setReglage("dlc")}
         />
       ) : onglet === "nettoyage" ? (
-        <Nettoyage {...communs} gestion={gestion} plan={d.plan} faits={parType.nettoyage} />
+        <Nettoyage {...communs} parametres={parametres} plan={d.plan} faits={parType.nettoyage} onConfigurer={() => setReglage("nettoyage")} />
       ) : onglet === "refroidissement" ? (
         <Refroidissements {...communs} liste={parType.refroidissement} />
       ) : onglet === "suivi-production" ? (
-        <section className="card" style={{ padding: "32px 20px", textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 10 }}>🍳</div>
-          <h2 style={{ margin: "0 0 8px", fontSize: 18 }}>Suivi de production & cuisson / refroidissement</h2>
-          <p className="hint" style={{ maxWidth: 540, margin: "0 auto 18px", lineHeight: 1.5 }}>
-            Cette rubrique permettra d’enregistrer les fiches de fabrication pour chaque recette : pesées (cru / cuit), numéros de lot des matières premières, photos, horodatages de cuisson et de refroidissement rapide, et type de conservation.
-          </p>
-          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <button className="btn" onClick={() => setOnglet("temperatures")}>← Revenir aux températures</button>
-            <button className="btn btn-primary" onClick={() => setOnglet("refroidissement")}>Voir les refroidissements en cours</button>
-          </div>
-        </section>
+        <Production {...communs} initiales={initiales(compte)} etablissementNom={etablissement.nom} liste={parType.production} historique={historique} />
       ) : (
-        <Registre liste={d.enregs} gestion={gestion} etablissementCode={etablissement.code} onSaved={sauve} />
+        <Registre key={typeRegistre} liste={d.enregs} gestion={gestion} etablissementCode={etablissement.code} typeInitial={typeRegistre} onSaved={sauve} />
       )}
 
       {onglet === "registre" && <p className="hint print-hide" style={{ marginTop: 10 }}>Le registre affiche les {JOURS_CHARGES} derniers jours (depuis le {new Date(ajouterJours(iso(new Date()), -JOURS_CHARGES)).toLocaleDateString("fr-FR")}).</p>}
 
-      {equip && d && (
-        <ModalEquipements
-          etablissementId={etablissement.id}
-          equipements={d.equipements}
-          onClose={() => setEquip(false)}
-          onSaved={(m) => {
-            setEquip(false);
-            sauve(m);
-          }}
-        />
-      )}
-
-      {modalDlc && d && (
-        <ModalProduitsDlc
-          etablissementId={etablissement.id}
-          catalogue={d.produitsDlc}
-          onClose={() => setModalDlc(false)}
-          onSaved={(m) => {
-            setModalDlc(false);
-            sauve(m);
-          }}
-        />
-      )}
+      {d && reglage === "equipements" && <ModalEquipements etablissementId={etablissement.id} equipements={d.equipements} onClose={() => setReglage(null)} onSaved={fermerReglage} />}
+      {d && reglage === "dlc" && <ModalProduitsDlc etablissementId={etablissement.id} catalogue={d.produitsDlc} onClose={() => setReglage(null)} onSaved={fermerReglage} />}
+      {d && reglage === "tracabilite" && <ModalTracabilite etablissementId={etablissement.id} config={d.tracabilite} onClose={() => setReglage(null)} onSaved={fermerReglage} />}
+      {d && reglage === "nettoyage" && <ModalPlan etablissementId={etablissement.id} plan={d.plan} onClose={() => setReglage(null)} onSaved={fermerReglage} />}
 
       {toast && (
         <div className="toast" role="status">

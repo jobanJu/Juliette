@@ -5,8 +5,12 @@ import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabase";
 import { initiales, nomComplet, ROLE_LABEL, useConnecte, useSession } from "@/lib/session";
 import { emailValide } from "@/lib/personnel";
+import { MODULES_ACCES } from "@/lib/accreditations";
+import Accreditations from "@/components/parametres/Accreditations";
+import { useDispositionMenu } from "@/lib/preferences";
 
-type Onglet = "compte" | "restaurant" | "pointeuse" | "emails";
+type Onglet = "compte" | "acces" | "restaurant" | "pointeuse" | "emails" | "accreditations";
+const ONGLETS: Onglet[] = ["compte", "acces", "restaurant", "pointeuse", "emails", "accreditations"];
 
 type Etab = {
   id: string;
@@ -48,8 +52,29 @@ function reduireImage(fichier: File, cote: number): Promise<string> {
 }
 
 export default function Parametres() {
-  const { compte } = useConnecte();
-  const [onglet, setOnglet] = useState<Onglet>("compte");
+  const { compte, modules } = useConnecte();
+  const directeur = compte.role === "directeur";
+  // Lien direct vers un onglet (?onglet=accreditations). La page ne s'affiche qu'une fois connecté,
+  // donc toujours dans le navigateur.
+  const [onglet, setOnglet] = useState<Onglet>(() => {
+    const voulu = typeof window === "undefined" ? null : (new URLSearchParams(window.location.search).get("onglet") as Onglet | null);
+    return voulu && ONGLETS.includes(voulu) ? voulu : "compte";
+  });
+
+  const perso: [Onglet, string][] = [
+    ["compte", "Mon compte"],
+    ["acces", "Mes accès"],
+  ];
+  const etab: [Onglet, string][] = [
+    ["restaurant", "Restaurant"],
+    ...(directeur ? ([["pointeuse", "Pointeuse"], ["emails", "E-mails automatiques"]] as [Onglet, string][]) : []),
+    ...(modules.has("accreditations") ? ([["accreditations", "Accréditations"]] as [Onglet, string][]) : []),
+  ];
+  const bouton = ([k, l]: [Onglet, string]) => (
+    <button key={k} role="tab" aria-selected={onglet === k} className={onglet === k ? "on" : ""} onClick={() => setOnglet(k)}>
+      {l}
+    </button>
+  );
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -64,36 +89,73 @@ export default function Parametres() {
         <div>
           <p className="eyebrow">Établissement</p>
           <h1>Paramètres</h1>
-          <p>Ton compte et les informations du restaurant.</p>
+          <p>Tes réglages personnels, et ceux de l&apos;établissement : informations, pointeuse, e-mails et accréditations.</p>
         </div>
       </div>
-      <div className="week-nav">
-        <div className="seg seg-inline" role="tablist">
-          <button role="tab" aria-selected={onglet === "compte"} className={onglet === "compte" ? "on" : ""} onClick={() => setOnglet("compte")}>
-            Mon compte
-          </button>
-          <button role="tab" aria-selected={onglet === "restaurant"} className={onglet === "restaurant" ? "on" : ""} onClick={() => setOnglet("restaurant")}>
-            Restaurant
-          </button>
-          {compte.role === "directeur" && (
-            <button role="tab" aria-selected={onglet === "pointeuse"} className={onglet === "pointeuse" ? "on" : ""} onClick={() => setOnglet("pointeuse")}>
-              Pointeuse
-            </button>
-          )}
-          {compte.role === "directeur" && (
-            <button role="tab" aria-selected={onglet === "emails"} className={onglet === "emails" ? "on" : ""} onClick={() => setOnglet("emails")}>
-              E-mails automatiques
-            </button>
-          )}
+      <div className="param-nav">
+        <div className="param-groupe">
+          <span className="nav-label">Paramètres individuels</span>
+          <div className="seg seg-inline" role="tablist">{perso.map(bouton)}</div>
+        </div>
+        <div className="param-groupe">
+          <span className="nav-label">Paramètres établissement</span>
+          <div className="seg seg-inline" role="tablist">{etab.map(bouton)}</div>
         </div>
       </div>
-      {onglet === "compte" ? <MonCompte onToast={setToast} /> : onglet === "restaurant" ? <Restaurant onToast={setToast} /> : onglet === "pointeuse" ? <Pointeuse onToast={setToast} /> : <Emails />}
+      {onglet === "compte" ? (
+        <MonCompte onToast={setToast} />
+      ) : onglet === "acces" ? (
+        <MesAcces />
+      ) : onglet === "restaurant" ? (
+        <Restaurant onToast={setToast} />
+      ) : onglet === "pointeuse" ? (
+        <Pointeuse onToast={setToast} />
+      ) : onglet === "accreditations" ? (
+        <Accreditations />
+      ) : (
+        <Emails />
+      )}
       {toast && (
         <div className="toast" role="status">
           {toast}
         </div>
       )}
     </>
+  );
+}
+
+function MesAcces() {
+  const { compte, modules } = useConnecte();
+  const groupes = [...new Set(MODULES_ACCES.map((m) => m.groupe))];
+  return (
+    <section className="card">
+      <div className="card-head">
+        <h2>Ce que je peux voir et faire</h2>
+        <span className="hint">{compte.role === "directeur" ? "Directeur : accès à tout" : "Réglé par le directeur, dans Accréditations"}</span>
+      </div>
+      {groupes.map((g) => (
+        <div key={g}>
+          <div className="nav-label" style={{ padding: 0, margin: "12px 0 4px" }}>
+            {g}
+          </div>
+          <div className="rows">
+            {MODULES_ACCES.filter((m) => m.groupe === g).map((m) => {
+              const ok = modules.has(m.cle);
+              return (
+                <div key={m.cle} className="row">
+                  <span className={`pill ${ok ? "t-mint" : "t-lav"}`} style={{ minWidth: 30, justifyContent: "center" }}>
+                    {ok ? "✓" : "✕"}
+                  </span>
+                  <span className="main-txt">
+                    <b>{m.label}</b>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </section>
   );
 }
 
@@ -111,6 +173,7 @@ function MonCompte({ onToast }: { onToast: (m: string) => void }) {
   const [mdp, setMdp] = useState({ actuel: "", nouveau: "", confirmation: "" });
   const [erreurMdp, setErreurMdp] = useState<string | null>(null);
   const ref = useRef<HTMLInputElement>(null);
+  const [disposition, setDisposition] = useDispositionMenu();
 
   // Coordonnées privées : lues via la fonction dédiée (voir migration comptes_coordonnees).
   useEffect(() => {
@@ -239,6 +302,27 @@ function MonCompte({ onToast }: { onToast: (m: string) => void }) {
           <button className="btn" onClick={changerMdp} disabled={!mdp.actuel || !mdp.nouveau} style={{ justifySelf: "start" }}>
             Changer le mot de passe
           </button>
+        </section>
+
+        <section className="card">
+          <div className="card-head">
+            <h2>Affichage</h2>
+            <span className="pill t-peach">test</span>
+          </div>
+          <div className="field">
+            <label>Menu principal (ordinateur et tablette)</label>
+            <div className="seg seg-inline" role="radiogroup" aria-label="Disposition du menu">
+              {([
+                ["laterale", "Barre latérale"],
+                ["horizontale", "Barre horizontale"],
+              ] as const).map(([v, l]) => (
+                <button key={v} role="radio" aria-checked={disposition === v} className={disposition === v ? "on" : ""} onClick={() => setDisposition(v)}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+          <p className="hint" style={{ margin: 0 }}>Réglage propre à cet appareil. Sur téléphone, le menu reste en bas d&apos;écran.</p>
         </section>
 
         <section className="card">

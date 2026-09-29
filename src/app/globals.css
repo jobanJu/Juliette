@@ -591,6 +591,15 @@ button.card:hover { border-color: #ddd6ea; }
 .haccp-tabs button { min-height: 38px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; color: var(--ink-2); font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer; }
 .haccp-tabs button:hover { background: var(--paper); color: var(--ink); }
 .haccp-tabs button.on { background: var(--lavender); color: var(--purple-ink); }
+.param-nav { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-bottom: 16px; }
+.param-groupe { display: grid; gap: 4px; }
+.param-groupe .nav-label { padding: 0 2px; }
+.section-tabs a { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 14px; border-radius: 9px; color: var(--ink-2); font-size: 12.5px; font-weight: 600; white-space: nowrap; text-decoration: none; }
+.section-tabs a:hover { background: var(--paper); color: var(--ink); }
+.section-tabs a.on { background: var(--lavender); color: var(--purple-ink); }
+.btn-messages { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--ink); font-size: 12.5px; font-weight: 650; text-decoration: none; }
+.btn-messages:hover, .btn-messages.on { background: var(--lavender); border-color: transparent; color: var(--purple-ink); }
+.btn-messages span[aria-hidden] { font-size: 15px; }
 .link-btn { border: 0; background: transparent; color: var(--purple-ink); font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; justify-self: start; }
 .temp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
 .temp-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 10px; }
@@ -1607,3 +1616,101 @@ tr.row-choisi td { background: var(--lavender); }
   .dashboard-customizer, .dashboard-widget { animation: none; }
   .dashboard-presets .chip, .dashboard-card-option, .dashboard-switch, .dashboard-switch i { transition: none; }
 }
+
+/* ── HACCP V3 : traçabilité par photo, plan de nettoyage en cartes, suivi de production ── */
+.btn-lg { min-height: 50px; font-size: 15px; }
+.haccp-subtabs button { display: inline-flex; align-items: center; gap: 6px; }
+.dot-alerte { width: 7px; height: 7px; border-radius: 50%; background: var(--red-ink); }
+
+.trace-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.trace-capture { display: grid; gap: 14px; }
+.trace-objectif { display: grid; place-items: center; gap: 6px; min-height: 260px; padding: 20px; border: 2px dashed #cfe3f7; border-radius: 14px; background: linear-gradient(180deg, var(--blue), #f6fbff); color: var(--ink); cursor: pointer; text-align: center; }
+.trace-objectif span { font-size: 54px; line-height: 1; }
+.trace-objectif b { font-size: 16px; }
+.trace-objectif small { color: var(--muted); max-width: 320px; }
+.trace-apercu { position: relative; border-radius: 14px; overflow: hidden; background: #000; }
+.trace-apercu img { display: block; width: 100%; max-height: 420px; object-fit: contain; }
+.trace-reprendre { position: absolute; left: 12px; bottom: 12px; width: 48px; height: 48px; border: 0; border-radius: 50%; background: #fffffff0; font-size: 24px; cursor: pointer; box-shadow: var(--shadow); }
+.trace-champs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.trace-liste { display: grid; gap: 8px; }
+.trace-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
+.trace-vignette, .prod-vignette, .registre-photo { display: inline-block; flex-shrink: 0; }
+.trace-vignette img, .trace-vignette.haccp-photo-vide { display: block; width: 56px; height: 56px; object-fit: cover; border-radius: 10px; background: var(--paper); }
+.prod-vignette img, .prod-vignette.haccp-photo-vide { display: block; width: 36px; height: 36px; object-fit: cover; border-radius: 8px; background: var(--paper); }
+.registre-photo { margin-left: 8px; vertical-align: middle; }
+.registre-photo img { width: 32px; height: 32px; object-fit: cover; border-radius: 6px; }
+
+.clean-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.clean-card { position: relative; display: grid; align-content: start; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--card); box-shadow: var(--shadow); }
+.clean-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--line); }
+.clean-card.done::before { background: var(--mint-ink); }
+.clean-card.retard::before { background: var(--red-ink); }
+.clean-card-head { display: grid; gap: 3px; padding: 12px 14px 10px 16px; }
+.clean-card-head b { font-size: 14px; font-weight: 650; color: var(--ink); }
+.clean-card-head small { font-size: 11.5px; color: var(--muted); }
+.clean-card-head .pill { justify-self: start; margin-top: 4px; }
+.clean-card.off { opacity: .5; box-shadow: none; }
+.clean-pass { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; min-height: 56px; padding: 6px 10px 6px 14px; border-top: 1px solid var(--line); }
+.clean-pass.off { display: block; padding: 16px; text-align: center; color: var(--muted); font-size: 12px; }
+.clean-pass-txt { display: grid; gap: 1px; text-align: center; font-size: 11.5px; color: var(--ink-2); }
+.clean-x, .clean-v { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); font-size: 18px; font-weight: 700; cursor: pointer; color: #c3bfcc; transition: background .15s, color .15s, border-color .15s; }
+.clean-x:hover { border-color: #f1c4be; color: var(--red-ink); }
+.clean-v:hover { border-color: #b9dfc9; color: var(--mint-ink); }
+.clean-pass.oui .clean-v { background: var(--mint-ink); border-color: var(--mint-ink); color: #fff; }
+.clean-pass.non .clean-x { background: var(--red-ink); border-color: var(--red-ink); color: #fff; }
+.clean-pass.non .clean-pass-txt { color: var(--red-ink); }
+
+.plan-card { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; }
+.plan-card .plan-row { grid-template-columns: 1.4fr 1fr auto; }
+.plan-methode, .plan-rythme select, .plan-rythme input { height: 36px; border: 1px solid var(--line); border-radius: 9px; padding: 0 8px; font-size: 12.5px; background: var(--card); min-width: 0; }
+.plan-rythme { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.plan-heure { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); }
+.plan-jours { display: flex; flex-wrap: wrap; gap: 4px; }
+.plan-jours button { min-width: 42px; height: 30px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); font-size: 11.5px; color: var(--muted); cursor: pointer; }
+.plan-jours button.on { background: var(--lavender); border-color: transparent; color: var(--purple-ink); font-weight: 650; }
+.modal:has(.plan-card) .plan-list { max-height: 60vh; }
+
+.prod-nouvelle { display: flex; flex-wrap: wrap; gap: 10px; }
+.prod-fiche { display: grid; gap: 12px; }
+.prod-lignes input.select-sm { width: 100%; min-width: 90px; }
+.prod-photo-btn { display: inline-grid; place-items: center; width: 40px; height: 40px; border: 1px dashed #c9d9ea; border-radius: 10px; background: var(--blue); cursor: pointer; font-size: 18px; }
+.prod-etapes { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.prod-etape { display: grid; align-content: start; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+.prod-etape > b { font-size: 13.5px; }
+.prod-etape .pill { justify-self: start; }
+.prod-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.prod-imprimee p { line-height: 1.7; font-size: 13px; }
+.prod-photos { display: flex; flex-wrap: wrap; gap: 8px; }
+.prod-photo-print img { width: 160px; height: 120px; object-fit: cover; border-radius: 8px; }
+
+@media (max-width: 820px) {
+  .trace-grid { grid-template-columns: 1fr; }
+  .trace-champs { grid-template-columns: 1fr; }
+  .trace-objectif { min-height: 200px; }
+  .clean-cards { grid-template-columns: 1fr; }
+  .plan-card .plan-row { grid-template-columns: 1fr 1fr; }
+  .plan-card .plan-row > span { grid-column: 1 / -1; justify-content: flex-end; }
+}
+
+/* ── Test : menu horizontal (façon Adoria), au choix dans Paramètres → Mon compte ── */
+.hnav { display: none; }
+@media (min-width: 861px) {
+  .shell.horizontale .sidebar { display: none; }
+  .shell.horizontale .main { margin-left: 0; }
+  .shell.horizontale .topbar { padding: 0 24px; }
+  .shell.horizontale .crumb { display: none; }
+  .shell.horizontale .hnav { display: flex; align-items: center; gap: 4px; min-width: 0; }
+}
+.hnav-brand { margin-right: 10px; }
+.hnav-groupe { position: relative; }
+.hnav-btn { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 13px; border: 0; border-radius: 10px; background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; text-decoration: none; }
+.hnav-btn:hover { background: var(--paper); color: var(--ink); }
+.hnav-btn.on { background: var(--lavender); color: var(--purple-ink); }
+.hnav-btn span { font-size: 11px; opacity: .7; }
+.hnav-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 40; display: grid; gap: 2px; min-width: 280px; padding: 6px; border: 1px solid var(--line); border-radius: 13px; background: var(--card); box-shadow: 0 12px 34px #2724351f; }
+.hnav-menu a { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 9px; color: var(--ink); text-decoration: none; }
+.hnav-menu a:hover, .hnav-menu a.on { background: var(--lavender); }
+.hnav-menu .ic { width: 20px; text-align: center; font-size: 16px; color: var(--purple); }
+.hnav-menu b { display: block; font-size: 13px; font-weight: 650; }
+.hnav-menu small { display: block; font-size: 11px; color: var(--muted); }
+.hnav-profil { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-weight: 600; text-decoration: none; }

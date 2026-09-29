@@ -14,12 +14,14 @@ export const MODULES_ACCES: { cle: string; label: string; groupe: string; sensib
   { cle: "dashboard", label: "Tableau de bord", groupe: "Pilotage" },
   { cle: "finance", label: "Finance", groupe: "Pilotage", sensible: true },
   { cle: "evenements", label: "Événements", groupe: "Pilotage" },
-  { cle: "pointeuse", label: "Pointage", groupe: "Équipe" },
+  { cle: "pointeuse", label: "Gestion pointage", groupe: "Équipe" },
   { cle: "planning", label: "Planning", groupe: "Équipe" },
   { cle: "equipe", label: "Équipe (annuaire)", groupe: "Équipe" },
   { cle: "rh-conges", label: "RH & congés", groupe: "Équipe" },
   { cle: "messagerie", label: "Messagerie", groupe: "Équipe" },
-  { cle: "haccp", label: "HACCP", groupe: "HACCP" },
+  { cle: "haccp", label: "HACCP (relevés du quotidien)", groupe: "HACCP" },
+  { cle: "haccp-parametres", label: "HACCP · paramètres (frigos, produits DLC, nettoyage, traçabilité)", groupe: "HACCP", sensible: true },
+  { cle: "haccp-historique", label: "HACCP · historique & exports", groupe: "HACCP" },
   { cle: "inventaire", label: "Stocks", groupe: "Stock & achats" },
   { cle: "perte", label: "Pertes", groupe: "Stock & achats" },
   { cle: "aide-commande", label: "Commandes fournisseurs", groupe: "Stock & achats", sensible: true },
@@ -32,7 +34,7 @@ export const MODULES_ACCES: { cle: string; label: string; groupe: string; sensib
   { cle: "accreditations", label: "Accréditations", groupe: "Établissement", sensible: true },
 ];
 
-const DEFAUT_RESPONSABLE = ["dashboard", "commandes-caisse", "configuration-commandes", "inventaire", "perte", "aide-commande", "reception", "evenements", "fiche-technique", "pointeuse", "planning", "messagerie", "equipe", "rh-conges", "reservations", "haccp", "documentation"];
+const DEFAUT_RESPONSABLE = ["dashboard", "commandes-caisse", "configuration-commandes", "inventaire", "perte", "aide-commande", "reception", "evenements", "fiche-technique", "pointeuse", "planning", "messagerie", "equipe", "rh-conges", "reservations", "haccp", "haccp-parametres", "haccp-historique", "documentation"];
 const DEFAUT_SALARIE = ["dashboard", "commandes-caisse", "fiche-technique", "pointeuse", "planning", "messagerie", "equipe", "rh-conges", "reservations", "haccp", "documentation"];
 
 export function parDefaut(role: Role, module: string) {

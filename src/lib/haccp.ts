@@ -4,11 +4,13 @@
 //   temperature     { equipement_id, equipement, valeur, min, max, conforme, action? }
 //   nettoyage       { tache_id, element, zone, frequence, periode, remarque? }
 //   refroidissement { produit, debut_at, temp_debut, fin_at?, temp_fin?, conforme?, action? }
-//   tracabilite     { produit, lot, fabrique_le, dlc, jours, quantite?, conservation? }
+//   tracabilite     { produit, lot, fabrique_le, dlc, jours, quantite?, conservation? }   (étiquette DLC)
+//                   { origine: "photo", produit, lot, dlc, photo }                         (étiquette fournisseur photographiée)
+//   production      voir Production ci-dessous (fiche de fabrication, complétée au fil de la journée)
 
 import { iso } from "@/lib/planning";
 
-export type TypeEnregistrement = "temperature" | "nettoyage" | "refroidissement" | "tracabilite";
+export type TypeEnregistrement = "temperature" | "nettoyage" | "refroidissement" | "tracabilite" | "production";
 
 export type Enregistrement<D = Record<string, unknown>> = {
   id: string;
@@ -22,12 +24,109 @@ export type Enregistrement<D = Record<string, unknown>> = {
 
 export type Equipement = { id: string; nom: string; type: "positif" | "negatif" | "chaud"; min: number; max: number };
 
-export type Tache = { id: string; zone: string; element: string; methode: string; frequence: "quotidien" | "hebdomadaire" | "mensuel"; moment?: "ouverture" | "service" | "fermeture" };
+export type Tache = {
+  id: string;
+  zone: string;
+  element: string;
+  methode: string;
+  frequence: "quotidien" | "hebdomadaire" | "mensuel";
+  moment?: "ouverture" | "service" | "fermeture";
+  /** Nombre de passages par période (ex. poignées de porte : 2 fois par jour). */
+  fois?: number;
+  /** Jours concernés (0 = dimanche … 6 = samedi) ; absent = tous les jours. */
+  jours?: number[];
+  /** Heure limite « HH:MM » : au-delà, la tâche non faite passe en alerte. */
+  heure?: string;
+};
 
 export type Temperature = { equipement_id: string; equipement: string; valeur: number; min: number; max: number; conforme: boolean; action?: string };
-export type Nettoyage = { tache_id: string; element: string; zone: string; frequence: Tache["frequence"]; periode: string; remarque?: string };
+export type Nettoyage = { tache_id: string; element: string; zone: string; frequence: Tache["frequence"]; periode: string; remarque?: string; non_fait?: boolean };
 export type Refroidissement = { produit: string; debut_at: string; temp_debut: number; fin_at?: string; temp_fin?: number; conforme?: boolean; action?: string };
 export type Etiquette = { produit: string; lot: string; fabrique_le: string; dlc: string; jours: number; quantite?: string; conservation?: string; categorie?: string };
+
+/** Traçabilité par photo : l'étiquette du produit reçu ou entamé, et ce qu'on en relève. */
+export type TracePhoto = { origine: "photo"; produit: string; lot: string; dlc: string; photo: string };
+export type TracabiliteConfig = { produit: boolean; lot: boolean; dlc: boolean };
+export const TRACABILITE_DEFAUT: TracabiliteConfig = { produit: true, lot: true, dlc: true };
+
+export const estTracePhoto = (d: unknown): d is TracePhoto => (d as TracePhoto)?.origine === "photo";
+
+/** Fiche de fabrication (suivi de production). */
+export type LigneProduction = { produit: string; quantite: string; lot: string; dlc: string; photo?: string };
+export type Etape = { debut_at?: string; temp_debut?: number; fin_at?: string; temp_fin?: number };
+export type Production = {
+  fiche_id?: string;
+  recette: string;
+  lot: string;
+  volume_cru?: number;
+  volume_cuit?: number;
+  unite: string;
+  lignes: LigneProduction[];
+  cuisson: Etape;
+  refroidissement: Etape & { procede?: string };
+  conservation?: string;
+  conservation_detail?: Record<string, string>;
+  dlc?: string;
+  photo?: string;
+  remarque?: string;
+  cloture_at?: string;
+};
+
+export const PROCEDES_REFROIDISSEMENT = ["Cellule de refroidissement", "Bain d'eau glacée", "Chambre froide (petites portions)", "Sans refroidissement (servi chaud)"];
+
+/** Selon le mode de conservation, la fiche demande des lignes en plus. */
+export const CONSERVATIONS: Record<string, { label: string; champs: { cle: string; label: string; type: "text" | "number" | "date" }[] }> = {
+  refrigere: { label: "Réfrigéré (0 / +3 °C)", champs: [] },
+  sous_vide: { label: "Sous vide", champs: [{ cle: "soudure", label: "Contrôle soudure (OK / à refaire)", type: "text" }] },
+  pasteurise: {
+    label: "Pasteurisé",
+    champs: [
+      { cle: "temp_pasteurisation", label: "Température à cœur (°C)", type: "number" },
+      { cle: "duree_pasteurisation", label: "Durée (min)", type: "number" },
+    ],
+  },
+  conserve: {
+    label: "Conserve / bocal stérilisé",
+    champs: [
+      { cle: "temp_sterilisation", label: "Température de stérilisation (°C)", type: "number" },
+      { cle: "duree_sterilisation", label: "Durée (min)", type: "number" },
+      { cle: "nb_bocaux", label: "Nombre de bocaux", type: "number" },
+    ],
+  },
+  congele: { label: "Congelé (−18 °C)", champs: [{ cle: "date_congelation", label: "Date de congélation", type: "date" }] },
+  chaud: { label: "Maintien au chaud (≥ 63 °C)", champs: [{ cle: "temp_maintien", label: "Température de maintien (°C)", type: "number" }] },
+};
+
+export function rendement(p: Pick<Production, "volume_cru" | "volume_cuit">) {
+  if (!p.volume_cru || !p.volume_cuit) return null;
+  return Math.round((p.volume_cuit / p.volume_cru) * 100);
+}
+
+/** Refroidissement d'une production : même règle que les refroidissements (≤ +10 °C en 2 h). */
+export function etapeRefroidissementConforme(e: Etape) {
+  if (!e.debut_at || !e.fin_at || e.temp_fin == null) return null;
+  const duree = (new Date(e.fin_at).getTime() - new Date(e.debut_at).getTime()) / 60000;
+  return e.temp_fin <= REFROID_TEMP_FIN && duree <= REFROID_DUREE_MAX_MIN;
+}
+
+/** Réduit une photo (JPEG, `cote` px max) avant envoi : une étiquette reste lisible à 1280 px. */
+export function reduirePhoto(fichier: File, cote = 1280): Promise<Blob> {
+  return new Promise((ok, ko) => {
+    const url = URL.createObjectURL(fichier);
+    const img = new Image();
+    img.onerror = () => ko(new Error("Image illisible"));
+    img.onload = () => {
+      const r = Math.min(1, cote / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * r);
+      c.height = Math.round(img.height * r);
+      c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob((b) => (b ? ok(b) : ko(new Error("Image illisible"))), "image/jpeg", 0.82);
+    };
+    img.src = url;
+  });
+}
 
 export const COLONNES_ENREG = "id, type, data, compte_id, auteur, created_at, updated_at";
 
@@ -79,6 +178,34 @@ export function periodeDe(frequence: Tache["frequence"], d = new Date()) {
   const an = t.getUTCFullYear();
   const semaine = Math.ceil(((t.getTime() - Date.UTC(an, 0, 1)) / 864e5 + 1) / 7);
   return `${an}-S${String(semaine).padStart(2, "0")}`;
+}
+
+export const JOURS_COURTS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+
+/** La tâche est-elle prévue ce jour-là ? (les jours ne filtrent que les tâches quotidiennes) */
+export function prevueLe(t: Tache, d = new Date()) {
+  return t.frequence !== "quotidien" || !t.jours?.length || t.jours.includes(d.getDay());
+}
+
+/** Périodes à cocher pour une tâche : une par passage (« 2026-09-29 », « 2026-09-29#2 »…). */
+export function passages(t: Tache, d = new Date()) {
+  if (!prevueLe(t, d)) return [];
+  const base = periodeDe(t.frequence, d);
+  return Array.from({ length: Math.max(1, t.fois ?? 1) }, (_, i) => (i === 0 ? base : `${base}#${i + 1}`));
+}
+
+/** Heure limite dépassée sans que tout soit fait (seulement pour les tâches du jour). */
+export function enRetard(t: Tache, restants: number, d = new Date()) {
+  if (!t.heure || !restants || t.frequence !== "quotidien") return false;
+  const [h, m] = t.heure.split(":").map(Number);
+  return d.getHours() * 60 + d.getMinutes() > h * 60 + m;
+}
+
+export function libelleRythme(t: Tache) {
+  const fois = (t.fois ?? 1) > 1 ? `${t.fois} fois ` : "";
+  const periode = { quotidien: "par jour", hebdomadaire: "par semaine", mensuel: "par mois" }[t.frequence];
+  const jours = t.frequence === "quotidien" && t.jours?.length && t.jours.length < 7 ? ` · ${t.jours.map((j) => JOURS_COURTS[j]).join(", ")}` : "";
+  return `${fois || "1 fois "}${periode}${jours}${t.heure ? ` · avant ${t.heure.replace(":", "h")}` : ""}`;
 }
 
 export const FREQUENCES: Record<Tache["frequence"], { label: string; periode: string }> = {
