@@ -32,6 +32,8 @@ export default function Camera({ onCapture, onClose, inline, titre }: Props) {
       queueMicrotask(() => vivant && setEtat("indisponible"));
       return;
     }
+    // Autorisation jamais donnée ni refusée (fenêtre ignorée) : on propose le choix de photo.
+    const delai = setTimeout(() => vivant && setEtat((e) => (e === "demarrage" ? "indisponible" : e)), 10000);
     navigator.mediaDevices
       .getUserMedia({ video: { facingMode: { ideal: face }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false })
       .then(async (s) => {
@@ -49,6 +51,7 @@ export default function Camera({ onCapture, onClose, inline, titre }: Props) {
       .catch(() => vivant && setEtat("indisponible"));
     return () => {
       vivant = false;
+      clearTimeout(delai);
     };
   }, [face, arreter]);
 

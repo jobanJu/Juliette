@@ -195,7 +195,7 @@ export default function Haccp() {
                 setOnglet("registre");
               }}
             >
-              📊 Historique & export
+              📊 Historique<span className="hide-mobile"> & export</span>
             </button>
           )}
           {parametres && reglageOnglet && (
@@ -204,8 +204,8 @@ export default function Haccp() {
             </button>
           )}
           {parametres && (
-            <button className="btn" onClick={() => setReglage("rubriques")} title="Choisir les rubriques HACCP affichées">
-              ☰ Rubriques
+            <button className="btn btn-icone" onClick={() => setReglage("rubriques")} title="Choisir les rubriques HACCP affichées">
+              ☰<span className="hide-mobile"> Rubriques</span>
             </button>
           )}
         </div>

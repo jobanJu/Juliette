@@ -304,11 +304,6 @@ export default function Temperatures(p: Props) {
             <span className={`pill ${tourneeComplete ? "t-mint" : "t-lav"}`} style={{ fontSize: 12, padding: "4px 10px" }}>
               {tourneeComplete ? "✓ Tournée complète" : `${nbFaits} / ${nbTotal} relevés`}
             </span>
-            {p.gestion && (
-              <button className="btn btn-sm" onClick={p.onConfigurer} title="Ajouter, modifier ou réorganiser les frigos">
-                ⚙ Paramètres & Ordre
-              </button>
-            )}
           </div>
         </div>
       </section>

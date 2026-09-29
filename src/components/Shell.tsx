@@ -238,7 +238,7 @@ export default function Shell({ children }: { children: ReactNode }) {
               ☰
             </button>
             <span className="hide-sm">{etablissement.nom}</span>
-            <span aria-hidden style={{ color: "#cfcad6" }}>/</span>
+            <span aria-hidden className="hide-sm" style={{ color: "#cfcad6" }}>/</span>
             {courant?.section && <span className="hide-sm">{SECTIONS[courant.section].label}</span>}
             {courant?.section && <span aria-hidden className="hide-sm" style={{ color: "#cfcad6" }}>/</span>}
             <b>{courant?.label ?? "Juliette"}</b>

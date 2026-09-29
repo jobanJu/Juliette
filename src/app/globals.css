@@ -149,6 +149,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ——— Listes ——— */
 .rows { display: grid; }
+/* Bloc titre + sous-titre, partout où il apparaît (lignes, cartes, listes à cocher). */
+.main-txt { display: grid; gap: 2px; min-width: 0; }
+.main-txt small { font-size: 11.5px; color: var(--muted); }
 .row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); min-width: 0; }
 .row:first-child { border-top: 0; padding-top: 2px; }
 .row .main-txt { flex: 1; min-width: 0; display: grid; gap: 2px; }
@@ -1922,7 +1925,7 @@ tr.row-choisi td { background: var(--lavender); }
   .caisse-choix { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .contrat-actions { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); z-index: 5; margin: 0 -14px; padding: 10px 14px; border-top: 1px solid var(--line); }
   .contrat-actions .btn { flex: 1 1 auto; }
-  .contrat-bascule { display: flex; }
+  .seg.contrat-bascule { display: flex; }
   .contrat-editeur.vue-remplir .contrat-apercu, .contrat-editeur.vue-apercu .contrat-form { display: none; }
   .huile-actions .btn { flex: 1 1 100%; }
   .mail-actions .btn { flex: 1 1 auto; }
@@ -1933,9 +1936,39 @@ tr.row-choisi td { background: var(--lavender); }
 }
 @media (max-width: 480px) {
   .contrat-signatures { grid-template-columns: 1fr; }
-  .huile-etat { grid-template-columns: 1fr 1fr; }
+  .huile-etat { gap: 6px; }
+  .huile-etat span { padding: 7px; }
   .sugg-ligne { grid-template-columns: 22px minmax(0, 1fr); }
   .sugg-horaires, .sugg-raison { grid-column: 2; }
 }
 .contrat-bascule { display: none; margin-bottom: 12px; }
 @media print { .contrat-editeur .contrat-apercu { display: block !important; } }
+
+/* ── Mobile, passe V3 (captures) : barre du haut et en-têtes ── */
+.hide-mobile { display: inline; }
+@media (max-width: 860px) {
+  .hide-mobile { display: none; }
+  .crumb .hide-sm { display: none; }
+  .crumb b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60vw; font-size: 14px; }
+  /* La barre du bas a déjà « Messages ». */
+  .topbar .btn-messages { display: none; }
+  .haccp-page-actions { display: grid; grid-template-columns: 1fr 1fr auto; }
+  .haccp-page-actions .btn { padding: 0 10px; }
+}
+@media (max-width: 860px) {
+  /* En-têtes de carte avec boutons : les boutons passent dessous, en pleine largeur. */
+  .card-head:has(> span > .btn) { flex-wrap: wrap; gap: 8px; }
+  .card-head > span:has(> .btn) { width: 100%; display: flex; gap: 8px; }
+  .card-head > span:has(> .btn) > .btn { flex: 1 1 auto; }
+}
+@media (max-width: 860px) {
+  /* Barre « Valider la tournée » : au-dessus de la barre du bas, compacte. */
+  .haccp-valider-bar { bottom: calc(72px + env(safe-area-inset-bottom, 0px)); padding: 10px 12px; gap: 8px; border-radius: 14px; }
+  .haccp-valider-info span { display: none; }
+  .haccp-valider-bar .haccp-valider-btn { flex: 1 1 auto; }
+  /* En-tête HACCP : les boutons se partagent la ligne, ☰ garde sa taille. */
+  .haccp-page-actions { display: flex; }
+  .haccp-page-actions .btn { flex: 1 1 0; }
+  .haccp-page-actions .btn-icone { flex: 0 0 auto; min-width: 48px; }
+  .contrat-doc p { text-align: left; }
+}
