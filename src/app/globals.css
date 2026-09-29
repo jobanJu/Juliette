@@ -1640,24 +1640,29 @@ tr.row-choisi td { background: var(--lavender); }
 .registre-photo { margin-left: 8px; vertical-align: middle; }
 .registre-photo img { width: 32px; height: 32px; object-fit: cover; border-radius: 6px; }
 
-.clean-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
-.clean-card { position: relative; display: grid; align-content: start; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--card); box-shadow: var(--shadow); }
-.clean-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--line); }
-.clean-card.done::before { background: var(--mint-ink); }
-.clean-card.retard::before { background: var(--red-ink); }
-.clean-card-head { display: grid; gap: 3px; padding: 12px 14px 10px 16px; }
-.clean-card-head b { font-size: 14px; font-weight: 650; color: var(--ink); }
-.clean-card-head small { font-size: 11.5px; color: var(--muted); }
-.clean-card-head .pill { justify-self: start; margin-top: 4px; }
-.clean-card.off { opacity: .5; box-shadow: none; }
-.clean-pass { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; min-height: 56px; padding: 6px 10px 6px 14px; border-top: 1px solid var(--line); }
-.clean-pass.off { display: block; padding: 16px; text-align: center; color: var(--muted); font-size: 12px; }
-.clean-pass-txt { display: grid; gap: 1px; text-align: center; font-size: 11.5px; color: var(--ink-2); }
-.clean-x, .clean-v { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); font-size: 18px; font-weight: 700; cursor: pointer; color: #c3bfcc; transition: background .15s, color .15s, border-color .15s; }
-.clean-x:hover { border-color: #f1c4be; color: var(--red-ink); }
-.clean-v:hover { border-color: #b9dfc9; color: var(--mint-ink); }
-.clean-pass.oui .clean-v { background: var(--mint-ink); border-color: var(--mint-ink); color: #fff; }
-.clean-pass.non .clean-x { background: var(--red-ink); border-color: var(--red-ink); color: #fff; }
+.clean-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.clean-card { display: grid; align-content: start; border: 2px solid var(--purple-ink); border-radius: 14px; overflow: hidden; background: var(--card); }
+.clean-card-head { display: grid; gap: 3px; padding: 12px 14px; background: var(--purple-ink); color: #fff; text-align: center; }
+.clean-card-head b { font-size: 15px; font-weight: 750; color: #fff; }
+.clean-card-head small { font-size: 12px; font-weight: 550; color: #ffffffe6; }
+.clean-card-head .pill { justify-self: center; margin-top: 4px; background: #fff; color: var(--red-ink); font-weight: 750; }
+.clean-card.done { border-color: var(--mint-ink); }
+.clean-card.done .clean-card-head { background: var(--mint-ink); }
+.clean-card.retard { border-color: var(--red-ink); }
+.clean-card.retard .clean-card-head { background: var(--red-ink); }
+.clean-card.off { border-color: #b9b4c6; opacity: .75; }
+.clean-card.off .clean-card-head { background: #8d899c; }
+.clean-pass { display: grid; grid-template-columns: 54px 1fr 54px; align-items: center; gap: 8px; min-height: 66px; padding: 6px 10px; border-top: 1px solid #d9d4e3; }
+.clean-pass.off { display: block; padding: 18px; text-align: center; color: var(--ink-2); font-size: 13px; font-weight: 600; }
+.clean-pass-txt { display: grid; gap: 2px; text-align: center; font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.clean-pass-txt .hint { color: var(--ink-2); font-weight: 600; }
+.clean-x, .clean-v { width: 52px; height: 52px; border: 2px solid; border-radius: 12px; font-size: 26px; font-weight: 800; line-height: 1; cursor: pointer; transition: background .15s, color .15s; }
+.clean-x { border-color: var(--red-ink); background: var(--red); color: var(--red-ink); }
+.clean-v { border-color: var(--mint-ink); background: var(--mint); color: var(--mint-ink); }
+.clean-x:hover, .clean-pass.non .clean-x { background: var(--red-ink); color: #fff; }
+.clean-v:hover, .clean-pass.oui .clean-v { background: var(--mint-ink); color: #fff; }
+.clean-pass.oui { background: var(--mint); }
+.clean-pass.non { background: var(--red); }
 .clean-pass.non .clean-pass-txt { color: var(--red-ink); }
 
 .plan-card { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; }
