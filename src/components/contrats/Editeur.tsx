@@ -8,9 +8,13 @@ import { FONCTIONS } from "@/lib/personnel";
 import type { Membre } from "@/lib/personnel";
 import { iso } from "@/lib/planning";
 import { nouvelId } from "@/lib/haccp";
+import { LIBELLES_CONVENTIONS, TITRES_RESTAURANT } from "@/lib/droitTravail";
 import {
   alertes,
   CHAMPS_DEFAUTS,
+  conventionDe,
+  partEmployeurTitre,
+  renouvellementEssai,
   DONNEES_VIDES,
   EMPLOIS,
   essaiPropose,
@@ -274,6 +278,29 @@ export default function Editeur({
               </div>
             </div>
             <small className="hint">{MODELES[modele].description}</small>
+            {pays === "FR" && (
+              <>
+                <div className="field">
+                  <label htmlFor="ct-convention">Convention collective</label>
+                  <select id="ct-convention" value={d.convention} onChange={(e) => set("convention", e.target.value)}>
+                    {Object.entries(LIBELLES_CONVENTIONS).map(([k, v]) => (
+                      <option key={k} value={k}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {d.convention === "autre" && (
+                  <div className="form-2">
+                    {champ("convention_libre", "Intitulé de la convention", { placeholder: "ex. Boulangerie-pâtisserie artisanale" })}
+                    {champ("idcc_libre", "N° IDCC", { placeholder: "ex. 843" })}
+                  </div>
+                )}
+                <small className="hint">
+                  Elle fixe la période d&apos;essai, son renouvellement, les préavis et la valeur des repas. Tu la trouves sur un bulletin de paie.
+                </small>
+              </>
+            )}
           </Etape>
 
           <Etape n={2} titre="Poste" aide="Choisis un poste type de ton établissement, ou un emploi de la liste.">
@@ -373,7 +400,18 @@ export default function Editeur({
                 {modele === "fr_cdi" && (
                   <div className="field">
                     <label>Renouvellement de l&apos;essai</label>
-                    <Choix valeur={d.essai_renouvelable ? "oui" : "non"} options={[["oui", "Renouvelable une fois"], ["non", "Non renouvelable"]]} onChange={(v) => set("essai_renouvelable", v === "oui")} />
+                    {renouvellementEssai(d).interdit ? (
+                      <small className="hint">🚫 Non renouvelable : {renouvellementEssai(d).raison}.</small>
+                    ) : (
+                      <>
+                        <Choix
+                          valeur={d.essai_renouvelable ? "oui" : "non"}
+                          options={[["oui", `Renouvelable une fois${renouvellementEssai(d).mois ? ` (+${renouvellementEssai(d).mois} mois max)` : ""}`], ["non", "Non renouvelable"]]}
+                          onChange={(v) => set("essai_renouvelable", v === "oui")}
+                        />
+                        {renouvellementEssai(d).mois === null && <small className="hint">Vérifie que ta convention autorise le renouvellement.</small>}
+                      </>
+                    )}
                   </div>
                 )}
               </>
@@ -439,8 +477,30 @@ export default function Editeur({
           <Etape n={5} titre="Avantages et équipement">
             <div className="field">
               <label>Repas</label>
-              <Choix valeur={d.repas} options={[["nature", "Avantage en nature (repas sur place)"], ["indemnite", "Indemnité compensatrice"], ["aucun", "Aucun"]]} onChange={(v) => set("repas", v)} />
+              <Choix valeur={d.repas} options={[["nature", "Avantage en nature (repas sur place)"], ["indemnite", "Indemnité compensatrice"], ["titres", "Titres-restaurant"], ["aucun", "Aucun"]]} onChange={(v) => set("repas", v)} />
             </div>
+            {(d.repas === "nature" || d.repas === "indemnite") && (
+              <div className="field">
+                <label htmlFor="ct-repas_montant">
+                  Valeur d&apos;un repas (€) <span className="hint">· référence : {conventionDe(d).repas.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} € ({conventionDe(d).repasSource})</span>
+                </label>
+                <input id="ct-repas_montant" inputMode="decimal" value={d.repas_montant} onChange={(e) => set("repas_montant", e.target.value)} placeholder={conventionDe(d).repas.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} />
+              </div>
+            )}
+            {d.repas === "titres" && (
+              <div className="ct-titres">
+                <div className="form-2">
+                  {champ("tr_valeur", "Valeur d'un titre (€)", { inputMode: "decimal", placeholder: "ex. 10" })}
+                  <div className="field">
+                    <label>Part employeur</label>
+                    <Choix valeur={d.tr_part} options={[["50", "50 %"], ["55", "55 %"], ["60", "60 %"]]} onChange={(v) => set("tr_part", v)} />
+                  </div>
+                </div>
+                <small className="hint">
+                  Part employeur : <b>{partEmployeurTitre(d)?.toLocaleString("fr-FR", { style: "currency", currency: "EUR" }) ?? "—"}</b> par titre · exonérée entre {TITRES_RESTAURANT.partMin} et {TITRES_RESTAURANT.partMax} %, dans la limite de {TITRES_RESTAURANT.plafondExonere.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })} (2026).
+                </small>
+              </div>
+            )}
             <div className="field">
               <label>Tenue de travail</label>
               <Choix valeur={d.tenue_fournie ? "oui" : "non"} options={[["oui", "Fournie par l'entreprise"], ["non", "Non fournie"]]} onChange={(v) => set("tenue_fournie", v === "oui")} />
@@ -481,10 +541,15 @@ export default function Editeur({
               <label>Frais de transport</label>
               <Choix valeur={d.transport ? "oui" : "non"} options={[["oui", pays === "FR" ? "Prise en charge 50 % de l'abonnement" : "Intervention selon la CCT"], ["non", "Non mentionné"]]} onChange={(v) => set("transport", v === "oui")} />
             </div>
-            {champ("mutuelle", "Mutuelle / prévoyance (facultatif)", { placeholder: "ex. Alan, contrat n°…" })}
           </Etape>
 
-          <Etape n={6} titre="Identité du salarié" aide="Ces informations restent visibles du seul directeur et du salarié.">
+          <Etape n={6} titre="Protection sociale" aide={pays === "FR" ? "Nom et adresse des organismes : obligatoires en CDD, à communiquer au salarié dans tous les cas." : undefined}>
+            {champ("caisse_retraite", "Caisse de retraite complémentaire (nom et adresse)", { placeholder: "ex. Malakoff Humanis, 21 rue Laffitte, 75009 Paris" })}
+            {champ("organisme_prevoyance", "Organisme de prévoyance (nom et adresse)", { placeholder: "ex. Klesia Prévoyance, …" })}
+            {champ("mutuelle", "Complémentaire santé", { placeholder: "ex. Alan, contrat n°…" })}
+          </Etape>
+
+          <Etape n={7} titre="Identité du salarié" aide="Ces informations restent visibles du seul directeur et du salarié.">
             <div className="field">
               <label>Civilité</label>
               <Choix valeur={d.civilite} options={[["M.", "Monsieur"], ["Mme", "Madame"]]} onChange={(v) => set("civilite", v)} />
@@ -502,7 +567,7 @@ export default function Editeur({
             {champ("numero_securite", pays === "FR" ? "N° de sécurité sociale" : "N° de registre national")}
           </Etape>
 
-          <Etape n={7} titre="Employeur et signature">
+          <Etape n={8} titre="Employeur et signature">
             {champ("employeur", "Raison sociale")}
             <div className="form-2">
               {champ("employeur_numero", pays === "FR" ? "SIRET" : "N° d'entreprise")}
@@ -518,7 +583,7 @@ export default function Editeur({
             </div>
             <div className="field">
               <label>Émargement</label>
-              <Choix valeur={d.paraphe ? "oui" : "non"} options={[["oui", "Paraphes en bas de chaque page"], ["non", "Signature finale uniquement"]]} onChange={(v) => set("paraphe", v === "oui")} />
+              <Choix valeur={d.paraphe ? "oui" : "non"} options={[["oui", "Initiales en bas de chaque page"], ["non", "Signature finale uniquement"]]} onChange={(v) => set("paraphe", v === "oui")} />
             </div>
             <div className="field">
               <label htmlFor="ct-clauses">Clauses particulières (facultatif)</label>

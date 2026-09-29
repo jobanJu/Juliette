@@ -2052,3 +2052,10 @@ tr.row-choisi td { background: var(--lavender); }
 .page-head .ct-nom { display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 6px; background: var(--lavender); color: var(--purple-ink); }
 /* Barre latérale : « Se déconnecter » en icône seule (le libellé ne tient pas). */
 .profile .icon-btn .hide-sm { display: none; }
+.contrat-sig-ligne { font-size: 11.5px; padding-bottom: 2px; border-bottom: 1px dotted #9e98ab; }
+.contrat-sig-lu { font-family: "Snell Roundhand", "Segoe Script", cursive; font-size: 15px; color: #1c1a2b; }
+.contrat-pied-paraphes i { display: inline-grid; place-items: center; font-style: normal; font-weight: 700; font-size: 10pt; color: #1c1a2b; }
+.ct-titres { display: grid; gap: 6px; padding: 12px; border-radius: 12px; background: var(--paper); }
+.ct-ligne-avenant td:first-child, .ct-ligne-avenant td:nth-child(2) { padding-left: 22px; }
+.ct-avenants { display: grid; gap: 4px; margin-bottom: 14px; }
+.ct-avenants .row { width: 100%; border: 0; border-top: 1px solid var(--line); background: transparent; text-align: left; cursor: pointer; font: inherit; }

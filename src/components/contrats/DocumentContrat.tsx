@@ -33,11 +33,30 @@ function Signature({ role, nom, image, le }: { role: string; nom: string; image:
     <div className="contrat-sig">
       <small>{role}</small>
       <b>{nom}</b>
-      <span className="contrat-sig-mention">Mention « Lu et approuvé », date et signature</span>
-      {image ? <img src={image} alt={`Signature : ${role}`} /> : <span className="contrat-sig-vide" />}
-      {le && <small>Signé électroniquement le {horodatage(le)}</small>}
+      {image ? (
+        <>
+          <span className="contrat-sig-lu">Lu et approuvé</span>
+          <img src={image} alt={`Signature : ${role}`} />
+          <small>Signé électroniquement le {horodatage(le!)}</small>
+        </>
+      ) : (
+        <>
+          <span className="contrat-sig-ligne">Date : </span>
+          <span className="contrat-sig-mention">Mention manuscrite « Lu et approuvé » puis signature :</span>
+          <span className="contrat-sig-vide" />
+        </>
+      )}
     </div>
   );
+}
+
+/** Initiales d'un nom : « Diane Test » → « D.T. » */
+export function initialesDe(nom: string) {
+  return nom
+    .split(/[\s-]+/)
+    .filter(Boolean)
+    .map((m) => m[0]!.toUpperCase() + ".")
+    .join("");
 }
 
 type Unite = { cle: string; contenu: ReactNode; /** titre d'article : ne jamais le laisser seul en bas de page */ colle?: boolean };
@@ -49,7 +68,9 @@ function unites(texte: string, employeur: string, salarie: string, sig: Signatur
   const entete = (
     <div className="contrat-entete">
       <b>{employeur}</b>
-      <span>Contrat de travail · {salarie}</span>
+      <span>
+        {texte.startsWith("# Avenant") ? "Avenant au contrat de travail" : "Contrat de travail"} · {salarie}
+      </span>
     </div>
   );
   for (let i = 0; i < liste.length; i++) {
@@ -189,7 +210,7 @@ function paginer(hauteurs: number[], colle: boolean[]) {
   return pages;
 }
 
-function PiedDePage({ n, total, paraphe }: { n: number; total: number; paraphe: boolean }) {
+function PiedDePage({ n, total, paraphe, initiales }: { n: number; total: number; paraphe: boolean; initiales: { employeur?: string; salarie?: string } }) {
   return (
     <footer className="contrat-pied">
       <span>
@@ -197,7 +218,7 @@ function PiedDePage({ n, total, paraphe }: { n: number; total: number; paraphe: 
       </span>
       {paraphe && (
         <span className="contrat-pied-paraphes">
-          Paraphe employeur <i /> Paraphe salarié <i />
+          Initiales employeur <i>{initiales.employeur}</i> Initiales salarié <i>{initiales.salarie}</i>
         </span>
       )}
     </footer>
@@ -206,7 +227,29 @@ function PiedDePage({ n, total, paraphe }: { n: number; total: number; paraphe: 
 
 // Contrat : à l'écran, un document continu ; à l'impression, des pages A4 découpées par Juliette,
 // chacune avec son pied de page (numéro et cases de paraphe), quel que soit le navigateur.
-export default function DocumentContrat({ texte, employeur, salarie, sig, paraphe = true, feminin = false }: { texte: string; employeur: string; salarie: string; sig?: SignaturesContrat; paraphe?: boolean; feminin?: boolean }) {
+export default function DocumentContrat({
+  texte,
+  employeur,
+  salarie,
+  sig,
+  paraphe = true,
+  feminin = false,
+  signataires,
+}: {
+  texte: string;
+  employeur: string;
+  salarie: string;
+  sig?: SignaturesContrat;
+  paraphe?: boolean;
+  feminin?: boolean;
+  /** Noms des signataires, pour reporter leurs initiales sur chaque page une fois signé. */
+  signataires?: { employeur: string; salarie: string };
+}) {
+  // Signature électronique : les initiales du signataire sont reportées sur chaque page.
+  const initiales = {
+    employeur: sig?.signature_employeur && signataires ? initialesDe(signataires.employeur) : undefined,
+    salarie: sig?.signature_salarie && signataires ? initialesDe(signataires.salarie) : undefined,
+  };
   const liste = useMemo(() => unites(texte, employeur, salarie, sig, feminin), [texte, employeur, salarie, sig, feminin]);
   const mesure = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<number[][] | null>(null);
@@ -232,7 +275,9 @@ export default function DocumentContrat({ texte, employeur, salarie, sig, paraph
         ))}
         {paraphe && (
           <div className="contrat-paraphe" aria-hidden>
-            À l&apos;impression, chaque page porte les cases de paraphe de l&apos;employeur et du salarié.
+            {initiales.employeur || initiales.salarie
+              ? `Initiales reportées sur chaque page : employeur ${initiales.employeur ?? "—"} · salarié ${initiales.salarie ?? "—"}`
+              : "À l'impression, chaque page porte les cases d'initiales de l'employeur et du salarié."}
           </div>
         )}
       </article>
@@ -255,7 +300,7 @@ export default function DocumentContrat({ texte, employeur, salarie, sig, paraph
                 </div>
               ))}
             </div>
-            <PiedDePage n={n + 1} total={pages.length} paraphe={paraphe} />
+            <PiedDePage n={n + 1} total={pages.length} paraphe={paraphe} initiales={initiales} />
           </section>
         ))}
       </div>

@@ -9,13 +9,19 @@ import { MODELES, nomContrat } from "@/lib/contrats";
 import type { Donnees, ModeleCle, Reglages } from "@/lib/contrats";
 import DocumentContrat, { imprimerContrat } from "@/components/contrats/DocumentContrat";
 import Editeur from "@/components/contrats/Editeur";
+import EditeurAvenant from "@/components/contrats/EditeurAvenant";
+import { nomAvenant } from "@/lib/avenants";
+import type { DonneesAvenant } from "@/lib/avenants";
 import SignaturePad from "@/components/contrats/SignaturePad";
 
 type Contrat = {
   id: string;
   compte_id: string;
-  modele: ModeleCle;
-  donnees: Donnees;
+  modele: ModeleCle | "avenant";
+  donnees: Donnees & Partial<DonneesAvenant>;
+  type_document: "contrat" | "avenant";
+  contrat_parent: string | null;
+  numero: number | null;
   contenu: string | null;
   empreinte: string | null;
   statut: "brouillon" | "a_signer" | "signe" | "annule";
@@ -27,7 +33,7 @@ type Contrat = {
   updated_at: string;
 };
 
-const COLONNES = "id, compte_id, modele, donnees, contenu, empreinte, statut, signature_employeur, signe_employeur_at, signature_salarie, signe_salarie_at, created_at, updated_at";
+const COLONNES = "id, compte_id, modele, donnees, type_document, contrat_parent, numero, contenu, empreinte, statut, signature_employeur, signe_employeur_at, signature_salarie, signe_salarie_at, created_at, updated_at";
 const STATUTS: Record<Contrat["statut"], { label: string; ton: string }> = {
   brouillon: { label: "Brouillon", ton: "t-lav" },
   a_signer: { label: "À signer", ton: "t-peach" },
@@ -36,6 +42,12 @@ const STATUTS: Record<Contrat["statut"], { label: string; ton: string }> = {
 };
 
 type Etab = { nom: string; adresse: string | null; ville: string | null; siret: string | null };
+
+/** Données du contrat concerné (pour un avenant : la copie du contrat modifié). */
+const donneesContrat = (c: Contrat): Donnees => (c.type_document === "avenant" ? (c.donnees.contrat as Donnees) : c.donnees);
+const modeleContrat = (c: Contrat): ModeleCle => (c.type_document === "avenant" ? (c.donnees.modele_parent as ModeleCle) : (c.modele as ModeleCle));
+const nomDocument = (c: Contrat) => (c.type_document === "avenant" ? nomAvenant(donneesContrat(c), c.numero ?? 1, c.donnees.avenant?.date_effet ?? "") : nomContrat(c.modele as ModeleCle, c.donnees));
+const libelleDocument = (c: Contrat) => (c.type_document === "avenant" ? `Avenant n° ${c.numero} · ${MODELES[modeleContrat(c)]?.court ?? ""}` : MODELES[c.modele as ModeleCle]?.label ?? c.modele);
 
 export default function Contrats() {
   const { compte, etablissement } = useConnecte();
@@ -46,7 +58,7 @@ export default function Contrats() {
   const [taux, setTaux] = useState<Map<string, number>>(new Map());
   const [etab, setEtab] = useState<Etab | null>(null);
   const [reglages, setReglages] = useState<Reglages>({ postes: [], defauts: {} });
-  const [vue, setVue] = useState<{ id: string | null } | null>(null);
+  const [vue, setVue] = useState<{ id: string | null; avenantDe?: string } | null>(null);
   const [version, setVersion] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
   const recharger = useCallback(() => setVersion((v) => v + 1), []);
@@ -100,19 +112,51 @@ export default function Contrats() {
 
   if (vue && contrats) {
     const c = vue.id ? contrats.find((x) => x.id === vue.id) ?? null : null;
-    if (c && c.statut !== "brouillon")
+    // Avenant : nouveau (depuis un contrat signé) ou brouillon à reprendre.
+    const parentId = vue.avenantDe ?? (c?.type_document === "avenant" && c.statut === "brouillon" ? c.contrat_parent : null);
+    const parent = parentId ? contrats.find((x) => x.id === parentId) : null;
+    if (parent && directeur)
       return (
         <>
-          <VueContrat c={c} directeur={directeur} moi={compte.id} employeur={etab?.nom ?? etablissement.nom} salarie={c.donnees.prenom ? `${c.donnees.prenom} ${c.donnees.nom}` : nomDe(c.compte_id)} onRetour={() => setVue(null)} onFini={fini} />
+          <EditeurAvenant
+            key={c?.id ?? `nouvel-avenant-${parent.id}`}
+            parent={{ id: parent.id, compte_id: parent.compte_id, modele: parent.modele as ModeleCle, donnees: parent.donnees, created_at: parent.created_at }}
+            avenant={c && c.type_document === "avenant" ? { id: c.id, numero: c.numero ?? 1, donnees: c.donnees as unknown as DonneesAvenant } : null}
+            numero={contrats.filter((x) => x.contrat_parent === parent.id).reduce((m, x) => Math.max(m, x.numero ?? 0), 0) + 1}
+            etablissementId={etablissement.id}
+            auteurId={compte.id}
+            onRetour={() => setVue(null)}
+            onFini={fini}
+          />
           {toast && <div className="toast" role="status">{toast}</div>}
         </>
       );
+    if (c && c.statut !== "brouillon") {
+      const dc = donneesContrat(c);
+      return (
+        <>
+          <VueContrat
+            c={c}
+            avenants={contrats.filter((x) => x.contrat_parent === c.id).sort((a, b) => (a.numero ?? 0) - (b.numero ?? 0))}
+            directeur={directeur}
+            moi={compte.id}
+            employeur={etab?.nom ?? etablissement.nom}
+            salarie={dc.prenom ? `${dc.prenom} ${dc.nom}` : nomDe(c.compte_id)}
+            onRetour={() => setVue(null)}
+            onFini={fini}
+            onOuvrir={(id) => setVue({ id })}
+            onAvenant={() => setVue({ id: null, avenantDe: c.id })}
+          />
+          {toast && <div className="toast" role="status">{toast}</div>}
+        </>
+      );
+    }
     if (directeur)
       return (
         <>
           <Editeur
             key={c?.id ?? "nouveau"}
-            contrat={c}
+            contrat={c && c.type_document === "contrat" ? { id: c.id, compte_id: c.compte_id, modele: c.modele as ModeleCle, donnees: c.donnees } : null}
             membres={membres}
             taux={taux}
             etab={etab}
@@ -132,7 +176,11 @@ export default function Contrats() {
       );
   }
 
-  const visibles = (contrats ?? []).filter((c) => directeur || c.compte_id === compte.id);
+  // Chaque contrat suivi de ses avenants.
+  const miens = (contrats ?? []).filter((c) => directeur || c.compte_id === compte.id);
+  const visibles = miens
+    .filter((c) => c.type_document !== "avenant" || !miens.some((p) => p.id === c.contrat_parent))
+    .flatMap((c) => [c, ...miens.filter((x) => x.contrat_parent === c.id).sort((a, b) => (a.numero ?? 0) - (b.numero ?? 0))]);
   const aSigner = visibles.filter((c) => c.statut === "a_signer" && c.compte_id === compte.id && !c.signature_salarie);
 
   return (
@@ -180,19 +228,25 @@ export default function Contrats() {
               </thead>
               <tbody>
                 {visibles.map((c) => (
-                  <tr key={c.id}>
+                  <tr key={c.id} className={c.type_document === "avenant" ? "ct-ligne-avenant" : undefined}>
                     {directeur && (
                       <td>
                         <b style={{ fontWeight: 600 }}>{nomDe(c.compte_id)}</b>
                       </td>
                     )}
                     <td>
-                      <b className="ct-nom">{nomContrat(c.modele, c.donnees)}</b>
+                      <b className="ct-nom">
+                        {c.type_document === "avenant" ? "↳ " : ""}
+                        {nomDocument(c)}
+                      </b>
                       <small className="justif">
-                        {MODELES[c.modele]?.label ?? c.modele} · {MODELES[c.modele]?.pays === "BE" ? "🇧🇪" : "🇫🇷"}
+                        {libelleDocument(c)} · {MODELES[modeleContrat(c)]?.pays === "BE" ? "🇧🇪" : "🇫🇷"}
                       </small>
                     </td>
-                    <td>{c.donnees.date_debut ? new Date(c.donnees.date_debut + "T12:00").toLocaleDateString("fr-FR") : "—"}</td>
+                    <td>{(() => {
+                      const j = c.type_document === "avenant" ? c.donnees.avenant?.date_effet : c.donnees.date_debut;
+                      return j ? new Date(j + "T12:00").toLocaleDateString("fr-FR") : "—";
+                    })()}</td>
                     <td>
                       <span className={`pill ${STATUTS[c.statut].ton}`}>{STATUTS[c.statut].label}</span>
                     </td>
@@ -221,7 +275,31 @@ export default function Contrats() {
   );
 }
 
-function VueContrat({ c, directeur, moi, employeur, salarie, onRetour, onFini }: { c: Contrat; directeur: boolean; moi: string; employeur: string; salarie: string; onRetour: () => void; onFini: (m: string, garderOuvert?: string) => void }) {
+function VueContrat({
+  c,
+  avenants,
+  directeur,
+  moi,
+  employeur,
+  salarie,
+  onRetour,
+  onFini,
+  onOuvrir,
+  onAvenant,
+}: {
+  c: Contrat;
+  avenants: Contrat[];
+  directeur: boolean;
+  moi: string;
+  employeur: string;
+  salarie: string;
+  onRetour: () => void;
+  onFini: (m: string, garderOuvert?: string) => void;
+  onOuvrir: (id: string) => void;
+  onAvenant: () => void;
+}) {
+  const dc = donneesContrat(c);
+  const avenant = c.type_document === "avenant";
   const sb = getSupabaseClient()!;
   const [signe, setSigne] = useState(false);
   const [envoi, setEnvoi] = useState(false);
@@ -250,19 +328,19 @@ function VueContrat({ c, directeur, moi, employeur, salarie, onRetour, onFini }:
     <>
       <div className="page-head print-hide">
         <div>
-          <p className="eyebrow">Contrat de travail</p>
+          <p className="eyebrow">{avenant ? "Avenant au contrat de travail" : "Contrat de travail"}</p>
           <h1>
-            {MODELES[c.modele]?.label} · {salarie}
+            {libelleDocument(c)} · {salarie}
           </h1>
           <p>
-            <span className={`pill ${STATUTS[c.statut].ton}`}>{STATUTS[c.statut].label}</span>
+            <span className={`pill ${STATUTS[c.statut].ton}`}>{STATUTS[c.statut].label}</span> <span className="ct-nom">{nomDocument(c)}</span>
           </p>
         </div>
         <div className="toolbar">
           <button className="btn" onClick={onRetour}>
             ← Retour
           </button>
-          <button className="btn" onClick={() => imprimerContrat(nomContrat(c.modele, c.donnees))}>
+          <button className="btn" onClick={() => imprimerContrat(nomDocument(c))}>
             ⎙ Imprimer / PDF
           </button>
           {directeur && c.statut === "a_signer" && (
@@ -270,9 +348,14 @@ function VueContrat({ c, directeur, moi, employeur, salarie, onRetour, onFini }:
               Modifier (retour brouillon)
             </button>
           )}
+          {directeur && !avenant && c.statut === "signe" && (
+            <button className="btn btn-primary" onClick={onAvenant}>
+              + Rédiger un avenant
+            </button>
+          )}
           {directeur && c.statut === "signe" && (
-            <button className="btn btn-danger-ghost" onClick={() => changer("annule", "Contrat annulé")}>
-              Annuler le contrat
+            <button className="btn btn-danger-ghost" onClick={() => changer("annule", avenant ? "Avenant annulé" : "Contrat annulé")}>
+              Annuler {avenant ? "l'avenant" : "le contrat"}
             </button>
           )}
         </div>
@@ -285,7 +368,9 @@ function VueContrat({ c, directeur, moi, employeur, salarie, onRetour, onFini }:
           ) : (
             <>
               <p style={{ margin: 0 }}>
-                {peutSignerSalarie ? "Lis le contrat jusqu'au bout. En signant, tu déclares l'avoir lu et approuvé." : "Signe en tant qu'employeur. Le salarié pourra signer depuis son compte Juliette."}
+                {peutSignerSalarie
+                  ? `Lis ${avenant ? "l'avenant" : "le contrat"} jusqu'au bout. En signant, tu déclares l'avoir lu et approuvé : la mention « Lu et approuvé » et tes initiales seront reportées sur chaque page.`
+                  : "Signe en tant qu'employeur. Le salarié pourra signer depuis son compte Juliette."}
               </p>
               <button className="btn btn-primary btn-lg" onClick={() => setSigne(true)}>
                 ✍ Signer le contrat
@@ -300,7 +385,22 @@ function VueContrat({ c, directeur, moi, employeur, salarie, onRetour, onFini }:
         </section>
       )}
 
-      <DocumentContrat texte={c.contenu ?? ""} employeur={employeur} salarie={salarie} sig={c} paraphe={c.donnees.paraphe !== false} feminin={c.donnees.civilite === "Mme"} />
+      {!avenant && avenants.length > 0 && (
+        <section className="card print-hide ct-avenants">
+          <b>Avenants à ce contrat</b>
+          {avenants.map((a) => (
+            <button key={a.id} className="row" onClick={() => onOuvrir(a.id)}>
+              <span className="main-txt">
+                <b className="ct-nom">{nomDocument(a)}</b>
+                <small>{a.donnees.avenant?.modifs?.join(", ")}</small>
+              </span>
+              <span className={`pill ${STATUTS[a.statut].ton}`}>{STATUTS[a.statut].label}</span>
+            </button>
+          ))}
+        </section>
+      )}
+
+      <DocumentContrat texte={c.contenu ?? ""} employeur={employeur} salarie={salarie} sig={c} paraphe={dc.paraphe !== false} feminin={dc.civilite === "Mme"} signataires={{ employeur: dc.representant || employeur, salarie: salarie }} />
     </>
   );
 }
