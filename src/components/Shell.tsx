@@ -107,6 +107,11 @@ export default function Shell({ children }: { children: ReactNode }) {
       cancelAnimationFrame(attente);
     };
   }, []);
+  // Rubrique à onglets (téléphone) : l'onglet de la page ouverte reste visible.
+  useEffect(() => {
+    document.querySelector(".section-tabs .on")?.scrollIntoView({ inline: "center", block: "nearest" });
+  }, [pathname]);
+
   const aujourdhui = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
   return (

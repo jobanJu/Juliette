@@ -219,6 +219,8 @@ function Editeur({
   const [modele, setModele] = useState<ModeleCle>(contrat?.modele ?? "fr_cdi");
   const [d, setD] = useState<Donnees>(() => ({ ...DONNEES_VIDES, ...(contrat?.donnees ?? {}) }));
   const [essaiManuel, setEssaiManuel] = useState(!!contrat?.donnees.essai);
+  // Téléphone : formulaire et aperçu en alternance plutôt qu'empilés.
+  const [vueMobile, setVueMobile] = useState<"remplir" | "apercu">("remplir");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const pays = MODELES[modele].pays;
@@ -321,7 +323,15 @@ function Editeur({
         </div>
       </div>
 
-      <div className="contrat-editeur">
+      <div className="seg seg-inline contrat-bascule print-hide" role="tablist" aria-label="Affichage">
+        <button role="tab" aria-selected={vueMobile === "remplir"} className={vueMobile === "remplir" ? "on" : ""} onClick={() => setVueMobile("remplir")}>
+          ✎ Remplir
+        </button>
+        <button role="tab" aria-selected={vueMobile === "apercu"} className={vueMobile === "apercu" ? "on" : ""} onClick={() => setVueMobile("apercu")}>
+          👁 Aperçu du contrat
+        </button>
+      </div>
+      <div className={`contrat-editeur vue-${vueMobile}`}>
         <div className="contrat-form print-hide">
           <section className="card">
             <div className="form-2">

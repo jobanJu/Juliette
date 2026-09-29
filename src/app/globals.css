@@ -1908,3 +1908,34 @@ tr.row-choisi td { background: var(--lavender); }
 .caisse-carte.on { border-color: var(--purple); background: var(--lavender); }
 .caisse-etapes { display: grid; gap: 10px; margin-top: 14px; padding: 14px; border-radius: 12px; background: var(--paper); }
 .caisse-etapes ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 13px; line-height: 1.5; }
+
+/* ── Mobile, passe V3 : nouveaux écrans ── */
+@media (max-width: 860px) {
+  /* Les lignes de liste passent à la ligne plutôt que d'être tronquées. */
+  .row .main-txt b, .row .main-txt small { white-space: normal; overflow: visible; text-overflow: clip; }
+  .haccp-page-actions { flex-wrap: wrap; }
+  .haccp-page-actions .btn { flex: 1 1 auto; }
+  .btn-messages { min-height: 40px; min-width: 40px; justify-content: center; padding: 0 10px; }
+  .section-tabs a, .haccp-tabs button { min-height: 42px; }
+  .param-nav { display: grid; gap: 10px; }
+  .param-groupe { min-width: 0; }
+  .caisse-choix { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .contrat-actions { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); z-index: 5; margin: 0 -14px; padding: 10px 14px; border-top: 1px solid var(--line); }
+  .contrat-actions .btn { flex: 1 1 auto; }
+  .contrat-bascule { display: flex; }
+  .contrat-editeur.vue-remplir .contrat-apercu, .contrat-editeur.vue-apercu .contrat-form { display: none; }
+  .huile-actions .btn { flex: 1 1 100%; }
+  .mail-actions .btn { flex: 1 1 auto; }
+  .outil-infos { grid-template-columns: 1fr; gap: 0; }
+  .outil-infos dd { margin-bottom: 6px; }
+  .prod-actions .btn { flex: 1 1 auto; }
+  .trace-capture .btn-lg, .cuisson-saisie .btn-lg { width: 100%; }
+}
+@media (max-width: 480px) {
+  .contrat-signatures { grid-template-columns: 1fr; }
+  .huile-etat { grid-template-columns: 1fr 1fr; }
+  .sugg-ligne { grid-template-columns: 22px minmax(0, 1fr); }
+  .sugg-horaires, .sugg-raison { grid-column: 2; }
+}
+.contrat-bascule { display: none; margin-bottom: 12px; }
+@media print { .contrat-editeur .contrat-apercu { display: block !important; } }

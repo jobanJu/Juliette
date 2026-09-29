@@ -96,6 +96,11 @@ export default function Haccp() {
     };
   }, [sb, etablissement.id, version]);
 
+  // Onglets qui défilent (téléphone) : l'onglet actif reste visible.
+  useEffect(() => {
+    document.querySelector(".haccp-tabs .on")?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }, [onglet]);
+
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 2600);
