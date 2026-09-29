@@ -8,10 +8,11 @@ import { MODULES, SECTIONS } from "@/lib/modules";
 import { emailValide } from "@/lib/personnel";
 import { MODULES_ACCES } from "@/lib/accreditations";
 import Accreditations from "@/components/parametres/Accreditations";
+import Caisse from "@/components/parametres/Caisse";
 import { useDispositionMenu } from "@/lib/preferences";
 
-type Onglet = "compte" | "acces" | "restaurant" | "modules" | "pointeuse" | "emails" | "accreditations";
-const ONGLETS: Onglet[] = ["compte", "acces", "restaurant", "modules", "pointeuse", "emails", "accreditations"];
+type Onglet = "compte" | "acces" | "restaurant" | "modules" | "caisse" | "pointeuse" | "emails" | "accreditations";
+const ONGLETS: Onglet[] = ["compte", "acces", "restaurant", "modules", "caisse", "pointeuse", "emails", "accreditations"];
 
 type Etab = {
   id: string;
@@ -68,7 +69,9 @@ export default function Parametres() {
   ];
   const etab: [Onglet, string][] = [
     ["restaurant", "Restaurant"],
-    ...(directeur ? ([["modules", "Modules"], ["pointeuse", "Pointeuse"], ["emails", "E-mails automatiques"]] as [Onglet, string][]) : []),
+    ...(directeur ? ([["modules", "Modules"]] as [Onglet, string][]) : []),
+    ...(compte.role !== "salarie" ? ([["caisse", "Caisse"]] as [Onglet, string][]) : []),
+    ...(directeur ? ([["pointeuse", "Pointeuse"], ["emails", "E-mails automatiques"]] as [Onglet, string][]) : []),
     ...(modules.has("accreditations") ? ([["accreditations", "Accréditations"]] as [Onglet, string][]) : []),
   ];
   const bouton = ([k, l]: [Onglet, string]) => (
@@ -111,6 +114,8 @@ export default function Parametres() {
         <Restaurant onToast={setToast} />
       ) : onglet === "pointeuse" ? (
         <Pointeuse onToast={setToast} />
+      ) : onglet === "caisse" ? (
+        <Caisse onToast={setToast} />
       ) : onglet === "modules" ? (
         <ModulesEtablissement onToast={setToast} />
       ) : onglet === "accreditations" ? (

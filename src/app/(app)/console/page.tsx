@@ -6,6 +6,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { MODULES, SECTIONS } from "@/lib/modules";
 import { MODULES_ESSENTIELS, ROLE_LABEL } from "@/lib/session";
 import type { Role } from "@/lib/session";
+import { CAISSES, caisse } from "@/lib/caisses";
 
 // Console de l'équipe Juliette : hors menu, accessible aux seuls membres de equipe_juliette
 // (vérifié côté serveur à chaque appel). Pour tout autre compte, elle se présente comme une page
@@ -33,9 +34,10 @@ type Ligne = {
 
 type Detail = {
   etablissement: { id: string; nom: string; code: string; ville: string | null; pays: "FR" | "BE"; adresse: string | null; telephone: string | null; email_contact: string | null; siret: string | null; created_at: string; modules_masques: string[] };
-  reglages: { formule: string; fin_essai: string | null; suspendu: boolean; motif_suspension: string | null; caisse_logiciel: string | null; caisse_statut: string; caisse_note: string | null; notes: string | null } | null;
+  reglages: { formule: string; fin_essai: string | null; suspendu: boolean; motif_suspension: string | null; caisse_note: string | null; notes: string | null } | null;
+  caisse: { logiciel: string; statut: string; identifiant: string | null; derniere_synchro: string | null; derniere_erreur: string | null; demande_at: string } | null;
   comptes: { id: string; prenom: string | null; nom: string | null; email: string | null; role: Role; statut: string; created_at: string }[];
-  usage: { outils: number; emails: number; contrats: number };
+  usage: { outils: number; emails: number; contrats: number; ventes: number };
 };
 
 const FORMULES: Record<string, string> = { essai: "Essai", essentiel: "Essentiel", pro: "Pro", premium: "Premium", offert: "Offert" };
@@ -46,7 +48,7 @@ const CAISSE: Record<string, { label: string; ton: string }> = {
   connectee: { label: "Connectée", ton: "t-mint" },
   erreur: { label: "Erreur", ton: "t-red" },
 };
-const LOGICIELS_CAISSE = ["Zelty", "Lightspeed", "L'Addition", "SumUp", "Tiller", "Innovorder", "Hiboutik", "Autre"];
+
 
 async function appel<T>(chemin: string, init?: RequestInit): Promise<{ ok: boolean; status: number; data: T | null }> {
   const { data } = await getSupabaseClient()!.auth.getSession();
@@ -199,7 +201,7 @@ export default function Console() {
                     {l.fin_essai && <small className="justif">fin d&apos;essai {new Date(l.fin_essai + "T12:00").toLocaleDateString("fr-FR")}</small>}
                   </td>
                   <td>
-                    <span className={`pill ${CAISSE[l.caisse_statut]?.ton ?? "t-lav"}`}>{l.caisse_logiciel ? `${l.caisse_logiciel} · ` : ""}{CAISSE[l.caisse_statut]?.label ?? l.caisse_statut}</span>
+                    <span className={`pill ${CAISSE[l.caisse_statut]?.ton ?? "t-lav"}`}>{l.caisse_logiciel ? `${caisse(l.caisse_logiciel)?.nom ?? l.caisse_logiciel} · ` : ""}{CAISSE[l.caisse_statut]?.label ?? l.caisse_statut}</span>
                   </td>
                   <td>{depuis(l.derniere_activite)}</td>
                   <td style={{ textAlign: "right" }}>
@@ -252,8 +254,8 @@ function Fiche({ id, onClose, onSaved }: { id: string; onClose: () => void; onSa
         fin_essai: g?.fin_essai ?? "",
         suspendu: g?.suspendu ?? false,
         motif_suspension: g?.motif_suspension ?? "",
-        caisse_logiciel: g?.caisse_logiciel ?? "",
-        caisse_statut: g?.caisse_statut ?? "aucune",
+        caisse_logiciel: r.data.caisse?.logiciel ?? "",
+        caisse_statut: r.data.caisse?.statut ?? "aucune",
         caisse_note: g?.caisse_note ?? "",
         notes: g?.notes ?? "",
       });
@@ -354,8 +356,10 @@ function Fiche({ id, onClose, onSaved }: { id: string; onClose: () => void; onSa
                   <label htmlFor="cs-caisse">Logiciel de caisse</label>
                   <select id="cs-caisse" value={String(f.caisse_logiciel)} onChange={(e) => set("caisse_logiciel", e.target.value)}>
                     <option value="">—</option>
-                    {LOGICIELS_CAISSE.map((l) => (
-                      <option key={l}>{l}</option>
+                    {CAISSES.map((c) => (
+                      <option key={c.cle} value={c.cle}>
+                        {c.nom}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -370,6 +374,14 @@ function Fiche({ id, onClose, onSaved }: { id: string; onClose: () => void; onSa
                   </select>
                 </div>
               </div>
+              {d.caisse && (
+                <p className="hint" style={{ margin: 0 }}>
+                  Demandée le {new Date(d.caisse.demande_at).toLocaleDateString("fr-FR")}
+                  {d.caisse.identifiant ? ` · identifiant ${d.caisse.identifiant}` : ""}
+                  {d.caisse.derniere_synchro ? ` · dernier import ${new Date(d.caisse.derniere_synchro).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}` : ""} · {d.usage.ventes} vente(s) importée(s)
+                  {d.caisse.derniere_erreur ? ` · erreur : ${d.caisse.derniere_erreur}` : ""}
+                </p>
+              )}
               {champ("caisse_note", "Note technique (identifiant marchand, contact éditeur…)")}
 
               <h3 className="console-h">Modules visibles pour le client</h3>

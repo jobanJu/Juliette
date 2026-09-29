@@ -7,6 +7,7 @@ import { ajouterJours, depuisIso, iso } from "@/lib/planning";
 import { minutesService, services } from "@/lib/pointage";
 import type { PointageBrut } from "@/lib/pointage";
 import type { Evenement } from "@/lib/evenements";
+import { caisse } from "@/lib/caisses";
 import { caParJour, coutMatiere, eur, pct, prevision, topVentes, totalTTC, TVA_SUR_PLACE } from "@/lib/finance";
 import type { BonVendu } from "@/lib/finance";
 
@@ -60,9 +61,18 @@ export default function Finance() {
       directeur ? sb.from("comptes_remuneration").select("compte_id, taux_brut").eq("etablissement_id", e) : null,
       sb.from("evenements").select("id, nom, date, date_fin, lieu, type, sens, impact, note").eq("etablissement_id", e).lte("date", ajouterJours(aujourdhui, 7)).gte("date", ajouterJours(aujourdhui, -30)),
       sb.from("reservations").select("date, couverts, statut").eq("etablissement_id", e).gte("date", aujourdhui).lte("date", ajouterJours(aujourdhui, 6)).in("statut", ["confirmee", "arrivee"]),
-    ]).then(([b, pr, mc, pe, ac, po, tx, ev, rs]) => {
+      // Encaissements importés d'une caisse externe (SumUp, Square…) : un « bon » par encaissement.
+      sb.from("ventes_caisse").select("id, vendu_at, montant_centimes, source").eq("etablissement_id", e).gte("vendu_at", minDeb).lt("vendu_at", finTs).limit(20000),
+    ]).then(([b, pr, mc, pe, ac, po, tx, ev, rs, vc]) => {
       if (!vivant) return;
-      const tous = (b.data ?? []) as BonVendu[];
+      const externes: BonVendu[] = ((vc.data ?? []) as { id: string; vendu_at: string; montant_centimes: number; source: string }[]).map((v) => ({
+        id: v.id,
+        updated_at: v.vendu_at,
+        type_commande: "caisse",
+        couverts: 0,
+        lignes: [{ produitId: `caisse:${v.source}`, nom: `Encaissement ${caisse(v.source)?.nom ?? v.source}`, quantite: 1, prixCentimes: v.montant_centimes }],
+      }));
+      const tous = [...((b.data ?? []) as BonVendu[]), ...externes];
       setD({
         bons: tous.filter((x) => x.updated_at >= deb),
         historique: tous,
@@ -113,7 +123,8 @@ export default function Finance() {
   }, [d]);
 
   const serie = useMemo(() => (d ? caParJour(d.bons, jours).map((x) => ({ ...x, ht: x.ttc / (1 + TVA_SUR_PLACE) })) : []), [d, jours]);
-  const top = useMemo(() => (d ? topVentes(d.bons).slice(0, 8) : []), [d]);
+  // Les encaissements de caisse externe n'ont pas de détail produit : exclus du classement.
+  const top = useMemo(() => (d ? topVentes(d.bons.filter((b) => b.type_commande !== "caisse")).slice(0, 8) : []), [d]);
   const prev = useMemo(() => {
     if (!d) return [];
     const histo = caParJour(d.historique, Array.from({ length: 56 }, (_, i) => ajouterJours(aujourdhui, -56 + i)));
