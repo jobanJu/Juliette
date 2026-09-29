@@ -8,6 +8,7 @@ import { CONSERVATIONS, etapeRefroidissementConforme, formatTemp, numeroLot, PRO
 import type { Enregistrement, Etape, LigneProduction, Production as Fiche } from "@/lib/haccp";
 import type { Ingredient } from "@/lib/fiches";
 import PhotoHaccp, { envoyerPhoto } from "@/components/haccp/Photo";
+import Camera from "@/components/Camera";
 
 type Props = {
   etablissementId: string;
@@ -194,6 +195,7 @@ function FicheProduction({ e, etablissementId, etablissementNom, onSaved, imprim
   const [f, setF] = useState<Fiche>(e.data);
   const [envoi, setEnvoi] = useState(false);
   const [photoEnvoi, setPhotoEnvoi] = useState<number | "fiche" | null>(null);
+  const [camera, setCamera] = useState<number | "fiche" | null>(null);
   const modifie = JSON.stringify(f) !== JSON.stringify(e.data);
 
   const maj = (c: Partial<Fiche>) => setF((x) => ({ ...x, ...c }));
@@ -207,8 +209,8 @@ function FicheProduction({ e, etablissementId, etablissementNom, onSaved, imprim
     onSaved(error ? "Enregistrement refusé" : message);
   }
 
-  async function photo(cible: number | "fiche", fichier?: File) {
-    if (!fichier) return;
+  async function photo(cible: number | "fiche", fichier: File) {
+    setCamera(null);
     setPhotoEnvoi(cible);
     try {
       const chemin = await envoyerPhoto(etablissementId, "production", fichier);
@@ -276,10 +278,9 @@ function FicheProduction({ e, etablissementId, etablissementNom, onSaved, imprim
                   {l.photo ? (
                     <PhotoHaccp chemin={l.photo} className="prod-vignette" alt={l.produit} />
                   ) : (
-                    <label className="prod-photo-btn" title="Photographier l'étiquette">
+                    <button className="prod-photo-btn" title="Photographier l'étiquette" onClick={() => setCamera(i)} disabled={photoEnvoi !== null}>
                       {photoEnvoi === i ? "…" : "📷"}
-                      <input type="file" accept="image/*" capture="environment" hidden onChange={(x) => photo(i, x.target.files?.[0])} />
-                    </label>
+                    </button>
                   )}
                 </td>
                 <td>
@@ -352,11 +353,18 @@ function FicheProduction({ e, etablissementId, etablissementNom, onSaved, imprim
         <input value={f.remarque ?? ""} onChange={(x) => maj({ remarque: x.target.value || undefined })} placeholder="Action corrective, incident…" />
       </div>
 
+      {camera !== null && (
+        <Camera
+          titre={camera === "fiche" ? `Photo : ${f.recette}` : `Étiquette : ${f.lignes[camera]?.produit || "produit"}`}
+          onCapture={(fichier) => photo(camera, fichier)}
+          onClose={() => setCamera(null)}
+        />
+      )}
+
       <div className="prod-actions">
-        <label className="btn" title="Photo de la préparation">
+        <button className="btn" title="Photo de la préparation" onClick={() => setCamera("fiche")} disabled={photoEnvoi !== null}>
           {photoEnvoi === "fiche" ? "Envoi…" : f.photo ? "📷 Changer la photo" : "📷 Photo de la préparation"}
-          <input type="file" accept="image/*" capture="environment" hidden onChange={(x) => photo("fiche", x.target.files?.[0])} />
-        </label>
+        </button>
         {f.photo && <PhotoHaccp chemin={f.photo} className="prod-vignette" alt={f.recette} />}
         <span style={{ flex: 1 }} />
         <button className="btn" onClick={() => onImprimer(e.id)}>

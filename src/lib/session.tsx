@@ -82,11 +82,23 @@ async function chargerSites() {
 /** Droits fins qui ne sont pas des pages : réglages d'un module, historique, etc. */
 const DROITS_FINS = ["haccp-parametres", "haccp-historique", "configuration-commandes"];
 
+/** Modules toujours visibles, même si l'établissement masque le reste. */
+export const MODULES_ESSENTIELS = ["dashboard", "parametres", "accreditations"];
+
 async function chargerModules(etablissementId: string, role: Role): Promise<Set<string>> {
-  const cles = [...MODULES.map((m) => m.module), ...DROITS_FINS];
-  if (role === "directeur") return new Set(cles);
   const sb = getSupabaseClient();
   if (!sb) return new Set(["dashboard"]);
+  // Modules que l'établissement a choisi de ne pas utiliser : retirés pour tout le monde.
+  const { data: etab } = await sb.from("etablissements").select("modules_masques").eq("id", etablissementId).maybeSingle();
+  const masques = new Set(((etab?.modules_masques ?? []) as string[]).filter((m) => !MODULES_ESSENTIELS.includes(m)));
+  const autorises = await droitsDe(sb, etablissementId, role);
+  for (const m of masques) autorises.delete(m);
+  return autorises;
+}
+
+async function droitsDe(sb: NonNullable<ReturnType<typeof getSupabaseClient>>, etablissementId: string, role: Role): Promise<Set<string>> {
+  const cles = [...MODULES.map((m) => m.module), ...DROITS_FINS];
+  if (role === "directeur") return new Set(cles);
   const reponses = await Promise.all(
     cles.map((cle) =>
       sb.rpc("acces_module_de", { p_etablissement_id: etablissementId, p_module: cle }).then((r) => [cle, r.data === true] as const),

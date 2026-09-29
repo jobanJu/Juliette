@@ -10,7 +10,7 @@
 
 import { iso } from "@/lib/planning";
 
-export type TypeEnregistrement = "temperature" | "nettoyage" | "refroidissement" | "tracabilite" | "production";
+export type TypeEnregistrement = "temperature" | "nettoyage" | "refroidissement" | "tracabilite" | "production" | "huile" | "cuisson";
 
 export type Enregistrement<D = Record<string, unknown>> = {
   id: string;
@@ -41,7 +41,7 @@ export type Tache = {
 
 export type Temperature = { equipement_id: string; equipement: string; valeur: number; min: number; max: number; conforme: boolean; action?: string };
 export type Nettoyage = { tache_id: string; element: string; zone: string; frequence: Tache["frequence"]; periode: string; remarque?: string; non_fait?: boolean };
-export type Refroidissement = { produit: string; debut_at: string; temp_debut: number; fin_at?: string; temp_fin?: number; conforme?: boolean; action?: string };
+export type Refroidissement = { produit: string; quantite?: string; debut_at: string; temp_debut: number; fin_at?: string; temp_fin?: number; conforme?: boolean; action?: string };
 export type Etiquette = { produit: string; lot: string; fabrique_le: string; dlc: string; jours: number; quantite?: string; conservation?: string; categorie?: string };
 
 /** Traçabilité par photo : l'étiquette du produit reçu ou entamé, et ce qu'on en relève. */
@@ -50,6 +50,53 @@ export type TracabiliteConfig = { produit: boolean; lot: boolean; dlc: boolean }
 export const TRACABILITE_DEFAUT: TracabiliteConfig = { produit: true, lot: true, dlc: true };
 
 export const estTracePhoto = (d: unknown): d is TracePhoto => (d as TracePhoto)?.origine === "photo";
+
+/** Huiles de friture : contrôles, filtrations, changements et collectes par le prestataire. */
+export type Friteuse = { id: string; nom: string; capacite_l?: number };
+export type Prestataire = { nom: string; contact?: string; telephone?: string; email?: string; adresse?: string; frequence?: string; note?: string };
+export type HuilesConfig = { friteuses: Friteuse[]; seuil_polaires: number; prestataire: Prestataire };
+export type ActionHuile = "controle" | "filtration" | "changement" | "collecte";
+export type Huile = { friteuse_id?: string; friteuse?: string; action: ActionHuile; polaires?: number; temperature?: number; conforme?: boolean; litres?: number; bordereau?: string; remarque?: string };
+
+/** Réglementation : une huile de friture est à changer dès 25 % de composés polaires. */
+export const SEUIL_POLAIRES = 25;
+export const TEMP_FRITURE_MAX = 180;
+export const HUILES_DEFAUT: HuilesConfig = { friteuses: [], seuil_polaires: SEUIL_POLAIRES, prestataire: { nom: "" } };
+export const ACTIONS_HUILE: Record<ActionHuile, { label: string; icone: string }> = {
+  controle: { label: "Contrôle", icone: "🧪" },
+  filtration: { label: "Filtration", icone: "⏚" },
+  changement: { label: "Changement d'huile", icone: "♻" },
+  collecte: { label: "Collecte prestataire", icone: "🚚" },
+};
+
+export function huileConforme(polaires: number | undefined, temperature: number | undefined, seuil: number) {
+  if (polaires == null && temperature == null) return undefined;
+  return (polaires == null || polaires < seuil) && (temperature == null || temperature <= TEMP_FRITURE_MAX);
+}
+
+/** Points de cuisson : température à cœur minimale par catégorie de produit (réglable). */
+export type CategorieCuisson = { id: string; nom: string; seuil: number };
+export type Cuisson = { produit: string; categorie: string; seuil: number; valeur: number; conforme: boolean; action?: string };
+export const CUISSON_DEFAUT: CategorieCuisson[] = [
+  { id: "volaille", nom: "Volaille", seuil: 74 },
+  { id: "hache", nom: "Viande hachée / steak haché", seuil: 70 },
+  { id: "porc", nom: "Porc", seuil: 70 },
+  { id: "poisson", nom: "Poisson", seuil: 63 },
+  { id: "oeufs", nom: "Préparation à base d'œufs", seuil: 70 },
+  { id: "rechauffe", nom: "Plat remis en température", seuil: 63 },
+];
+
+/** Rubriques HACCP que l'établissement peut masquer (la vue du jour et le registre restent). */
+export const RUBRIQUES_HACCP = [
+  { cle: "temperatures", label: "Températures" },
+  { cle: "tracabilite", label: "Traçabilité" },
+  { cle: "etiquettes", label: "Étiquettes DLC" },
+  { cle: "nettoyage", label: "Plan de nettoyage" },
+  { cle: "refroidissement", label: "Refroidissement" },
+  { cle: "cuisson", label: "Points de cuisson" },
+  { cle: "huiles", label: "Huiles de friture" },
+  { cle: "suivi-production", label: "Suivi production" },
+] as const;
 
 /** Fiche de fabrication (suivi de production). */
 export type LigneProduction = { produit: string; quantite: string; lot: string; dlc: string; photo?: string };

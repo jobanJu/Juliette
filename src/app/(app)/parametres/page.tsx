@@ -3,14 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabase";
-import { initiales, nomComplet, ROLE_LABEL, useConnecte, useSession } from "@/lib/session";
+import { initiales, MODULES_ESSENTIELS, nomComplet, ROLE_LABEL, useConnecte, useSession } from "@/lib/session";
+import { MODULES, SECTIONS } from "@/lib/modules";
 import { emailValide } from "@/lib/personnel";
 import { MODULES_ACCES } from "@/lib/accreditations";
 import Accreditations from "@/components/parametres/Accreditations";
 import { useDispositionMenu } from "@/lib/preferences";
 
-type Onglet = "compte" | "acces" | "restaurant" | "pointeuse" | "emails" | "accreditations";
-const ONGLETS: Onglet[] = ["compte", "acces", "restaurant", "pointeuse", "emails", "accreditations"];
+type Onglet = "compte" | "acces" | "restaurant" | "modules" | "pointeuse" | "emails" | "accreditations";
+const ONGLETS: Onglet[] = ["compte", "acces", "restaurant", "modules", "pointeuse", "emails", "accreditations"];
 
 type Etab = {
   id: string;
@@ -67,7 +68,7 @@ export default function Parametres() {
   ];
   const etab: [Onglet, string][] = [
     ["restaurant", "Restaurant"],
-    ...(directeur ? ([["pointeuse", "Pointeuse"], ["emails", "E-mails automatiques"]] as [Onglet, string][]) : []),
+    ...(directeur ? ([["modules", "Modules"], ["pointeuse", "Pointeuse"], ["emails", "E-mails automatiques"]] as [Onglet, string][]) : []),
     ...(modules.has("accreditations") ? ([["accreditations", "Accréditations"]] as [Onglet, string][]) : []),
   ];
   const bouton = ([k, l]: [Onglet, string]) => (
@@ -110,6 +111,8 @@ export default function Parametres() {
         <Restaurant onToast={setToast} />
       ) : onglet === "pointeuse" ? (
         <Pointeuse onToast={setToast} />
+      ) : onglet === "modules" ? (
+        <ModulesEtablissement onToast={setToast} />
       ) : onglet === "accreditations" ? (
         <Accreditations />
       ) : (
@@ -121,6 +124,76 @@ export default function Parametres() {
         </div>
       )}
     </>
+  );
+}
+
+function ModulesEtablissement({ onToast }: { onToast: (m: string) => void }) {
+  const { etablissement } = useConnecte();
+  const { changerEtablissement } = useSession();
+  const sb = getSupabaseClient()!;
+  const [masques, setMasques] = useState<Set<string> | null>(null);
+  const [envoi, setEnvoi] = useState(false);
+
+  useEffect(() => {
+    sb.from("etablissements")
+      .select("modules_masques")
+      .eq("id", etablissement.id)
+      .single()
+      .then(({ data }) => setMasques(new Set((data?.modules_masques ?? []) as string[])));
+  }, [sb, etablissement.id]);
+
+  if (!masques) return <div className="skeleton" style={{ height: 300, borderRadius: 14 }} />;
+  const choix = MODULES.filter((m) => !MODULES_ESSENTIELS.includes(m.module));
+
+  async function enregistrer() {
+    setEnvoi(true);
+    const { error } = await sb.from("etablissements").update({ modules_masques: [...masques!] }).eq("id", etablissement.id);
+    setEnvoi(false);
+    if (error) return onToast("Enregistrement refusé : réservé au directeur");
+    onToast("Modules de l'établissement mis à jour");
+    changerEtablissement(etablissement.id);
+  }
+
+  return (
+    <section className="card">
+      <div className="card-head">
+        <h2>Modules utilisés par l&apos;établissement</h2>
+        <button className="btn btn-primary" onClick={enregistrer} disabled={envoi}>
+          {envoi ? "Enregistrement…" : "Enregistrer"}
+        </button>
+      </div>
+      <p className="hint" style={{ marginTop: 0 }}>
+        Décoche ce que tu n&apos;utilises pas : le module disparaît du menu pour toute l&apos;équipe. Rien n&apos;est effacé, tu peux le réactiver à tout moment. Le détail par personne se règle dans Accréditations.
+      </p>
+      <div className="modules-choix">
+        {choix.map((m) => {
+          const actif = !masques.has(m.module);
+          return (
+            <label key={m.module} className={`module-choix${actif ? " on" : ""}`}>
+              <input
+                type="checkbox"
+                checked={actif}
+                onChange={() =>
+                  setMasques((s) => {
+                    const n = new Set(s);
+                    if (actif) n.add(m.module);
+                    else n.delete(m.module);
+                    return n;
+                  })
+                }
+              />
+              <span className="ic" aria-hidden>
+                {m.icon}
+              </span>
+              <span className="main-txt">
+                <b>{m.label}</b>
+                <small>{m.section ? `${SECTIONS[m.section].label} · ` : ""}{m.sub}</small>
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

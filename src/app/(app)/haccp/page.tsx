@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { initiales, useConnecte } from "@/lib/session";
 import { ajouterJours, iso } from "@/lib/planning";
-import { COLONNES_ENREG, creneauReleve, estTracePhoto, joursRestants, passages, PRODUITS_DLC_DEFAUT, REFROID_DUREE_MAX_MIN, TRACABILITE_DEFAUT } from "@/lib/haccp";
-import type { Enregistrement, Equipement, Etiquette, Nettoyage as Fait, Production as FicheProduction, ProduitDlcConfig, Refroidissement, Tache, Temperature, TracabiliteConfig, TracePhoto, TypeEnregistrement } from "@/lib/haccp";
+import { COLONNES_ENREG, creneauReleve, CUISSON_DEFAUT, estTracePhoto, HUILES_DEFAUT, joursRestants, passages, PRODUITS_DLC_DEFAUT, REFROID_DUREE_MAX_MIN, RUBRIQUES_HACCP, TRACABILITE_DEFAUT } from "@/lib/haccp";
+import type { CategorieCuisson, Cuisson as ReleveCuisson, Enregistrement, Equipement, Huile, HuilesConfig, Etiquette, Nettoyage as Fait, Production as FicheProduction, ProduitDlcConfig, Refroidissement, Tache, Temperature, TracabiliteConfig, TracePhoto, TypeEnregistrement } from "@/lib/haccp";
 import Temperatures from "@/components/haccp/Temperatures";
 import ModalEquipements from "@/components/haccp/ModalEquipements";
 import ModalProduitsDlc from "@/components/haccp/ModalProduitsDlc";
@@ -15,15 +15,28 @@ import Production from "@/components/haccp/Production";
 import Refroidissements from "@/components/haccp/Refroidissements";
 import Etiquettes from "@/components/haccp/Etiquettes";
 import Registre from "@/components/haccp/Registre";
+import Huiles, { ModalHuiles } from "@/components/haccp/Huiles";
+import Cuisson, { ModalCuisson } from "@/components/haccp/Cuisson";
+import ModalRubriques from "@/components/haccp/ModalRubriques";
 
-type Onglet = "temperatures" | "tracabilite" | "etiquettes" | "nettoyage" | "refroidissement" | "suivi-production" | "registre" | "jour";
+type Onglet = "temperatures" | "tracabilite" | "etiquettes" | "nettoyage" | "refroidissement" | "cuisson" | "huiles" | "suivi-production" | "registre" | "jour";
 const JOURS_CHARGES = 90;
 
-type Donnees = { equipements: Equipement[]; plan: Tache[]; enregs: Enregistrement[]; produitsDlc: ProduitDlcConfig[]; tracabilite: TracabiliteConfig };
-type Reglage = "equipements" | "dlc" | "tracabilite" | "nettoyage" | null;
+type Donnees = {
+  equipements: Equipement[];
+  plan: Tache[];
+  enregs: Enregistrement[];
+  produitsDlc: ProduitDlcConfig[];
+  tracabilite: TracabiliteConfig;
+  huiles: HuilesConfig;
+  cuisson: CategorieCuisson[];
+  masquees: string[];
+  recettes: string[];
+};
+type Reglage = "equipements" | "dlc" | "tracabilite" | "nettoyage" | "huiles" | "cuisson" | "rubriques" | null;
 
 /** Rubrique du registre qui correspond à l'onglet ouvert (bouton « Historique »). */
-const TYPE_ONGLET: Partial<Record<Onglet, TypeEnregistrement>> = { temperatures: "temperature", tracabilite: "tracabilite", etiquettes: "tracabilite", nettoyage: "nettoyage", refroidissement: "refroidissement", "suivi-production": "production" };
+const TYPE_ONGLET: Partial<Record<Onglet, TypeEnregistrement>> = { temperatures: "temperature", tracabilite: "tracabilite", etiquettes: "tracabilite", nettoyage: "nettoyage", refroidissement: "refroidissement", cuisson: "cuisson", huiles: "huile", "suivi-production": "production" };
 
 export default function Haccp() {
   const { compte, etablissement, modules } = useConnecte();
@@ -59,7 +72,8 @@ export default function Haccp() {
       // Refroidissements jamais clôturés, même anciens : ils doivent rester visibles.
       sb.from("haccp_enregistrements").select(COLONNES_ENREG).eq("etablissement_id", etablissement.id).eq("type", "refroidissement").is("data->>fin_at", null).lt("created_at", depuis),
       sb.from("haccp_enregistrements").select(COLONNES_ENREG).eq("etablissement_id", etablissement.id).eq("type", "production").is("data->>cloture_at", null).lt("created_at", depuis),
-    ]).then(([c, e, r, pr]) => {
+      sb.from("fiches_techniques").select("nom").eq("etablissement_id", etablissement.id).order("nom"),
+    ]).then(([c, e, r, pr, ft]) => {
       if (!vivant) return;
       if (c.error || e.error) return setErreur(true);
       const conf = new Map((c.data ?? []).map((x) => [x.cle, x.data]));
@@ -69,6 +83,10 @@ export default function Haccp() {
         enregs: [...((r.data ?? []) as Enregistrement[]), ...((pr.data ?? []) as Enregistrement[]), ...((e.data ?? []) as Enregistrement[])],
         produitsDlc: (conf.get("produits_dlc") as ProduitDlcConfig[]) ?? PRODUITS_DLC_DEFAUT,
         tracabilite: { ...TRACABILITE_DEFAUT, ...((conf.get("tracabilite") as Partial<TracabiliteConfig>) ?? {}) },
+        huiles: { ...HUILES_DEFAUT, ...((conf.get("huiles") as Partial<HuilesConfig>) ?? {}) },
+        cuisson: (conf.get("cuisson") as CategorieCuisson[]) ?? CUISSON_DEFAUT,
+        masquees: (conf.get("rubriques") as string[]) ?? [],
+        recettes: (ft.data ?? []).map((x) => x.nom as string),
       });
       setErreur(false);
       setMaintenant(Date.now());
@@ -93,6 +111,8 @@ export default function Haccp() {
       tracabilite: e.filter((x) => x.type === "tracabilite" && !estTracePhoto(x.data)) as Enregistrement<Etiquette>[],
       photos: e.filter((x) => x.type === "tracabilite" && estTracePhoto(x.data)) as Enregistrement<TracePhoto>[],
       production: e.filter((x) => x.type === "production") as Enregistrement<FicheProduction>[],
+      huile: e.filter((x) => x.type === "huile") as Enregistrement<Huile>[],
+      cuisson: e.filter((x) => x.type === "cuisson") as Enregistrement<ReleveCuisson>[],
     };
   }, [d]);
 
@@ -132,19 +152,22 @@ export default function Haccp() {
   }, [d, parType, maintenant]);
 
   // Navigation calquée sur la maquette HACCP ; l'aperçu du jour reste accessible en dernier.
+  // Les rubriques masquées par l'établissement (Paramètres → Rubriques) disparaissent des onglets.
+  const masquees = new Set(d?.masquees ?? []);
   const onglets: [Onglet, string][] = [
-    ["temperatures", "Températures"],
-    ["tracabilite", "Traçabilité"],
-    ["etiquettes", "Étiquettes DLC"],
-    ["nettoyage", "Plan de nettoyage"],
-    ["refroidissement", "Refroidissement"],
-    ["suivi-production", "Suivi production"],
+    ...RUBRIQUES_HACCP.filter((x) => !masquees.has(x.cle)).map((x) => [x.cle, x.label] as [Onglet, string]),
     ...(historique ? [["registre", "Registre"] as [Onglet, string]] : []),
     ["jour", "Vue du jour"],
   ];
+  const ongletVisible = onglets.some(([k]) => k === onglet) ? onglet : onglets[0][0];
+  // Produits proposés à la saisie : fiches techniques + produits déjà saisis.
+  const suggestionsProduits = useMemo(
+    () => [...new Set([...(d?.recettes ?? []), ...parType.refroidissement.map((x) => x.data.produit), ...parType.cuisson.map((x) => x.data.produit)])].sort((a, b) => a.localeCompare(b)),
+    [d, parType],
+  );
 
   const communs = { etablissementId: etablissement.id, compteId: compte.id, onSaved: sauve };
-  const reglageOnglet: Reglage = onglet === "temperatures" || onglet === "jour" ? "equipements" : onglet === "etiquettes" ? "dlc" : onglet === "tracabilite" ? "tracabilite" : onglet === "nettoyage" ? "nettoyage" : null;
+  const reglageOnglet: Reglage = ({ temperatures: "equipements", jour: "equipements", etiquettes: "dlc", tracabilite: "tracabilite", nettoyage: "nettoyage", huiles: "huiles", cuisson: "cuisson" } as Partial<Record<Onglet, Reglage>>)[ongletVisible] ?? null;
   const fermerReglage = (m: string) => {
     setReglage(null);
     sauve(m);
@@ -159,11 +182,11 @@ export default function Haccp() {
           <p>Températures, nettoyage, refroidissements et traçabilité : ton plan de maîtrise sanitaire, à jour et prêt pour un contrôle.</p>
         </div>
         <div className="haccp-page-actions">
-          {historique && onglet !== "registre" && onglet !== "suivi-production" && (
+          {historique && ongletVisible !== "registre" && ongletVisible !== "suivi-production" && (
             <button
               className="btn"
               onClick={() => {
-                setTypeRegistre(TYPE_ONGLET[onglet] ?? "tout");
+                setTypeRegistre(TYPE_ONGLET[ongletVisible] ?? "tout");
                 setOnglet("registre");
               }}
             >
@@ -175,13 +198,18 @@ export default function Haccp() {
               ⚙ Paramètres
             </button>
           )}
+          {parametres && (
+            <button className="btn" onClick={() => setReglage("rubriques")} title="Choisir les rubriques HACCP affichées">
+              ☰ Rubriques
+            </button>
+          )}
         </div>
       </div>
 
       <div className="tabs-scroll print-hide">
         <div className="haccp-tabs" role="tablist" aria-label="Rubriques HACCP">
           {onglets.map(([k, l]) => (
-            <button key={k} role="tab" aria-selected={onglet === k} className={onglet === k ? "on" : ""} onClick={() => setOnglet(k)}>
+            <button key={k} role="tab" aria-selected={ongletVisible === k} className={ongletVisible === k ? "on" : ""} onClick={() => setOnglet(k)}>
               {l}
             </button>
           ))}
@@ -192,7 +220,7 @@ export default function Haccp() {
 
       {!d || !resume ? (
         !erreur && <div className="skeleton" style={{ height: 240, borderRadius: 14 }} />
-      ) : onglet === "jour" ? (
+      ) : ongletVisible === "jour" ? (
         <div style={{ display: "grid", gap: 14 }}>
           <section className="haccp-mission" aria-label="Progression HACCP du jour">
             <div className="haccp-mission-main">
@@ -255,11 +283,11 @@ export default function Haccp() {
           {parType.refroidissement.some((r) => !r.data.fin_at) && <Refroidissements {...communs} liste={parType.refroidissement} enCoursSeulement />}
           <Nettoyage {...communs} parametres={parametres} plan={d.plan} faits={parType.nettoyage} duJour onConfigurer={() => setReglage("nettoyage")} />
         </div>
-      ) : onglet === "temperatures" ? (
+      ) : ongletVisible === "temperatures" ? (
         <Temperatures {...communs} equipements={d.equipements} releves={parType.temperature} gestion={parametres} historique={historique} onConfigurer={() => setReglage("equipements")} />
-      ) : onglet === "tracabilite" ? (
+      ) : ongletVisible === "tracabilite" ? (
         <Tracabilite {...communs} liste={parType.photos} config={d.tracabilite} />
-      ) : onglet === "etiquettes" ? (
+      ) : ongletVisible === "etiquettes" ? (
         <Etiquettes
           {...communs}
           etablissementNom={etablissement.nom}
@@ -269,21 +297,28 @@ export default function Haccp() {
           gestion={parametres}
           onConfigurer={() => setReglage("dlc")}
         />
-      ) : onglet === "nettoyage" ? (
+      ) : ongletVisible === "nettoyage" ? (
         <Nettoyage {...communs} parametres={parametres} plan={d.plan} faits={parType.nettoyage} onConfigurer={() => setReglage("nettoyage")} />
-      ) : onglet === "refroidissement" ? (
-        <Refroidissements {...communs} liste={parType.refroidissement} />
-      ) : onglet === "suivi-production" ? (
+      ) : ongletVisible === "refroidissement" ? (
+        <Refroidissements {...communs} liste={parType.refroidissement} suggestions={suggestionsProduits} />
+      ) : ongletVisible === "cuisson" ? (
+        <Cuisson {...communs} categories={d.cuisson} liste={parType.cuisson} suggestions={suggestionsProduits} parametres={parametres} onConfigurer={() => setReglage("cuisson")} />
+      ) : ongletVisible === "huiles" ? (
+        <Huiles {...communs} config={d.huiles} liste={parType.huile} parametres={parametres} onConfigurer={() => setReglage("huiles")} />
+      ) : ongletVisible === "suivi-production" ? (
         <Production {...communs} initiales={initiales(compte)} etablissementNom={etablissement.nom} liste={parType.production} historique={historique} />
       ) : (
         <Registre key={typeRegistre} liste={d.enregs} gestion={gestion} etablissementCode={etablissement.code} typeInitial={typeRegistre} onSaved={sauve} />
       )}
 
-      {onglet === "registre" && <p className="hint print-hide" style={{ marginTop: 10 }}>Le registre affiche les {JOURS_CHARGES} derniers jours (depuis le {new Date(ajouterJours(iso(new Date()), -JOURS_CHARGES)).toLocaleDateString("fr-FR")}).</p>}
+      {ongletVisible === "registre" && <p className="hint print-hide" style={{ marginTop: 10 }}>Le registre affiche les {JOURS_CHARGES} derniers jours (depuis le {new Date(ajouterJours(iso(new Date()), -JOURS_CHARGES)).toLocaleDateString("fr-FR")}).</p>}
 
       {d && reglage === "equipements" && <ModalEquipements etablissementId={etablissement.id} equipements={d.equipements} onClose={() => setReglage(null)} onSaved={fermerReglage} />}
       {d && reglage === "dlc" && <ModalProduitsDlc etablissementId={etablissement.id} catalogue={d.produitsDlc} onClose={() => setReglage(null)} onSaved={fermerReglage} />}
       {d && reglage === "tracabilite" && <ModalTracabilite etablissementId={etablissement.id} config={d.tracabilite} onClose={() => setReglage(null)} onSaved={fermerReglage} />}
+      {d && reglage === "huiles" && <ModalHuiles etablissementId={etablissement.id} config={d.huiles} onClose={() => setReglage(null)} onSaved={fermerReglage} />}
+      {d && reglage === "cuisson" && <ModalCuisson etablissementId={etablissement.id} categories={d.cuisson} onClose={() => setReglage(null)} onSaved={fermerReglage} />}
+      {d && reglage === "rubriques" && <ModalRubriques etablissementId={etablissement.id} masquees={d.masquees} onClose={() => setReglage(null)} onSaved={fermerReglage} />}
       {d && reglage === "nettoyage" && <ModalPlan etablissementId={etablissement.id} plan={d.plan} onClose={() => setReglage(null)} onSaved={fermerReglage} />}
 
       {toast && (

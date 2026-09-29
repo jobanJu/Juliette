@@ -11,11 +11,14 @@ type Props = {
   compteId: string;
   liste: Enregistrement<Refroidissement>[];
   enCoursSeulement?: boolean;
+  /** Produits proposés : fiches techniques et produits déjà refroidis. */
+  suggestions?: string[];
   onSaved: (message: string) => void;
 };
 
 export default function Refroidissements(p: Props) {
   const [produit, setProduit] = useState("");
+  const [quantite, setQuantite] = useState("");
   const [temp, setTemp] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -35,11 +38,12 @@ export default function Refroidissements(p: Props) {
     if (!produit.trim()) return setErreur("Quel produit refroidis-tu ?");
     if (!Number.isFinite(t)) return setErreur("Indique la température à cœur au départ.");
     setEnvoi(true);
-    const data: Refroidissement = { produit: produit.trim(), debut_at: new Date().toISOString(), temp_debut: t };
+    const data: Refroidissement = { produit: produit.trim(), ...(quantite.trim() ? { quantite: quantite.trim() } : {}), debut_at: new Date().toISOString(), temp_debut: t };
     const { error } = await getSupabaseClient()!.from("haccp_enregistrements").insert({ etablissement_id: p.etablissementId, compte_id: p.compteId, type: "refroidissement", data });
     setEnvoi(false);
     if (error) return setErreur("Enregistrement refusé.");
     setProduit("");
+    setQuantite("");
     setTemp("");
     p.onSaved(`Refroidissement lancé : ${data.produit}`);
   }
@@ -65,7 +69,13 @@ export default function Refroidissements(p: Props) {
           </div>
         )}
         <div className="refroid-form">
-          <input value={produit} onChange={(e) => setProduit(e.target.value)} placeholder="Produit (ex. : sauce bolognaise, 5 L)" aria-label="Produit" />
+          <input value={produit} onChange={(e) => setProduit(e.target.value)} placeholder="Produit refroidi (ex. : sauce bolognaise)" aria-label="Produit refroidi" list="refroid-produits" />
+          <datalist id="refroid-produits">
+            {(p.suggestions ?? []).map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
+          <input value={quantite} onChange={(e) => setQuantite(e.target.value)} placeholder="Quantité (ex. 5 L)" aria-label="Quantité" style={{ maxWidth: 150 }} />
           <span className="temp-input" style={{ maxWidth: 150 }}>
             <input inputMode="decimal" value={temp} onChange={(e) => setTemp(e.target.value)} placeholder="65" aria-label="Température de départ" />
             <span>°C</span>
@@ -109,6 +119,7 @@ export default function Refroidissements(p: Props) {
                       <tr key={r.id}>
                         <td>
                           <b style={{ fontWeight: 600 }}>{r.data.produit}</b>
+                          {r.data.quantite && <small className="hint"> · {r.data.quantite}</small>}
                           {r.data.action && <small className="justif">Action : {r.data.action}</small>}
                         </td>
                         <td>
@@ -161,7 +172,7 @@ function EnCours({ r, maintenant, onSaved }: { r: Enregistrement<Refroidissement
   return (
     <div className="refroid-row">
       <span className="main-txt">
-        <b>{r.data.produit}</b>
+        <b>{r.data.produit}{r.data.quantite ? ` · ${r.data.quantite}` : ""}</b>
         <small>
           lancé à {new Date(r.data.debut_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} à {formatTemp(r.data.temp_debut)} · {r.auteur}
         </small>

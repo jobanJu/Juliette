@@ -4,11 +4,11 @@ import { useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { ajouterJours, depuisIso, iso } from "@/lib/planning";
 import { csv } from "@/lib/pointage";
-import { CONSERVATIONS, estTracePhoto, etapeRefroidissementConforme, formatTemp, refroidissementConforme } from "@/lib/haccp";
-import type { Enregistrement, Etiquette, Nettoyage, Production, Refroidissement, Temperature, TypeEnregistrement } from "@/lib/haccp";
+import { ACTIONS_HUILE, CONSERVATIONS, estTracePhoto, etapeRefroidissementConforme, formatTemp, refroidissementConforme } from "@/lib/haccp";
+import type { Cuisson, Enregistrement, Etiquette, Huile, Nettoyage, Production, Refroidissement, Temperature, TypeEnregistrement } from "@/lib/haccp";
 import PhotoHaccp from "@/components/haccp/Photo";
 
-const TYPES: Record<TypeEnregistrement, string> = { temperature: "Température", nettoyage: "Nettoyage", refroidissement: "Refroidissement", tracabilite: "Traçabilité", production: "Production" };
+const TYPES: Record<TypeEnregistrement, string> = { temperature: "Température", nettoyage: "Nettoyage", refroidissement: "Refroidissement", tracabilite: "Traçabilité", production: "Production", cuisson: "Cuisson", huile: "Huiles" };
 
 function detail(e: Enregistrement): { texte: string; conforme: boolean | null } {
   if (e.type === "temperature") {
@@ -26,6 +26,15 @@ function detail(e: Enregistrement): { texte: string; conforme: boolean | null } 
       texte: `${d.produit} : ${formatTemp(d.temp_debut)} → ${d.temp_fin != null ? formatTemp(d.temp_fin) : "en cours"}${d.fin_at ? ` en ${Math.round((new Date(d.fin_at).getTime() - new Date(d.debut_at).getTime()) / 60000)} min` : ""}${d.action ? ` · action : ${d.action}` : ""}`,
       conforme: ok,
     };
+  }
+  if (e.type === "cuisson") {
+    const d = e.data as Cuisson;
+    return { texte: `${d.produit} (${d.categorie}) : ${formatTemp(d.valeur)} à cœur (min. ${formatTemp(d.seuil)})${d.action ? ` · action : ${d.action}` : ""}`, conforme: d.conforme };
+  }
+  if (e.type === "huile") {
+    const d = e.data as Huile;
+    const mesures = [d.polaires != null && `${d.polaires} % polaires`, d.temperature != null && formatTemp(d.temperature), d.litres != null && `${d.litres} L`, d.bordereau && `bordereau ${d.bordereau}`].filter(Boolean).join(" · ");
+    return { texte: `${ACTIONS_HUILE[d.action].label}${d.friteuse ? ` · ${d.friteuse}` : ""}${mesures ? ` · ${mesures}` : ""}${d.remarque ? ` · ${d.remarque}` : ""}`, conforme: d.conforme ?? null };
   }
   if (e.type === "production") {
     const d = e.data as Production;

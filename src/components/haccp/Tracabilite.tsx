@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import Camera from "@/components/Camera";
 import Modal from "@/components/Modal";
 import { getSupabaseClient } from "@/lib/supabase";
 import { depuisIso, iso } from "@/lib/planning";
@@ -26,7 +27,6 @@ const CHAMPS: [keyof TracabiliteConfig, string][] = [
 // et DLC. Les champs obligatoires se règlent dans les paramètres.
 export default function Tracabilite(p: Props) {
   const sb = getSupabaseClient()!;
-  const refPhoto = useRef<HTMLInputElement>(null);
   const [fichier, setFichier] = useState<File | null>(null);
   const [apercu, setApercu] = useState<string | null>(null);
   const [champs, setChamps] = useState({ produit: "", lot: "", dlc: "" });
@@ -36,8 +36,7 @@ export default function Tracabilite(p: Props) {
   const aujourdhui = iso(new Date());
   const duJour = useMemo(() => p.liste.filter((e) => iso(new Date(e.created_at)) === aujourdhui).slice().reverse(), [p.liste, aujourdhui]);
 
-  function choisir(f: File | undefined) {
-    if (!f) return;
+  function choisir(f: File) {
     if (apercu) URL.revokeObjectURL(apercu);
     setFichier(f);
     setApercu(URL.createObjectURL(f));
@@ -48,7 +47,6 @@ export default function Tracabilite(p: Props) {
     if (apercu) URL.revokeObjectURL(apercu);
     setFichier(null);
     setApercu(null);
-    refPhoto.current?.click();
   }
 
   async function valider() {
@@ -76,7 +74,6 @@ export default function Tracabilite(p: Props) {
   return (
     <div className="trace-grid">
       <section className="card trace-capture">
-        <input ref={refPhoto} type="file" accept="image/*" capture="environment" hidden onChange={(e) => choisir(e.target.files?.[0])} />
         {apercu ? (
           <div className="trace-apercu">
             <img src={apercu} alt="Étiquette photographiée" />
@@ -85,11 +82,12 @@ export default function Tracabilite(p: Props) {
             </button>
           </div>
         ) : (
-          <button className="trace-objectif" onClick={() => refPhoto.current?.click()}>
-            <span aria-hidden>📷</span>
-            <b>Photographier l&apos;étiquette</b>
-            <small>Produit reçu ou entamé : l&apos;étiquette doit être lisible (lot, DLC).</small>
-          </button>
+          <>
+            <Camera inline onCapture={choisir} />
+            <p className="hint" style={{ margin: 0, textAlign: "center" }}>
+              Cadre l&apos;étiquette du produit reçu ou entamé : lot et DLC doivent être lisibles.
+            </p>
+          </>
         )}
 
         <div className="trace-champs">

@@ -1745,3 +1745,63 @@ tr.row-choisi td { background: var(--lavender); }
 .sugg-horaires { font-size: 13px; font-weight: 650; color: var(--ink); }
 .sugg-raison { grid-column: 3; font-size: 11.5px; color: var(--ink-2); }
 .modal:has(.sugg-liste) { max-width: 680px; }
+
+/* ── Caméra intégrée ── */
+.camera-scrim { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; background: #0d0b14f2; padding: 16px; }
+.camera { display: grid; gap: 14px; width: min(100%, 720px); }
+.camera-titre { color: #fff; font-weight: 650; text-align: center; }
+.camera-viseur { position: relative; overflow: hidden; border-radius: 16px; background: #000; aspect-ratio: 4 / 3; max-height: 70vh; }
+.camera-viseur video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.camera-viseur video.miroir { transform: scaleX(-1); }
+.camera-cadre { position: absolute; inset: 12% 10%; border: 2px solid #ffffffb3; border-radius: 14px; box-shadow: 0 0 0 999px #0000002e; pointer-events: none; }
+.camera-flash { position: absolute; inset: 0; background: #fff; opacity: .85; }
+.camera-info { position: absolute; inset: 0; display: grid; place-content: center; gap: 12px; padding: 20px; color: #fff; text-align: center; font-size: 13px; }
+.camera-info p { margin: 0; }
+.camera-commandes { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
+.camera-declencheur { width: 72px; height: 72px; border-radius: 50%; border: 5px solid #fff; background: var(--purple); box-shadow: 0 0 0 3px var(--purple); cursor: pointer; }
+.camera-declencheur:disabled { opacity: .4; cursor: default; }
+.camera-declencheur:active { transform: scale(.94); }
+.camera-rond { width: 52px; height: 52px; border-radius: 50%; border: 0; background: #ffffff26; color: #fff; font-size: 20px; cursor: pointer; }
+.camera-rond.vide { background: transparent; }
+.camera-inline .camera-commandes { padding: 0 4px; }
+.camera-inline .camera-rond { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
+.camera-inline .camera-rond.vide { border: 0; background: transparent; }
+@media (max-width: 600px) {
+  .camera-scrim { padding: 0; place-items: stretch; }
+  .camera:not(.camera-inline) { width: 100%; align-content: center; }
+  .camera:not(.camera-inline) .camera-viseur { border-radius: 0; aspect-ratio: 3 / 4; max-height: 76vh; }
+}
+
+/* ── HACCP : huiles de friture et points de cuisson ── */
+.huile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.huile-card { display: grid; gap: 12px; padding: 14px; border: 2px solid var(--purple-ink); border-radius: 14px; background: var(--card); }
+.huile-card.alerte { border-color: var(--red-ink); }
+.huile-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.huile-tete b { font-size: 16px; }
+.huile-tete small { color: var(--ink-2); font-weight: 600; }
+.huile-etat { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.huile-etat span { display: grid; gap: 2px; padding: 8px; border-radius: 10px; background: var(--paper); }
+.huile-etat small { font-size: 10.5px; color: var(--ink-2); font-weight: 600; }
+.huile-etat b { font-size: 12.5px; }
+.huile-alerte { padding: 8px 10px; border-radius: 10px; background: var(--red-ink); color: #fff; font-weight: 700; font-size: 13px; }
+.huile-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.huile-actions .btn { flex: 1 1 auto; }
+.presta { display: grid; gap: 8px; padding: 12px; border-radius: 12px; background: var(--paper); }
+.presta > div:first-child { display: grid; gap: 2px; }
+.presta b { font-size: 15px; }
+.presta small { color: var(--ink-2); }
+.presta-liens { display: flex; flex-wrap: wrap; gap: 8px; }
+.cuisson-saisie { display: grid; gap: 12px; }
+.cuisson-cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.cuisson-cats button { display: grid; gap: 2px; padding: 10px; border: 2px solid var(--line); border-radius: 12px; background: var(--card); cursor: pointer; text-align: left; }
+.cuisson-cats button b { font-size: 13px; }
+.cuisson-cats button small { font-size: 12px; font-weight: 650; color: var(--ink-2); }
+.cuisson-cats button.on { border-color: var(--purple); background: var(--lavender); }
+.field input.invalide { border-color: var(--red-ink); }
+
+/* ── Paramètres : modules de l'établissement ── */
+.modules-choix { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.module-choix { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; opacity: .6; }
+.module-choix.on { opacity: 1; border-color: #d9d0f5; background: var(--lavender); }
+.module-choix input { width: 20px; height: 20px; accent-color: var(--purple); }
+.module-choix .ic { width: 22px; text-align: center; font-size: 17px; color: var(--purple); }
