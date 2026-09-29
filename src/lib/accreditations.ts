@@ -31,10 +31,11 @@ export const MODULES_ACCES: { cle: string; label: string; groupe: string; sensib
   { cle: "reservations", label: "Réservations", groupe: "Salle" },
   { cle: "fiche-technique", label: "Fiches techniques", groupe: "Établissement" },
   { cle: "documentation", label: "Documentation", groupe: "Établissement" },
+  { cle: "outils", label: "Outils externes", groupe: "Établissement" },
   { cle: "accreditations", label: "Accréditations", groupe: "Établissement", sensible: true },
 ];
 
-const DEFAUT_RESPONSABLE = ["dashboard", "commandes-caisse", "configuration-commandes", "inventaire", "perte", "aide-commande", "reception", "evenements", "fiche-technique", "pointeuse", "planning", "messagerie", "equipe", "rh-conges", "reservations", "haccp", "haccp-parametres", "haccp-historique", "documentation"];
+const DEFAUT_RESPONSABLE = ["dashboard", "commandes-caisse", "configuration-commandes", "inventaire", "perte", "aide-commande", "reception", "evenements", "fiche-technique", "pointeuse", "planning", "messagerie", "equipe", "rh-conges", "reservations", "haccp", "haccp-parametres", "haccp-historique", "documentation", "outils"];
 const DEFAUT_SALARIE = ["dashboard", "commandes-caisse", "fiche-technique", "pointeuse", "planning", "messagerie", "equipe", "rh-conges", "reservations", "haccp", "documentation"];
 
 export function parDefaut(role: Role, module: string) {

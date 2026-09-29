@@ -1805,3 +1805,19 @@ tr.row-choisi td { background: var(--lavender); }
 .module-choix.on { opacity: 1; border-color: #d9d0f5; background: var(--lavender); }
 .module-choix input { width: 20px; height: 20px; accent-color: var(--purple); }
 .module-choix .ic { width: 22px; text-align: center; font-size: 17px; color: var(--purple); }
+
+/* ── Outils externes ── */
+.outils-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.outil-card { display: grid; align-content: start; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); box-shadow: var(--shadow); }
+.outil-tete { display: flex; align-items: center; gap: 12px; }
+.outil-logo { width: 42px; height: 42px; flex-shrink: 0; display: grid; place-items: center; border-radius: 12px; background: var(--purple); color: #fff; font-size: 19px; font-weight: 750; }
+.outil-tete b { font-size: 14.5px; }
+.outil-infos { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 0; padding: 10px; border-radius: 10px; background: var(--paper); font-size: 12.5px; }
+.outil-infos dt { color: var(--ink-2); font-weight: 600; }
+.outil-infos dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+.outil-actions { display: flex; gap: 8px; }
+.outil-actions .btn { flex: 1; }
+.catalogue-liste { display: grid; max-height: 52vh; overflow-y: auto; }
+.catalogue-item { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-radius: 10px; cursor: pointer; }
+.catalogue-item input { width: 20px; height: 20px; accent-color: var(--purple); flex-shrink: 0; }
+.catalogue-item.on { background: var(--lavender); }
