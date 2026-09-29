@@ -27,7 +27,7 @@ export type Tache = { id: string; zone: string; element: string; methode: string
 export type Temperature = { equipement_id: string; equipement: string; valeur: number; min: number; max: number; conforme: boolean; action?: string };
 export type Nettoyage = { tache_id: string; element: string; zone: string; frequence: Tache["frequence"]; periode: string; remarque?: string };
 export type Refroidissement = { produit: string; debut_at: string; temp_debut: number; fin_at?: string; temp_fin?: number; conforme?: boolean; action?: string };
-export type Etiquette = { produit: string; lot: string; fabrique_le: string; dlc: string; jours: number; quantite?: string; conservation?: string };
+export type Etiquette = { produit: string; lot: string; fabrique_le: string; dlc: string; jours: number; quantite?: string; conservation?: string; categorie?: string };
 
 export const COLONNES_ENREG = "id, type, data, compte_id, auteur, created_at, updated_at";
 
@@ -105,3 +105,60 @@ export function joursRestants(dlc: string, aujourdhui = iso(new Date())) {
 export const nouvelId = () => Math.random().toString(36).slice(2, 10);
 
 export const formatTemp = (v: number) => `${v > 0 ? "+" : ""}${v.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} °C`;
+
+export const CATEGORIES_DLC = [
+  { id: "surgele", label: "PRODUIT SURGELÉ", icone: "🧊", dlcDefautJours: 30, conservation: "−18 °C" },
+  { id: "decongele", label: "PRODUIT DÉCONGELÉ", icone: "🐟", dlcDefautJours: 1, conservation: "0 / +3 °C" },
+  { id: "sec_entame", label: "PRODUIT SEC ENTAMÉ", icone: "🌾", dlcDefautJours: 30, conservation: "Ambiant" },
+  { id: "legume_decontamine", label: "LÉGUME DÉCONTAMINÉ", icone: "🥗", dlcDefautJours: 1, conservation: "0 / +4 °C" },
+  { id: "frais_ouvert", label: "PRODUIT FRAIS OUVERT", icone: "🥛", dlcDefautJours: 3, conservation: "0 / +4 °C" },
+  { id: "viande_sous_vide", label: "VIANDE SOUS VIDE OUVERTE", icone: "🥩", dlcDefautJours: 2, conservation: "0 / +2 °C" },
+] as const;
+
+export type CategorieDlcId = (typeof CATEGORIES_DLC)[number]["id"];
+
+export type ProduitDlcConfig = {
+  id: string;
+  categorieId: CategorieDlcId;
+  nom: string;
+  dlcJours: number;
+  conservation: string;
+};
+
+export const PRODUITS_DLC_DEFAUT: ProduitDlcConfig[] = [
+  // Surgelés
+  { id: "s-1", categorieId: "surgele", nom: "Pain / Viennoiseries surgelées", dlcJours: 30, conservation: "−18 °C" },
+  { id: "s-2", categorieId: "surgele", nom: "Légumes portionnés surgelés", dlcJours: 30, conservation: "−18 °C" },
+  { id: "s-3", categorieId: "surgele", nom: "Frites & Pommes de terre", dlcJours: 30, conservation: "−18 °C" },
+  { id: "s-4", categorieId: "surgele", nom: "Glace / Sorbet entamé", dlcJours: 14, conservation: "−18 °C" },
+  // Décongelés
+  { id: "d-1", categorieId: "decongele", nom: "Poisson blanc décongelé", dlcJours: 1, conservation: "0 / +2 °C" },
+  { id: "d-2", categorieId: "decongele", nom: "Saumon décongelé", dlcJours: 1, conservation: "0 / +2 °C" },
+  { id: "d-3", categorieId: "decongele", nom: "Pièce de viande décongelée", dlcJours: 1, conservation: "0 / +2 °C" },
+  { id: "d-4", categorieId: "decongele", nom: "Pâtisserie / Dessert décongelé", dlcJours: 1, conservation: "0 / +4 °C" },
+  { id: "d-5", categorieId: "decongele", nom: "Pain décongelé", dlcJours: 1, conservation: "Ambiant" },
+  // Secs entamés
+  { id: "se-1", categorieId: "sec_entame", nom: "Farine entamée", dlcJours: 60, conservation: "Ambiant" },
+  { id: "se-2", categorieId: "sec_entame", nom: "Riz / Pâtes entamé", dlcJours: 60, conservation: "Ambiant" },
+  { id: "se-3", categorieId: "sec_entame", nom: "Épices & aromates entamés", dlcJours: 90, conservation: "Ambiant" },
+  { id: "se-4", categorieId: "sec_entame", nom: "Fruits secs / Graines", dlcJours: 30, conservation: "Ambiant" },
+  { id: "se-5", categorieId: "sec_entame", nom: "Sucre / Chocolat", dlcJours: 90, conservation: "Ambiant" },
+  // Légumes décontaminés
+  { id: "ld-1", categorieId: "legume_decontamine", nom: "Salade lavée & décontaminée", dlcJours: 1, conservation: "0 / +4 °C" },
+  { id: "ld-2", categorieId: "legume_decontamine", nom: "Tomates lavées & coupées", dlcJours: 1, conservation: "0 / +4 °C" },
+  { id: "ld-3", categorieId: "legume_decontamine", nom: "Oignons émincés", dlcJours: 1, conservation: "0 / +4 °C" },
+  { id: "ld-4", categorieId: "legume_decontamine", nom: "Herbes fraîches lavées", dlcJours: 2, conservation: "0 / +4 °C" },
+  { id: "ld-5", categorieId: "legume_decontamine", nom: "Carottes / Concombres râpés", dlcJours: 1, conservation: "0 / +4 °C" },
+  // Frais ouverts
+  { id: "fo-1", categorieId: "frais_ouvert", nom: "Crème fraîche ouverte", dlcJours: 3, conservation: "0 / +4 °C" },
+  { id: "fo-2", categorieId: "frais_ouvert", nom: "Lait ouvert", dlcJours: 3, conservation: "0 / +4 °C" },
+  { id: "fo-3", categorieId: "frais_ouvert", nom: "Fromage râpé ouvert", dlcJours: 3, conservation: "0 / +4 °C" },
+  { id: "fo-4", categorieId: "frais_ouvert", nom: "Sauce maison / vinaigrette", dlcJours: 3, conservation: "0 / +4 °C" },
+  { id: "fo-5", categorieId: "frais_ouvert", nom: "Beurre / Matière grasse", dlcJours: 7, conservation: "0 / +4 °C" },
+  // Viandes sous vide ouvertes
+  { id: "v-1", categorieId: "viande_sous_vide", nom: "Pièce de bœuf ouverte", dlcJours: 2, conservation: "0 / +2 °C" },
+  { id: "v-2", categorieId: "viande_sous_vide", nom: "Filet de poulet ouvert", dlcJours: 1, conservation: "0 / +2 °C" },
+  { id: "v-3", categorieId: "viande_sous_vide", nom: "Magret de canard ouvert", dlcJours: 2, conservation: "0 / +2 °C" },
+  { id: "v-4", categorieId: "viande_sous_vide", nom: "Viande hachée préparée", dlcJours: 1, conservation: "0 / +2 °C" },
+  { id: "v-5", categorieId: "viande_sous_vide", nom: "Charcuterie découpe", dlcJours: 2, conservation: "0 / +3 °C" },
+];

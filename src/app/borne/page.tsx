@@ -1,8 +1,7 @@
 "use client";
 
-// Pointeuse : tablette ou téléphone posé à l'entrée. Aucune session utilisateur : l'appareil est
-// activé une fois (code établissement + e-mail du directeur + mot de passe pointeuse) et garde un
-// jeton qui ne sait faire qu'une chose, enregistrer les pointages. Voir la migration pointeuse_borne.
+// Pointeuse : authentification du directeur à l'activation, puis la borne garde un jeton
+// limité aux pointages et ferme la session utilisateur.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
@@ -73,7 +72,6 @@ export default function Borne() {
 }
 
 function Activation({ onActive }: { onActive: (j: string) => void }) {
-  const [code, setCode] = useState("");
   const [email, setEmail] = useState("");
   const [mdp, setMdp] = useState("");
   const [nom, setNom] = useState("");
@@ -84,7 +82,14 @@ function Activation({ onActive }: { onActive: (j: string) => void }) {
     e.preventDefault();
     setErreur(null);
     setEnvoi(true);
-    const { data, error } = await getSupabaseClient()!.rpc("badgeuse_activer", { p_code: code, p_email_directeur: email, p_mdp: mdp, p_nom: nom || "Pointeuse" });
+    const sb = getSupabaseClient()!;
+    const { error: erreurConnexion } = await sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: mdp });
+    if (erreurConnexion) {
+      setEnvoi(false);
+      return setErreur("E-mail ou mot de passe incorrect.");
+    }
+    const { data, error } = await sb.rpc("badgeuse_activer_directeur", { p_nom: nom || "Pointeuse" });
+    await sb.auth.signOut();
     setEnvoi(false);
     const r = data?.[0];
     if (error || !r) return setErreur("Activation impossible pour le moment. Vérifie la connexion.");
@@ -116,19 +121,15 @@ function Activation({ onActive }: { onActive: (j: string) => void }) {
           </div>
           <div>
             <h1>Activer la pointeuse</h1>
-            <p style={{ margin: "6px 0 4px", color: "var(--muted)", fontSize: 13 }}>Le mot de passe de la pointeuse se définit dans Paramètres → Pointeuse.</p>
-          </div>
-          <div className="field">
-            <label htmlFor="b-code">Code établissement</label>
-            <input id="b-code" className="code" value={code} onChange={(e) => setCode(e.target.value)} required />
+            <p style={{ margin: "6px 0 4px", color: "var(--muted)", fontSize: 13 }}>Connecte-toi avec les identifiants habituels du directeur.</p>
           </div>
           <div className="field">
             <label htmlFor="b-email">E-mail du directeur</label>
             <input id="b-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required />
           </div>
           <div className="field">
-            <label htmlFor="b-mdp">Mot de passe de la pointeuse</label>
-            <input id="b-mdp" type="password" value={mdp} onChange={(e) => setMdp(e.target.value)} autoComplete="off" required />
+            <label htmlFor="b-mdp">Mot de passe du directeur</label>
+            <input id="b-mdp" type="password" value={mdp} onChange={(e) => setMdp(e.target.value)} autoComplete="current-password" required />
           </div>
           <div className="field">
             <label htmlFor="b-nom">Nom de cet appareil</label>
@@ -314,12 +315,8 @@ function Clavier({ jeton, infos, heure, onDesactive }: { jeton: string; infos: {
 }
 
 function Reglages({ jeton, nom, onClose, onDesactive }: { jeton: string; nom: string; onClose: () => void; onDesactive: () => void }) {
-  const [mdp, setMdp] = useState("");
-  const [erreur, setErreur] = useState<string | null>(null);
-
   async function desactiver() {
-    const { error } = await getSupabaseClient()!.rpc("badgeuse_desactiver", { p_jeton: jeton, p_mdp: mdp });
-    if (error) return setErreur("Mot de passe de la pointeuse incorrect.");
+    await getSupabaseClient()!.rpc("badgeuse_desactiver_jeton", { p_jeton: jeton });
     try {
       localStorage.removeItem(CLE);
     } catch {}
@@ -340,19 +337,14 @@ function Reglages({ jeton, nom, onClose, onDesactive }: { jeton: string; nom: st
         </div>
         <div className="modal-body">
           <p className="hint" style={{ fontSize: 13 }}>
-            Pour retirer cet appareil (vente, remplacement…), saisis le mot de passe de la pointeuse. Le directeur peut aussi le révoquer à distance depuis Paramètres → Pointeuse.
+            Tu peux retirer cet appareil ici. Le directeur peut aussi le révoquer à distance depuis Paramètres → Pointeuse.
           </p>
-          <div className="field">
-            <label htmlFor="r-mdp">Mot de passe de la pointeuse</label>
-            <input id="r-mdp" type="password" value={mdp} onChange={(e) => setMdp(e.target.value)} autoFocus />
-          </div>
-          {erreur && <div className="error">{erreur}</div>}
         </div>
         <div className="modal-foot">
           <button className="btn" onClick={onClose}>
             Annuler
           </button>
-          <button className="btn btn-danger" onClick={desactiver} disabled={!mdp}>
+          <button className="btn btn-danger" onClick={desactiver}>
             Désactiver cet appareil
           </button>
         </div>

@@ -17,6 +17,7 @@ type Etab = {
   adresse_facturation: string | null;
   telephone: string | null;
   email_contact: string | null;
+  email_expediteur: string | null;
   siret: string | null;
   siren: string | null;
   numero_tva: string | null;
@@ -285,7 +286,7 @@ function Restaurant({ onToast }: { onToast: (m: string) => void }) {
 
   useEffect(() => {
     sb.from("etablissements")
-      .select("id, code, nom, ville, adresse, adresse_facturation, telephone, email_contact, siret, siren, numero_tva, photo_couverture, pause_pointage_active")
+      .select("id, code, nom, ville, adresse, adresse_facturation, telephone, email_contact, email_expediteur, siret, siren, numero_tva, photo_couverture, pause_pointage_active")
       .eq("id", etablissement.id)
       .single()
       .then(({ data }) => setE(data as Etab));
@@ -302,6 +303,7 @@ function Restaurant({ onToast }: { onToast: (m: string) => void }) {
     if (e!.siren && !/^\d{9}$/.test(chiffres(e!.siren))) return setErreur("Le SIREN compte 9 chiffres.");
     if (e!.numero_tva && !/^FR[0-9A-Z]{2}\d{9}$/.test(chiffres(e!.numero_tva).toUpperCase())) return setErreur("TVA intracommunautaire : FR + 2 caractères + SIREN (ex. FR12345678901).");
     if (e!.email_contact && !emailValide(e!.email_contact)) return setErreur("E-mail de contact invalide.");
+    if (e!.email_expediteur && !emailValide(e!.email_expediteur)) return setErreur("E-mail d’expédition invalide.");
     setEnvoi(true);
     const { error } = await sb
       .from("etablissements")
@@ -312,6 +314,7 @@ function Restaurant({ onToast }: { onToast: (m: string) => void }) {
         adresse_facturation: e!.adresse_facturation?.trim() || null,
         telephone: e!.telephone?.trim() || null,
         email_contact: e!.email_contact?.trim() || null,
+        email_expediteur: e!.email_expediteur?.trim().toLowerCase() || null,
         siret: chiffres(e!.siret) || null,
         siren: chiffres(e!.siren) || (chiffres(e!.siret).length === 14 ? chiffres(e!.siret).slice(0, 9) : null),
         numero_tva: chiffres(e!.numero_tva).toUpperCase() || null,
@@ -358,6 +361,11 @@ function Restaurant({ onToast }: { onToast: (m: string) => void }) {
               <label htmlFor="r-ville">Ville</label>
               <input id="r-ville" value={e.ville ?? ""} onChange={(x) => set("ville", x.target.value)} />
             </div>
+          </div>
+          <div className="field">
+            <label htmlFor="r-expediteur">Adresse d’expédition des commandes</label>
+            <input id="r-expediteur" type="email" value={e.email_expediteur ?? ""} onChange={(x) => set("email_expediteur", x.target.value)} placeholder="commandes@restaurant.fr" />
+            <span className="hint">Les fournisseurs verront cette adresse. Elle doit être validée dans le compte Mailjet de Juliette. Les réponses arrivent à l’e-mail de contact ci-dessus.</span>
           </div>
           <div className="field">
             <label htmlFor="r-adr">Adresse</label>
@@ -454,24 +462,21 @@ function Emails() {
     <section className="card" style={{ maxWidth: 720 }}>
       <div className="card-head">
         <h2>Envoi automatique des commandes fournisseurs</h2>
-        {configure !== null && <span className={`pill ${configure ? "t-mint" : "t-yellow"}`}>{configure ? "Connecté" : "Pas encore connecté"}</span>}
+        {configure !== null && <span className={`pill ${configure ? "t-mint" : "t-yellow"}`}>{configure ? "Service disponible" : "Clé serveur manquante"}</span>}
       </div>
       {configure ? (
         <p className="hint" style={{ fontSize: 13 }}>
-          Les commandes validées dans « Commandes » partent automatiquement par e-mail au fournisseur. Les réponses arrivent sur l&apos;e-mail de contact du restaurant (onglet Restaurant).
+          Mailjet est configuré. Le restaurateur choisit son adresse d’expédition dans Paramètres → Restaurant ; cette adresse ou son domaine doit être validé dans le compte Mailjet de Juliette. Les réponses arrivent à son e-mail de contact.
         </p>
       ) : (
         <div style={{ display: "grid", gap: 10, fontSize: 13, lineHeight: 1.55 }}>
           <p style={{ margin: 0 }}>
-            Tout est prêt côté Juliette ; il reste à brancher <b>Resend</b>, le service qui envoie les e-mails. En attendant, les commandes s&apos;envoient depuis ta messagerie.
+            L’envoi automatique utilise les identifiants Mailjet de Juliette, configurés côté serveur. En attendant, les commandes s&apos;envoient depuis ta messagerie.
           </p>
           <ol style={{ margin: 0, paddingLeft: 20 }}>
-            <li>Crée un compte sur resend.com et vérifie ton nom de domaine (ex. monrestaurant.fr).</li>
-            <li>Crée une clé API.</li>
-            <li>
-              Dans le fichier <code>.env.local</code> de Juliette, renseigne <code>RESEND_API_KEY=</code> (la clé) et <code>RESEND_FROM_EMAIL=</code> (ex. <code>Mon Restaurant &lt;commandes@monrestaurant.fr&gt;</code>).
-            </li>
-            <li>Redémarre Juliette : ce panneau passe à « Connecté ».</li>
+            <li>Les identifiants <code>MAILJET_API_KEY</code> et <code>MAILJET_API_SECRET</code> sont configurés par Juliette côté serveur ; le restaurateur ne les saisit jamais.</li>
+            <li>Dans Paramètres → Restaurant, le restaurateur saisit l’adresse d’expédition souhaitée.</li>
+            <li>L’adresse ou le domaine doit être validé dans Mailjet avant le premier envoi.</li>
           </ol>
         </div>
       )}
@@ -482,33 +487,16 @@ function Emails() {
 type Appareil = { id: string; nom: string; created_at: string; derniere_activite: string | null; revoquee_at: string | null };
 
 function Pointeuse({ onToast }: { onToast: (m: string) => void }) {
-  const { etablissement, compte } = useConnecte();
+  const { etablissement } = useConnecte();
   const sb = getSupabaseClient()!;
-  const [defini, setDefini] = useState<boolean | null>(null);
   const [appareils, setAppareils] = useState<Appareil[]>([]);
-  const [mdp, setMdp] = useState("");
-  const [mdp2, setMdp2] = useState("");
-  const [erreur, setErreur] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
-    Promise.all([sb.rpc("pointeuse_mdp_defini", { p_etablissement_id: etablissement.id }), sb.rpc("badgeuses_liste", { p_etablissement_id: etablissement.id })]).then(([d, l]) => {
-      setDefini(Boolean(d.data));
+    sb.rpc("badgeuses_liste", { p_etablissement_id: etablissement.id }).then((l) => {
       setAppareils((l.data ?? []) as Appareil[]);
     });
   }, [sb, etablissement.id, version]);
-
-  async function enregistrer() {
-    setErreur(null);
-    if (mdp.length < 6) return setErreur("Au moins 6 caractères.");
-    if (mdp !== mdp2) return setErreur("Les deux mots de passe ne sont pas identiques.");
-    const { error } = await sb.rpc("definir_mdp_pointeuse", { p_etablissement_id: etablissement.id, p_mdp: mdp });
-    if (error) return setErreur("Enregistrement refusé.");
-    setMdp("");
-    setMdp2("");
-    onToast("Mot de passe de la pointeuse enregistré");
-    setVersion((v) => v + 1);
-  }
 
   async function revoquer(a: Appareil) {
     const { error } = await sb.rpc("badgeuse_revoquer", { p_id: a.id });
@@ -519,34 +507,6 @@ function Pointeuse({ onToast }: { onToast: (m: string) => void }) {
   const actifs = appareils.filter((a) => !a.revoquee_at);
   return (
     <div className="fiche-grid">
-      <section className="card">
-        <div className="card-head">
-          <h2>Mot de passe de la pointeuse</h2>
-          {defini !== null && <span className={`pill ${defini ? "t-mint" : "t-yellow"}`}>{defini ? "Défini" : "À définir"}</span>}
-        </div>
-        <p className="hint" style={{ fontSize: 13, lineHeight: 1.55 }}>
-          Il sert uniquement à <b>activer une tablette ou un téléphone en pointeuse</b>, avec le code établissement <b>{etablissement.code}</b> et ton e-mail (<b>{compte.email}</b>). Choisis-le différent de ton mot de passe personnel.
-        </p>
-        <div className="form-2">
-          <div className="field">
-            <label htmlFor="p-mdp">{defini ? "Nouveau mot de passe" : "Mot de passe"}</label>
-            <input id="p-mdp" type="password" autoComplete="new-password" value={mdp} onChange={(e) => setMdp(e.target.value)} />
-          </div>
-          <div className="field">
-            <label htmlFor="p-mdp2">Confirmation</label>
-            <input id="p-mdp2" type="password" autoComplete="new-password" value={mdp2} onChange={(e) => setMdp2(e.target.value)} />
-          </div>
-        </div>
-        {erreur && (
-          <div className="error" role="alert">
-            {erreur}
-          </div>
-        )}
-        <button className="btn btn-primary" onClick={enregistrer} disabled={!mdp} style={{ justifySelf: "start" }}>
-          Enregistrer
-        </button>
-      </section>
-
       <div style={{ display: "grid", gap: 14, alignContent: "start" }}>
         <section className="card">
           <div className="card-head">
@@ -554,7 +514,7 @@ function Pointeuse({ onToast }: { onToast: (m: string) => void }) {
           </div>
           <ol style={{ margin: 0, paddingLeft: 20, display: "grid", gap: 6, fontSize: 13, lineHeight: 1.5 }}>
             <li>Sur la tablette ou le téléphone de l&apos;entrée, ouvre l&apos;adresse de Juliette et touche « Pointeuse » (ou va directement sur <code>/borne</code>).</li>
-            <li>Saisis le code établissement, ton e-mail et le mot de passe de la pointeuse.</li>
+            <li>Connecte-toi avec l&apos;e-mail et le mot de passe habituels du directeur.</li>
             <li>Ajoute la page à l&apos;écran d&apos;accueil de la tablette (Partager → « Sur l&apos;écran d&apos;accueil ») pour l&apos;ouvrir en plein écran.</li>
             <li>Chaque salarié pointe avec <b>son code à 6 chiffres</b>, visible dans sa fiche Équipe.</li>
           </ol>

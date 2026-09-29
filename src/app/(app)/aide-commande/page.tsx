@@ -262,7 +262,7 @@ export default function Commandes() {
   );
 }
 
-/** Appelle la route serveur d'envoi (Resend) avec la session de l'utilisateur. */
+/** Appelle la route serveur d'envoi (Mailjet) avec la session de l'utilisateur. */
 async function envoyerParEmail(commandeId: string): Promise<{ ok: boolean; message: string }> {
   const { data } = await getSupabaseClient()!.auth.getSession();
   const jeton = data.session?.access_token;
@@ -271,7 +271,7 @@ async function envoyerParEmail(commandeId: string): Promise<{ ok: boolean; messa
   if (!r) return { ok: false, message: "serveur injoignable" };
   if (r.ok) return { ok: true, message: "" };
   const j = (await r.json().catch(() => ({}))) as { erreur?: string; message?: string };
-  const libelles: Record<string, string> = { non_configure: "envoi automatique non branché", sans_email: "pas d'e-mail pour ce fournisseur", interdit: "réservé aux responsables", echec_envoi: j.message ?? "refusé par le prestataire" };
+  const libelles: Record<string, string> = { non_configure: "envoi automatique non branché", sans_email: "pas d'e-mail pour ce fournisseur", sans_expediteur: "adresse d’expédition manquante dans Paramètres → Restaurant", interdit: "réservé aux responsables", echec_envoi: j.message ?? "refusé par le prestataire" };
   return { ok: false, message: libelles[j.erreur ?? ""] ?? "erreur inconnue" };
 }
 
@@ -521,7 +521,7 @@ function ModalEnvoi({ g, etablissementId, etablissementNom, compteId, signataire
         </p>
       ) : email ? (
         <>
-          {auto === false && <p className="hint">L&apos;envoi automatique n&apos;est pas encore branché (clé Resend à ajouter) : envoie-la depuis ta messagerie.</p>}
+          {auto === false && <p className="hint">L&apos;envoi automatique n&apos;est pas encore branché (identifiants Mailjet à ajouter) : envoie-la depuis ta messagerie.</p>}
           <a className="btn" href={mailto}>
             ✉ Ouvrir dans ma messagerie ({email})
           </a>

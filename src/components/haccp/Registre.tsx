@@ -49,6 +49,29 @@ export default function Registre({ liste, gestion, etablissementCode, onSaved }:
     [liste, du, au, type, nonConformes],
   );
 
+  const [copieOk, setCopieOk] = useState(false);
+
+  function copierGoogleSheets() {
+    const rows: string[][] = [["Date", "Heure", "Type", "Détail", "Conformité", "Auteur"]];
+    for (const l of lignes) {
+      const d = new Date(l.e.created_at);
+      rows.push([
+        d.toLocaleDateString("fr-FR"),
+        d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+        TYPES[l.e.type],
+        l.texte,
+        l.conforme === null ? "" : l.conforme ? "Conforme" : "NON CONFORME",
+        l.e.auteur,
+      ]);
+    }
+    const tsv = rows.map((r) => r.join("\t")).join("\n");
+    navigator.clipboard.writeText(tsv).then(() => {
+      setCopieOk(true);
+      setTimeout(() => setCopieOk(false), 2500);
+      onSaved("Données copiées ! Ouvre Google Sheets et colle (Cmd+V ou Ctrl+V)");
+    });
+  }
+
   function exporter() {
     const rows: (string | number)[][] = [["Date", "Heure", "Type", "Détail", "Conformité", "Auteur"]];
     for (const l of lignes) {
@@ -56,7 +79,7 @@ export default function Registre({ liste, gestion, etablissementCode, onSaved }:
       rows.push([d.toLocaleDateString("fr-FR"), d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), TYPES[l.e.type], l.texte, l.conforme === null ? "" : l.conforme ? "Conforme" : "NON CONFORME", l.e.auteur]);
     }
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob(["﻿" + csv(rows)], { type: "text/csv;charset=utf-8" }));
+    a.href = URL.createObjectURL(new Blob(["\uFEFF" + csv(rows)], { type: "text/csv;charset=utf-8" }));
     a.download = `registre-haccp-${etablissementCode}-${du}-au-${au}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
@@ -86,12 +109,15 @@ export default function Registre({ liste, gestion, etablissementCode, onSaved }:
             <input type="checkbox" checked={nonConformes} onChange={(e) => setNonConformes(e.target.checked)} /> Non-conformités seulement
           </label>
         </div>
-        <span style={{ display: "flex", gap: 8 }}>
-          <button className="btn" onClick={() => window.print()}>
-            ⎙ Imprimer
+        <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button className="btn btn-sm" onClick={copierGoogleSheets} title="Copier les données tabulées pour les coller directement dans Google Sheets">
+            {copieOk ? "✓ Copié !" : "📋 Google Sheets"}
           </button>
-          <button className="btn" onClick={exporter}>
-            ⤓ Exporter
+          <button className="btn btn-sm" onClick={exporter} title="Télécharger sous format CSV compatible Microsoft Excel">
+            ⤓ Export Excel (.csv)
+          </button>
+          <button className="btn btn-sm" onClick={() => window.print()}>
+            ⎙ Imprimer
           </button>
         </span>
       </div>

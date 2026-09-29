@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabase";
 import { MODULES } from "@/lib/modules";
@@ -30,38 +30,63 @@ const heure = (t: string) => new Date(t).toLocaleTimeString("fr-FR", { hour: "2-
 const hhmm = (t: string | null) => (t ? t.slice(0, 5).replace(":", "h") : "—");
 const euros = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
+const CARTES = [
+  { id: "presence", label: "Présences", detail: "Pointages et équipe présente", icon: "◷", couleur: "t-mint" },
+  { id: "stock-stat", label: "Stock critique", detail: "Produits sous le seuil", icon: "▤", couleur: "t-peach" },
+  { id: "pertes", label: "Pertes · 7 jours", detail: "Montant et déclarations", icon: "↘", couleur: "t-red" },
+  { id: "commandes-stat", label: "À commander", detail: "Liste d’achat et demandes en attente", icon: "↗", couleur: "t-lav" },
+  { id: "equipe", label: "Équipe du jour", detail: "Qui travaille aujourd’hui", icon: "☺", couleur: "t-blue" },
+  { id: "stock", label: "Stock à surveiller", detail: "Détail des alertes stock", icon: "!", couleur: "t-peach" },
+  { id: "evenements", label: "Événements à venir", detail: "Événements qui influencent l’activité", icon: "✦", couleur: "t-yellow" },
+  { id: "commandes", label: "Dernières commandes", detail: "Commandes envoyées aux fournisseurs", icon: "↗", couleur: "t-lav" },
+  { id: "raccourcis", label: "Raccourcis", detail: "Accès rapides aux modules", icon: "⌘", couleur: "t-blue" },
+] as const;
+
+const CARTES_PAR_DEFAUT = CARTES.map((carte) => carte.id);
+const VUE_ESSENTIELLE = ["presence", "stock-stat", "equipe", "stock", "raccourcis"];
+
 function salutation() {
   const h = new Date().getHours();
   return h < 5 ? "Bonne nuit" : h < 18 ? "Bonjour" : "Bonsoir";
 }
 
-async function charger(etabId: string, modules: Set<string>): Promise<Donnees> {
+async function charger(etabId: string, modules: Set<string>, cartesActives: Set<string>): Promise<Donnees> {
   const sb = getSupabaseClient()!;
   const auj = new Date();
   const debutJour = new Date(auj.getFullYear(), auj.getMonth(), auj.getDate()).toISOString();
   const il7j = new Date(auj.getTime() - 7 * 864e5);
   const a = (m: string) => modules.has(m);
 
+  const equipeVisible = cartesActives.has("equipe") || cartesActives.has("presence");
+  const stockVisible = cartesActives.has("stock") || cartesActives.has("stock-stat");
   const [comptes, pointages, planning, produits, releves, pertes, liste, conges, evts, cmds] = await Promise.all([
-    sb.from("comptes").select("id, prenom, nom, email, role, statut, poste, avatar_url, etablissement_id").eq("etablissement_id", etabId),
-    a("pointeuse")
+    equipeVisible
+      ? sb.from("comptes").select("id, prenom, nom, email, role, statut, poste, avatar_url, etablissement_id").eq("etablissement_id", etabId)
+      : null,
+    equipeVisible && a("pointeuse")
       ? sb.from("pointages").select("compte_id, type, horodatage").eq("etablissement_id", etabId).gte("horodatage", debutJour).order("horodatage")
       : null,
-    sb.from("planning_creneaux").select("compte_id, heure_debut, heure_fin").eq("etablissement_id", etabId).eq("date", iso(auj)).eq("type", "shift"),
-    a("inventaire") || a("perte") ? sb.from("produits").select("id, nom, unite, seuil, prix_unitaire").eq("etablissement_id", etabId) : null,
-    a("inventaire")
+    equipeVisible
+      ? sb.from("planning_creneaux").select("compte_id, heure_debut, heure_fin").eq("etablissement_id", etabId).eq("date", iso(auj)).eq("type", "shift")
+      : null,
+    (stockVisible && a("inventaire")) || (cartesActives.has("pertes") && a("perte"))
+      ? sb.from("produits").select("id, nom, unite, seuil, prix_unitaire").eq("etablissement_id", etabId)
+      : null,
+    stockVisible && a("inventaire")
       ? sb.from("inventaire_releves").select("produit_id, zone_id, valeur, created_at").eq("etablissement_id", etabId).order("created_at", { ascending: false }).limit(5000)
       : null,
-    a("perte") ? sb.from("pertes").select("produit_id, valeur").eq("etablissement_id", etabId).gte("date", iso(il7j)) : null,
-    a("aide-commande") ? sb.from("commande_liste").select("produit_id", { count: "exact", head: true }).eq("etablissement_id", etabId) : null,
-    a("rh-conges") ? sb.from("conges").select("id", { count: "exact", head: true }).eq("etablissement_id", etabId).eq("statut", "en_attente") : null,
-    sb.from("evenements").select("id, nom, date, lieu, sens, impact").eq("etablissement_id", etabId).gte("date", iso(auj)).order("date").limit(5),
-    a("aide-commande")
+    cartesActives.has("pertes") && a("perte") ? sb.from("pertes").select("produit_id, valeur").eq("etablissement_id", etabId).gte("date", iso(il7j)) : null,
+    cartesActives.has("commandes-stat") && a("aide-commande") ? sb.from("commande_liste").select("produit_id", { count: "exact", head: true }).eq("etablissement_id", etabId) : null,
+    cartesActives.has("commandes-stat") && a("rh-conges") ? sb.from("conges").select("id", { count: "exact", head: true }).eq("etablissement_id", etabId).eq("statut", "en_attente") : null,
+    cartesActives.has("evenements")
+      ? sb.from("evenements").select("id, nom, date, lieu, sens, impact").eq("etablissement_id", etabId).gte("date", iso(auj)).order("date").limit(5)
+      : null,
+    cartesActives.has("commandes") && a("aide-commande")
       ? sb.from("commandes_envoyees").select("id, fournisseur_nom, envoyee_at, lignes").eq("etablissement_id", etabId).order("envoyee_at", { ascending: false }).limit(4)
       : null,
   ]);
 
-  const parCompte = new Map((comptes.data ?? []).map((c) => [c.id, c as Compte]));
+  const parCompte = new Map((comptes?.data ?? []).map((c) => [c.id, c as Compte]));
 
   // Présence : le dernier pointage du jour de chaque personne dit où elle en est.
   let presences: Presence[] | null = null;
@@ -111,13 +136,13 @@ async function charger(etabId: string, modules: Set<string>): Promise<Donnees> {
 
   return {
     presences,
-    prevus: planning.error ? null : (planning.data as Creneau[]),
+    prevus: planning ? (planning.error ? null : (planning.data as Creneau[])) : null,
     critiques,
     inventaireVide,
     pertes7j,
     aCommander: liste && !liste.error ? (liste.count ?? 0) : null,
     congesEnAttente: conges && !conges.error ? (conges.count ?? 0) : null,
-    evenements: evts.error ? null : (evts.data as Evenement[]),
+    evenements: evts ? (evts.error ? null : (evts.data as Evenement[])) : null,
     commandes: cmds && !cmds.error ? (cmds.data as Commande[]) : null,
   };
 }
@@ -146,16 +171,83 @@ export default function TableauDeBord() {
   const { compte, etablissement, modules } = useConnecte();
   const [d, setD] = useState<Donnees | null>(null);
   const [erreur, setErreur] = useState(false);
+  const [cartes, setCartes] = useState<string[]>(CARTES_PAR_DEFAUT);
+  const [preferencesChargees, setPreferencesChargees] = useState(false);
+  const [preferencesEnregistrables, setPreferencesEnregistrables] = useState(false);
+  const [personnalisation, setPersonnalisation] = useState(false);
+  const [sauvegarde, setSauvegarde] = useState<"repos" | "en-cours" | "ok" | "erreur">("repos");
+  const visibles = useMemo(() => new Set(cartes), [cartes]);
 
   useEffect(() => {
     let actif = true;
-    charger(etablissement.id, modules)
-      .then((r) => actif && setD(r))
-      .catch(() => actif && setErreur(true));
+    setPreferencesChargees(false);
+    setPreferencesEnregistrables(false);
+    getSupabaseClient()!
+      .from("tableau_bord_preferences")
+      .select("cartes")
+      .eq("compte_id", compte.id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!actif) return;
+        if (error) {
+          setCartes(CARTES_PAR_DEFAUT);
+          setSauvegarde("erreur");
+          setPreferencesChargees(true);
+          return;
+        }
+        const enregistrees = Array.isArray(data?.cartes) ? data.cartes.filter((id: string) => CARTES.some((carte) => carte.id === id)) : null;
+        setCartes(enregistrees ?? CARTES_PAR_DEFAUT);
+        setPreferencesEnregistrables(true);
+        setPreferencesChargees(true);
+      }, () => {
+        if (!actif) return;
+        setCartes(CARTES_PAR_DEFAUT);
+        setSauvegarde("erreur");
+        setPreferencesChargees(true);
+      });
     return () => {
       actif = false;
     };
-  }, [etablissement.id, modules]);
+  }, [compte.id]);
+
+  useEffect(() => {
+    if (!preferencesChargees || !preferencesEnregistrables) return;
+    setSauvegarde("en-cours");
+    const minuteur = window.setTimeout(async () => {
+      try {
+        const { error } = await getSupabaseClient()!
+          .from("tableau_bord_preferences")
+          .upsert({ compte_id: compte.id, cartes }, { onConflict: "compte_id" });
+        setSauvegarde(error ? "erreur" : "ok");
+      } catch {
+        setSauvegarde("erreur");
+      }
+    }, 350);
+    return () => window.clearTimeout(minuteur);
+  }, [cartes, compte.id, preferencesChargees, preferencesEnregistrables]);
+
+  function basculerCarte(id: string) {
+    setCartes((actuelles) => actuelles.includes(id) ? actuelles.filter((carte) => carte !== id) : [...actuelles, id]);
+  }
+
+  useEffect(() => {
+    if (!preferencesChargees) return;
+    let actif = true;
+    if (!visibles.size) {
+      setD(null);
+      setErreur(false);
+      return;
+    }
+    const minuteur = window.setTimeout(() => {
+      charger(etablissement.id, modules, visibles)
+        .then((r) => actif && setD(r))
+        .catch(() => actif && setErreur(true));
+    }, 220);
+    return () => {
+      actif = false;
+      window.clearTimeout(minuteur);
+    };
+  }, [etablissement.id, modules, preferencesChargees, visibles]);
 
   const presents = d?.presences?.filter((p) => p.etat !== "parti").length ?? null;
   const date = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
@@ -171,17 +263,51 @@ export default function TableauDeBord() {
           </h1>
           <p>Voici l&apos;essentiel de {etablissement.nom} aujourd&apos;hui.</p>
         </div>
-        {modules.has("pointeuse") && (
-          <Link className="btn btn-primary" href="/pointeuse">
-            ◷ Pointer
-          </Link>
-        )}
+        <div className="dashboard-actions">
+          <button className={`btn ${personnalisation ? "btn-on" : ""}`} onClick={() => setPersonnalisation((ouverte) => !ouverte)} aria-expanded={personnalisation}>
+            <span aria-hidden="true">✦</span> {personnalisation ? "Terminer" : "Personnaliser"}
+          </button>
+          {modules.has("pointeuse") && <Link className="btn btn-primary" href="/pointeuse">◷ Pointer</Link>}
+        </div>
       </div>
+
+      {personnalisation && (
+        <section className="dashboard-customizer card" aria-label="Personnaliser le tableau de bord">
+          <div className="dashboard-customizer-head">
+            <div>
+              <span className="dashboard-customizer-kicker">À TON IMAGE</span>
+              <h2>Garde l’essentiel sous les yeux</h2>
+              <p>Choisis les cartes utiles à ton quotidien. Tes préférences sont enregistrées pour cet établissement.</p>
+            </div>
+            <span className="dashboard-customizer-count">{visibles.size}<small> / {CARTES.length} cartes</small></span>
+          </div>
+          <div className="dashboard-presets" aria-label="Vues rapides">
+            <button className="chip" onClick={() => setCartes([...CARTES_PAR_DEFAUT])}>Tout afficher</button>
+            <button className="chip" onClick={() => setCartes([...VUE_ESSENTIELLE])}>Vue essentielle ✨</button>
+            <button className="chip" onClick={() => setCartes([])}>Tout masquer</button>
+            <span className={`dashboard-save dashboard-save-${sauvegarde}`} aria-live="polite">
+              {sauvegarde === "en-cours" ? "Enregistrement…" : sauvegarde === "ok" ? "✓ Enregistré" : sauvegarde === "erreur" ? "Enregistrement impossible" : ""}
+            </span>
+          </div>
+          <div className="dashboard-card-options">
+            {CARTES.map((carte) => {
+              const active = visibles.has(carte.id);
+              return (
+                <button key={carte.id} className={`dashboard-card-option ${active ? "selected" : ""}`} onClick={() => basculerCarte(carte.id)} aria-pressed={active}>
+                  <span className={`chip-ic ${carte.couleur}`}>{carte.icon}</span>
+                  <span className="dashboard-card-option-text"><b>{carte.label}</b><small>{carte.detail}</small></span>
+                  <span className={`dashboard-switch ${active ? "on" : ""}`} aria-hidden="true"><i /></span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {erreur && <div className="error" style={{ marginBottom: 14 }}>Impossible de charger les données. Vérifie ta connexion puis recharge la page.</div>}
 
-      <div className="grid-stats">
-        <Stat
+      {CARTES.slice(0, 4).some((carte) => visibles.has(carte.id)) && <div className="grid-stats">
+        {visibles.has("presence") && <Stat
           label="Présents"
           icon="◷"
           ton="t-mint"
@@ -189,8 +315,8 @@ export default function TableauDeBord() {
           valeur={d ? (d.presences ? presents : "—") : null}
           unite={d?.prevus ? `/ ${d.prevus.length} prévus` : undefined}
           pied={d?.presences ? (d.presences.length ? `${d.presences.length} pointé(s) aujourd'hui` : "Personne n'a pointé") : "Pointage non accessible"}
-        />
-        <Stat
+        />}
+        {visibles.has("stock-stat") && <Stat
           label="Stock critique"
           icon="▤"
           ton="t-peach"
@@ -198,16 +324,16 @@ export default function TableauDeBord() {
           valeur={d ? (d.critiques ? d.critiques.length : "—") : null}
           unite={d?.critiques ? "produits" : undefined}
           pied={d?.inventaireVide ? "Aucun inventaire saisi" : "Sous le seuil d'alerte"}
-        />
-        <Stat
+        />}
+        {visibles.has("pertes") && <Stat
           label="Pertes · 7 jours"
           icon="↘"
           ton="t-red"
           href="/perte"
           valeur={d ? (d.pertes7j ? euros(d.pertes7j.euros) : "—") : null}
           pied={d?.pertes7j ? `${d.pertes7j.nb} déclaration(s)` : "Pertes non accessibles"}
-        />
-        <Stat
+        />}
+        {visibles.has("commandes-stat") && <Stat
           label="À commander"
           icon="↗"
           ton="t-lav"
@@ -215,11 +341,11 @@ export default function TableauDeBord() {
           valeur={d ? (d.aCommander ?? "—") : null}
           unite={d?.aCommander != null ? "produits" : undefined}
           pied={d?.congesEnAttente ? `${d.congesEnAttente} demande(s) RH en attente` : "Dans la liste de commande"}
-        />
-      </div>
+        />}
+      </div>}
 
-      <div className="grid-2">
-        <section className="card">
+      {(visibles.has("equipe") || visibles.has("stock")) && <div className="grid-2">
+        {visibles.has("equipe") && <section className="card dashboard-widget">
           <div className="card-head">
             <h2>Équipe du jour</h2>
             <Link href={modules.has("pointeuse") ? "/pointeuse" : "/planning"}>Voir le détail →</Link>
@@ -229,9 +355,9 @@ export default function TableauDeBord() {
           ) : (
             <EquipeDuJour d={d} />
           )}
-        </section>
+        </section>}
 
-        <section className="card">
+        {visibles.has("stock") && <section className="card dashboard-widget">
           <div className="card-head">
             <h2>Stock à surveiller</h2>
             <Link href="/inventaire">Inventaire →</Link>
@@ -268,11 +394,11 @@ export default function TableauDeBord() {
               ))}
             </div>
           )}
-        </section>
-      </div>
+        </section>}
+      </div>}
 
-      <div className="grid-3">
-        <section className="card">
+      {(visibles.has("evenements") || visibles.has("commandes") || visibles.has("raccourcis")) && <div className="grid-3">
+        {visibles.has("evenements") && <section className="card dashboard-widget">
           <div className="card-head">
             <h2>Événements à venir</h2>
             <Link href="/evenements">Tous →</Link>
@@ -301,9 +427,9 @@ export default function TableauDeBord() {
               ))}
             </div>
           )}
-        </section>
+        </section>}
 
-        <section className="card">
+        {visibles.has("commandes") && <section className="card dashboard-widget">
           <div className="card-head">
             <h2>Dernières commandes</h2>
             <Link href="/aide-commande">Commandes →</Link>
@@ -330,9 +456,9 @@ export default function TableauDeBord() {
               ))}
             </div>
           )}
-        </section>
+        </section>}
 
-        <section className="card">
+        {visibles.has("raccourcis") && <section className="card dashboard-widget">
           <div className="card-head">
             <h2>Raccourcis</h2>
           </div>
@@ -347,8 +473,13 @@ export default function TableauDeBord() {
               </Link>
             ))}
           </div>
-        </section>
-      </div>
+        </section>}
+      </div>}
+      {preferencesChargees && cartes.length === 0 && <section className="dashboard-empty card">
+        <span aria-hidden="true">🪄</span><h2>Ton tableau, ta page blanche</h2>
+        <p>Réactive les cartes dont tu as besoin pour retrouver tes repères.</p>
+        <button className="btn btn-primary" onClick={() => setCartes([...VUE_ESSENTIELLE])}>Afficher la vue essentielle</button>
+      </section>}
     </>
   );
 }
