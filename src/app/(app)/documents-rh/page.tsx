@@ -5,7 +5,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { nomComplet, useConnecte } from "@/lib/session";
 import { chargerMembres, FONCTIONS } from "@/lib/personnel";
 import type { Membre } from "@/lib/personnel";
-import { alertesDoc, GROUPES_DOCS, MATERIELS, MODELES_DOCS, ORDRE_DOCS } from "@/lib/documentsRh";
+import { alertesDoc, docsDuPays, GROUPES_DOCS, MATERIELS, MODELES_DOCS } from "@/lib/documentsRh";
 import type { Champ, Contexte, Donnees, LigneMateriel, TypeDoc } from "@/lib/documentsRh";
 import DocumentContrat, { imprimerContrat } from "@/components/contrats/DocumentContrat";
 import SignaturePad from "@/components/contrats/SignaturePad";
@@ -26,7 +26,7 @@ type Doc = {
   signe_salarie_at: string | null;
   created_at: string;
 };
-type Etab = { nom: string; adresse: string | null; ville: string | null; siret: string | null };
+type Etab = { nom: string; adresse: string | null; ville: string | null; siret: string | null; pays: "FR" | "BE" | null };
 
 const COLONNES = "id, compte_id, type, titre, donnees, contenu, empreinte, statut, signature_employeur, signe_employeur_at, signature_salarie, signe_salarie_at, created_at";
 const STATUTS: Record<Doc["statut"], { label: string; ton: string }> = {
@@ -68,7 +68,7 @@ export default function DocumentsRh() {
   useEffect(() => {
     chargerMembres(etablissement.id).then((m) => setMembres(m ?? []));
     sb.from("etablissements")
-      .select("nom, adresse, ville, siret")
+      .select("nom, adresse, ville, siret, pays")
       .eq("id", etablissement.id)
       .single()
       .then(({ data }) => setEtab(data as Etab));
@@ -143,7 +143,7 @@ export default function DocumentsRh() {
             <div key={g} className="doc-groupe">
               <h3 className="doc-groupe-titre">{g}</h3>
               <div className="doc-grille">
-                {ORDRE_DOCS.filter((t) => MODELES_DOCS[t].groupe === g).map((t) => (
+                {docsDuPays(etab?.pays === "BE" ? "BE" : "FR").filter((t) => MODELES_DOCS[t].groupe === g).map((t) => (
                   <button
                     key={t}
                     className="doc-carte"
@@ -221,7 +221,7 @@ export default function DocumentsRh() {
 
 function contexte(etab: Etab, directeurNom: string, m: Membre | null, civilite: string, materielContrat: string[], fonctionContrat = ""): Contexte {
   return {
-    etablissement: { nom: etab.nom, adresse: etab.adresse ?? "", siret: etab.siret ?? "", ville: etab.ville ?? "" },
+    etablissement: { nom: etab.nom, adresse: etab.adresse ?? "", siret: etab.siret ?? "", ville: etab.ville ?? "", pays: etab.pays === "BE" ? "BE" : "FR" },
     directeur: directeurNom,
     salarie: m ? { civilite: civilite === "Mme" ? "Mme" : "M.", prenom: m.prenom ?? "", nom: m.nom ?? "", fonction: fonctionContrat || (m.fonction ? FONCTIONS[m.fonction] ?? m.fonction : ""), date_embauche: m.date_embauche ?? "", nature: m.nature_contrat ?? "" } : null,
     materielContrat,

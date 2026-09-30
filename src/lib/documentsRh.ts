@@ -11,14 +11,15 @@
 
 import { briques, EMPLOIS, MATERIELS } from "@/lib/contrats";
 import type { NomIcone } from "@/components/Icone";
-import { anciennete, calendrierRupture, indemniteLegale, joursEntre, preavisLegal, prevenanceEssai, ajouterOuvrables } from "@/lib/finContrat";
+import { anciennete, calendrierRupture, indemniteLegale, joursEntre, preavisLegal, prevenanceEssai, ajouterOuvrables, ajouterOuvrablesBE, periodePreavisBE, preavisEmployeurBE, preavisTravailleurBE } from "@/lib/finContrat";
 import { ajouterJours } from "@/lib/planning";
 
 const { eur, dateLongue, ou } = briques;
 
 export type TypeDoc =
   | "fiche_poste" | "remise_materiel" | "reglement" | "promesse" | "avertissement" | "convocation" | "certificat" | "attestation"
-  | "licenciement" | "rupture_conventionnelle" | "rupture_essai" | "rupture_cdd" | "demission" | "solde_tout_compte";
+  | "licenciement" | "rupture_conventionnelle" | "rupture_essai" | "rupture_cdd" | "demission" | "solde_tout_compte"
+  | "be_licenciement" | "be_motif_grave" | "be_commun_accord" | "be_demission" | "be_certificat";
 
 export type GroupeDoc = "Embauche & quotidien" | "Discipline" | "Fin de contrat";
 export const GROUPES_DOCS: GroupeDoc[] = ["Embauche & quotidien", "Discipline", "Fin de contrat"];
@@ -38,7 +39,7 @@ export type Champ = {
 };
 
 export type Contexte = {
-  etablissement: { nom: string; adresse: string; siret: string; ville: string };
+  etablissement: { nom: string; adresse: string; siret: string; ville: string; pays: "FR" | "BE" };
   directeur: string;
   salarie: { civilite: "M." | "Mme"; prenom: string; nom: string; fonction: string; date_embauche: string; nature: string } | null;
   /** Matériel prévu au dernier contrat du salarié (pour la remise de matériel). */
@@ -50,6 +51,8 @@ export type Modele = {
   label: string;
   icone: NomIcone;
   groupe: GroupeDoc;
+  /** Réservé à un pays ; sans valeur, le document vaut pour la France et la Belgique. */
+  pays?: "FR" | "BE";
   description: string;
   /** requis : un salarié de l'équipe ; optionnel : salarié ou document générique ; candidat : nom saisi ; non : document d'établissement. */
   nominatif: "requis" | "optionnel" | "candidat" | "non";
@@ -217,7 +220,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
         "## Engagements",
         `${leSal(ctx).charAt(0).toUpperCase() + leSal(ctx).slice(1)} s'engage à utiliser ce matériel dans le cadre exclusif de son travail, à en prendre soin et à le porter ou l'utiliser conformément aux consignes d'hygiène et de sécurité.`,
         s(d, "entretien") === "salarie" ? `L'entretien des tenues est assuré par ${leSal(ctx)}, qui perçoit à ce titre la prime d'entretien prévue à son contrat.` : "L'entretien des tenues est assuré par l'entreprise.",
-        `Ce matériel reste la propriété de l'entreprise et devra être restitué au plus tard le dernier jour de travail. Toute perte ou détérioration doit être signalée sans délai ; conformément à l'article L1331-2 du Code du travail, aucune retenue sur salaire ne peut être opérée à ce titre.`,
+        `Ce matériel reste la propriété de l'entreprise et devra être restitué au plus tard le dernier jour de travail. Toute perte ou détérioration doit être signalée sans délai. ${ctx.etablissement.pays === "BE" ? "Le travailleur ne répond des dommages causés au matériel qu'en cas de dol, de faute lourde ou de faute légère présentant un caractère habituel (art. 18 de la loi du 3 juillet 1978)." : "Conformément à l'article L1331-2 du Code du travail, aucune retenue sur salaire ne peut être opérée à ce titre."}`,
         s(d, "remarques").trim() && `**Remarques :** ${s(d, "remarques").trim()}`,
         fait(d, ctx),
       ]
@@ -229,6 +232,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
   reglement: {
     cle: "reglement",
     groupe: "Embauche & quotidien",
+    pays: "FR",
     label: "Règlement intérieur",
     icone: "parchemin",
     description: "Obligatoire dès 50 salariés (France). Hygiène, sécurité, discipline, harcèlement.",
@@ -383,6 +387,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
   convocation: {
     cle: "convocation",
     groupe: "Discipline",
+    pays: "FR",
     label: "Convocation à entretien préalable",
     icone: "calendrier",
     description: "Avant une sanction importante ou un licenciement. Délai de 5 jours ouvrables.",
@@ -424,6 +429,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
   certificat: {
     cle: "certificat",
     groupe: "Fin de contrat",
+    pays: "FR",
     label: "Certificat de travail",
     icone: "formation",
     description: "À remettre à tout salarié à la fin de son contrat.",
@@ -492,6 +498,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
     label: "Lettre de licenciement",
     icone: "interdit",
     groupe: "Fin de contrat",
+    pays: "FR",
     description: "Motif personnel (faute, insuffisance), après l'entretien préalable. À envoyer en recommandé.",
     nominatif: "requis",
     signatureSalarie: false,
@@ -549,6 +556,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
     label: "Rupture conventionnelle",
     icone: "partenaire",
     groupe: "Fin de contrat",
+    pays: "FR",
     description: "Convention signée par les deux parties (CDI), avec calendrier et indemnité minimale calculés.",
     nominatif: "requis",
     signatureSalarie: true,
@@ -606,6 +614,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
     label: "Rupture de la période d'essai",
     icone: "horloge",
     groupe: "Fin de contrat",
+    pays: "FR",
     description: "Par l'employeur, avec le délai de prévenance légal calculé selon la présence.",
     nominatif: "requis",
     signatureSalarie: true,
@@ -643,6 +652,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
     label: "Rupture anticipée d'un CDD",
     icone: "calendrier",
     groupe: "Fin de contrat",
+    pays: "FR",
     description: "Accord commun écrit pour mettre fin à un CDD avant son terme.",
     nominatif: "requis",
     signatureSalarie: true,
@@ -678,6 +688,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
     label: "Accusé de réception de démission",
     icone: "reception",
     groupe: "Fin de contrat",
+    pays: "FR",
     description: "Prend acte de la démission et fixe le préavis et la date de départ.",
     nominatif: "requis",
     signatureSalarie: true,
@@ -719,6 +730,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
     label: "Reçu pour solde de tout compte",
     icone: "facture",
     groupe: "Fin de contrat",
+    pays: "FR",
     description: "Inventaire des sommes versées à la fin du contrat, signé par le salarié.",
     nominatif: "requis",
     signatureSalarie: true,
@@ -742,13 +754,205 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
         fait(d, ctx),
       ].join("\n\n"),
   },
+
+  be_licenciement: {
+    cle: "be_licenciement",
+    label: "Licenciement avec préavis",
+    icone: "interdit",
+    groupe: "Fin de contrat",
+    pays: "BE",
+    description: "Délai de préavis légal calculé selon l'ancienneté, ou indemnité compensatoire. Envoi recommandé.",
+    nominatif: "requis",
+    signatureSalarie: false,
+    champs: [
+      { cle: "date_envoi", label: "Date d'envoi du recommandé", type: "date", requis: true },
+      { cle: "date_entree", label: "Date d'entrée en service", type: "date" },
+      { cle: "execution", label: "Préavis", type: "choix", options: [["preste", "À prester"], ["indemnite", "Rupture immédiate avec indemnité compensatoire de préavis"]] },
+      { cle: "motifs", label: "Motifs (facultatif)", type: "zone", aide: "Pas obligatoires dans la lettre, mais le travailleur peut les demander (CCT n° 109)." },
+      { cle: "fait_a", label: "Fait à", type: "texte" },
+    ],
+    defauts: (ctx) => ({ date_envoi: aujourdhui(), date_entree: ctx.salarie?.date_embauche ?? "", execution: "preste", motifs: "", fait_a: ctx.etablissement.ville }),
+    generer: (d, ctx) => {
+      const civ = ctx.salarie?.civilite === "Mme" ? "Madame" : "Monsieur";
+      const brouillon = periodePreavisBE(s(d, "date_envoi"), "recommande", 1);
+      const anc = anciennete(s(d, "date_entree"), brouillon?.debut ?? aujourdhui());
+      const semaines = preavisEmployeurBE(anc.mois);
+      const p = periodePreavisBE(s(d, "date_envoi"), "recommande", semaines);
+      const indemnite = s(d, "execution") === "indemnite";
+      return [
+        "# Notification de licenciement",
+        `#> ${ctx.etablissement.nom} · lettre recommandée · loi du 3 juillet 1978 relative aux contrats de travail`,
+        `**${nomSal(ctx)}**${ctx.salarie?.fonction ? `, ${posteDe(ctx.salarie.fonction, ctx.salarie.civilite)}` : ""}`,
+        `${civ},`,
+        indemnite
+          ? `Nous vous informons que nous mettons fin à votre contrat de travail avec effet immédiat, moyennant le paiement d'une **indemnité compensatoire de préavis** correspondant à **${semaines} semaine${semaines > 1 ? "s" : ""}** de rémunération, conformément à l'article 39 de la loi du 3 juillet 1978.`
+          : `Nous vous informons que nous mettons fin à votre contrat de travail moyennant un **préavis de ${semaines} semaine${semaines > 1 ? "s" : ""}**, qui prendra cours le **lundi ${dateLongue(p?.debut ?? "")}** et se terminera le **${dateLongue(p?.fin ?? "")}**.`,
+        `Ce délai correspond à votre ancienneté de ${Math.floor(anc.mois / 12)} an${Math.floor(anc.mois / 12) > 1 ? "s" : ""} et ${anc.mois % 12} mois au début du préavis (article 37/2 de la loi du 3 juillet 1978).`,
+        s(d, "motifs") && `Les motifs de cette décision sont les suivants : ${s(d, "motifs")}`,
+        !s(d, "motifs") && "Conformément à la convention collective de travail n° 109, vous pouvez nous demander, par lettre recommandée, les motifs concrets de votre licenciement dans les deux mois qui suivent la fin du contrat ; nous vous répondrons dans les deux mois de la réception de votre demande.",
+        !indemnite && "Pendant le préavis, vous pouvez vous absenter, avec maintien de votre rémunération, afin de rechercher un nouvel emploi, dans les limites prévues par la loi.",
+        semaines >= 30 && "Compte tenu de la durée de votre préavis, vous bénéficiez de mesures favorisant votre employabilité, dont un reclassement professionnel (outplacement), dont nous vous communiquerons les modalités.",
+        "À la fin du contrat, vous recevrez votre certificat de chômage (C4), votre attestation de vacances, votre certificat de travail et votre décompte final.",
+        `Veuillez agréer, ${civ}, l'expression de nos salutations distinguées.`,
+        `Fait à ${ou(s(d, "fait_a") || ctx.etablissement.ville)}, le ${dateLongue(s(d, "date_envoi"))}.`,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+    },
+  },
+
+  be_motif_grave: {
+    cle: "be_motif_grave",
+    label: "Licenciement pour motif grave",
+    icone: "alerte",
+    groupe: "Fin de contrat",
+    pays: "BE",
+    description: "Rupture immédiate sans préavis. Congé et motifs dans les 3 jours ouvrables.",
+    nominatif: "requis",
+    signatureSalarie: true,
+    mentionSalarie: "Copie reçue le (pour réception, sans reconnaissance des faits)",
+    champs: [
+      { cle: "date_connaissance", label: "Date à laquelle les faits ont été connus avec certitude", type: "date", requis: true },
+      { cle: "faits", label: "Faits reprochés (précis, datés, circonstanciés)", type: "zone", requis: true, aide: "Seuls les faits décrits ici pourront être invoqués devant le tribunal du travail." },
+      { cle: "date_envoi", label: "Date de notification", type: "date", requis: true },
+      { cle: "mode", label: "Mode de notification", type: "choix", options: [["recommande", "Lettre recommandée"], ["remise", "Remise d'un écrit contresigné par le travailleur"], ["huissier", "Exploit d'huissier"]] },
+      { cle: "fait_a", label: "Fait à", type: "texte" },
+    ],
+    defauts: (ctx) => ({ date_connaissance: "", faits: "", date_envoi: aujourdhui(), mode: "recommande", fait_a: ctx.etablissement.ville }),
+    generer: (d, ctx) => {
+      const civ = ctx.salarie?.civilite === "Mme" ? "Madame" : "Monsieur";
+      return [
+        "# Licenciement pour motif grave",
+        `#> ${ctx.etablissement.nom} · ${s(d, "mode") === "remise" ? "écrit remis contre signature" : s(d, "mode") === "huissier" ? "exploit d'huissier" : "lettre recommandée"} · article 35 de la loi du 3 juillet 1978`,
+        `**${nomSal(ctx)}**${ctx.salarie?.fonction ? `, ${posteDe(ctx.salarie.fonction, ctx.salarie.civilite)}` : ""}`,
+        `${civ},`,
+        `Nous vous notifions par la présente la rupture immédiate de votre contrat de travail, **sans préavis ni indemnité**, pour motif grave au sens de l'article 35 de la loi du 3 juillet 1978 relative aux contrats de travail.`,
+        `Les faits suivants, dont nous avons eu connaissance avec certitude le ${dateLongue(s(d, "date_connaissance"))}, constituent une faute grave qui rend immédiatement et définitivement impossible toute collaboration professionnelle :`,
+        ou(s(d, "faits")),
+        "Vous recevrez votre certificat de chômage (C4), votre attestation de vacances, votre certificat de travail et votre décompte final.",
+        `Veuillez agréer, ${civ}, l'expression de nos salutations distinguées.`,
+        `Fait à ${ou(s(d, "fait_a") || ctx.etablissement.ville)}, le ${dateLongue(s(d, "date_envoi"))}.`,
+      ].join("\n\n");
+    },
+  },
+
+  be_commun_accord: {
+    cle: "be_commun_accord",
+    label: "Rupture de commun accord",
+    icone: "partenaire",
+    groupe: "Fin de contrat",
+    pays: "BE",
+    description: "Fin du contrat à une date convenue, sans préavis. Attention aux allocations de chômage.",
+    nominatif: "requis",
+    signatureSalarie: true,
+    mentionSalarie: "Lu et approuvé, bon pour accord",
+    champs: [
+      { cle: "date_fin", label: "Date de fin du contrat", type: "date", requis: true },
+      { cle: "indemnite", label: "Indemnité convenue (facultatif)", type: "texte", placeholder: "ex. 2 000 € brut" },
+      { cle: "fait_a", label: "Fait à", type: "texte" },
+      { cle: "fait_le", label: "Le", type: "date" },
+    ],
+    defauts: (ctx) => ({ date_fin: "", indemnite: "", fait_a: ctx.etablissement.ville, fait_le: aujourdhui() }),
+    generer: (d, ctx) =>
+      [
+        "# Convention de rupture de commun accord",
+        `#> Loi du 3 juillet 1978 relative aux contrats de travail`,
+        "Entre :",
+        `${employeur(ctx)}, représentée par ${ou(ctx.directeur)}, ci-après « l'employeur »,`,
+        `et ${nomSal(ctx)}, ci-après « ${ctx.salarie?.civilite === "Mme" ? "la travailleuse" : "le travailleur"} ».`,
+        `Les parties conviennent, librement et d'un commun accord, de mettre fin au contrat de travail qui les lie. Le contrat prendra fin le **${dateLongue(s(d, "date_fin"))}**, sans préavis.`,
+        s(d, "indemnite") ? `L'employeur versera une indemnité de rupture de ${s(d, "indemnite")}.` : "Aucune indemnité n'est due de part et d'autre.",
+        `${ctx.salarie?.civilite === "Mme" ? "La travailleuse" : "Le travailleur"} reconnaît avoir été informé${e(ctx)} que ce mode de rupture peut entraîner une sanction de l'ONEM sur ses allocations de chômage, la fin du contrat pouvant être considérée comme volontaire.`,
+        "L'employeur remettra le certificat de chômage (C4), l'attestation de vacances, le certificat de travail et le décompte final.",
+        "Établi en deux exemplaires, dont un remis à chaque partie.",
+        fait(d, ctx),
+      ].join("\n\n"),
+  },
+
+  be_demission: {
+    cle: "be_demission",
+    label: "Accusé de réception de démission",
+    icone: "reception",
+    groupe: "Fin de contrat",
+    pays: "BE",
+    description: "Calcule le préavis dû par le travailleur et ses dates de début et de fin.",
+    nominatif: "requis",
+    signatureSalarie: true,
+    mentionSalarie: "Reçu",
+    champs: [
+      { cle: "date_reception", label: "Date de la démission", type: "date", requis: true },
+      { cle: "mode", label: "Démission notifiée par", type: "choix", options: [["remise", "Écrit remis à l'employeur"], ["recommande", "Lettre recommandée"]] },
+      { cle: "date_entree", label: "Date d'entrée en service", type: "date" },
+      { cle: "dispense", label: "Dispense de préavis accordée", type: "oui_non" },
+      { cle: "fait_a", label: "Fait à", type: "texte" },
+      { cle: "fait_le", label: "Le", type: "date" },
+    ],
+    defauts: (ctx) => ({ date_reception: aujourdhui(), mode: "remise", date_entree: ctx.salarie?.date_embauche ?? "", dispense: false, fait_a: ctx.etablissement.ville, fait_le: aujourdhui() }),
+    generer: (d, ctx) => {
+      const civ = ctx.salarie?.civilite === "Mme" ? "Madame" : "Monsieur";
+      const mode = s(d, "mode") === "recommande" ? "recommande" : "remise";
+      const brouillon = periodePreavisBE(s(d, "date_reception"), mode, 1);
+      const anc = anciennete(s(d, "date_entree"), brouillon?.debut ?? aujourdhui());
+      const semaines = preavisTravailleurBE(anc.mois);
+      const p = periodePreavisBE(s(d, "date_reception"), mode, semaines);
+      return [
+        "# Accusé de réception de démission",
+        `#> ${ctx.etablissement.nom}`,
+        `**${nomSal(ctx)}**`,
+        `${civ},`,
+        `Nous accusons réception de votre démission du ${dateLongue(s(d, "date_reception"))}${mode === "recommande" ? ", notifiée par lettre recommandée" : ""}, dont nous prenons acte.`,
+        b(d, "dispense")
+          ? `À votre demande, nous acceptons de vous dispenser de prester votre préavis. Votre contrat prendra fin d'un commun accord le ${dateLongue(p?.debut ? p.effet : "")}.`
+          : `Compte tenu de votre ancienneté (${Math.floor(anc.mois / 12)} an${Math.floor(anc.mois / 12) > 1 ? "s" : ""} et ${anc.mois % 12} mois), votre préavis est de **${semaines} semaine${semaines > 1 ? "s" : ""}**. Il prend cours le **lundi ${dateLongue(p?.debut ?? "")}** et se termine le **${dateLongue(p?.fin ?? "")}**.`,
+        "Vous recevrez à la fin du contrat votre certificat de chômage (C4), votre attestation de vacances, votre certificat de travail et votre décompte final.",
+        "Nous vous remercions pour le travail accompli et vous souhaitons pleine réussite pour la suite.",
+        `Veuillez agréer, ${civ}, l'expression de nos salutations distinguées.`,
+        fait(d, ctx),
+      ].join("\n\n");
+    },
+  },
+
+  be_certificat: {
+    cle: "be_certificat",
+    label: "Certificat de travail",
+    icone: "formation",
+    groupe: "Fin de contrat",
+    pays: "BE",
+    description: "À remettre à la fin du contrat (article 21 de la loi du 3 juillet 1978).",
+    nominatif: "requis",
+    signatureSalarie: false,
+    champs: [
+      { cle: "date_entree", label: "Date de début du contrat", type: "date" },
+      { cle: "date_sortie", label: "Date de fin du contrat", type: "date" },
+      { cle: "fonctions", label: "Nature du travail effectué (une ligne par fonction)", type: "liste" },
+      { cle: "mentions", label: "Autres mentions demandées par le travailleur (facultatif)", type: "zone", aide: "Le certificat ne peut rien contenir d'autre, sauf à la demande expresse du travailleur." },
+      ...CHAMPS_FIN,
+    ],
+    defauts: (ctx) => ({ date_entree: ctx.salarie?.date_embauche ?? "", date_sortie: "", fonctions: ctx.salarie?.fonction ? [posteDe(ctx.salarie.fonction, ctx.salarie.civilite)] : [], mentions: "", fait_a: ctx.etablissement.ville, fait_le: aujourdhui() }),
+    generer: (d, ctx) =>
+      [
+        "# Certificat de travail",
+        `#> ${ctx.etablissement.nom} · article 21 de la loi du 3 juillet 1978`,
+        `Je soussigné(e) ${ou(ctx.directeur)}, agissant pour ${employeur(ctx)}, certifie que ${nomSal(ctx)} a été occupé${e(ctx)} dans notre entreprise du **${dateLongue(s(d, "date_entree"))}** au **${dateLongue(s(d, "date_sortie"))}**, en qualité de :`,
+        puces(l(d, "fonctions")) || "- [fonction à compléter]",
+        s(d, "mentions"),
+        "Certificat délivré pour servir et valoir ce que de droit.",
+        fait(d, ctx),
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
+  },
 };
 
 export const ORDRE_DOCS: TypeDoc[] = [
   "fiche_poste", "remise_materiel", "reglement", "promesse", "attestation",
   "avertissement", "convocation",
   "licenciement", "rupture_conventionnelle", "rupture_essai", "rupture_cdd", "demission", "solde_tout_compte", "certificat",
+  "be_licenciement", "be_motif_grave", "be_commun_accord", "be_demission", "be_certificat",
 ];
+
+/** Documents proposés à un établissement selon son pays. */
+export const docsDuPays = (pays: "FR" | "BE") => ORDRE_DOCS.filter((t) => !MODELES_DOCS[t].pays || MODELES_DOCS[t].pays === pays);
 
 /** Alertes légales propres à chaque document. */
 export function alertesDoc(type: TypeDoc, d: Donnees, ctx?: Contexte): string[] {
@@ -782,6 +986,11 @@ export function alertesDoc(type: TypeDoc, d: Donnees, ctx?: Contexte): string[] 
     if (ref && s(d, "indemnite") && Number(s(d, "indemnite")) < indemniteLegale(ref, anciennete(ctx?.salarie?.date_embauche ?? "", s(d, "date_fin") || s(d, "date_signature")).annees)) a.push("L'indemnité convenue est inférieure à l'indemnité légale de licenciement : l'administration refusera l'homologation.");
   }
   if (type === "rupture_essai" && !s(d, "fin_essai")) a.push("Indique la fin prévue de la période d'essai : le délai de prévenance ne peut pas la dépasser.");
+  if (type === "be_motif_grave" && s(d, "date_connaissance") && s(d, "date_envoi") > ajouterOuvrablesBE(s(d, "date_connaissance"), 3))
+    a.push(`Hors délai : le congé pour motif grave doit être notifié au plus tard le ${dateLongue(ajouterOuvrablesBE(s(d, "date_connaissance"), 3))}, trois jours ouvrables après la connaissance des faits. Au-delà, le motif grave sera rejeté.`);
+  if (type === "be_licenciement") a.push("Vérifie que le travailleur n'est pas protégé contre le licenciement (grossesse, congé parental ou crédit-temps, délégué syndical, conseiller en prévention…).");
+  if (type === "be_commun_accord") a.push("Une rupture de commun accord peut priver le travailleur d'allocations de chômage pendant plusieurs semaines : assure-toi qu'il en est bien informé.");
+  if (type.startsWith("be_") && type !== "be_certificat") a.push("Le certificat de chômage (C4) se fait par voie électronique (déclaration de risque social, scénario 5) auprès de ton secrétariat social.");
   if (type === "solde_tout_compte") a.push("Le montant doit correspondre au bulletin de paie de sortie. Le salarié peut dénoncer ce reçu pendant 6 mois.");
   return a;
 }
