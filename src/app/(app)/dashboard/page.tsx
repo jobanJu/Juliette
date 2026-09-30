@@ -7,6 +7,7 @@ import { MODULES } from "@/lib/modules";
 import { initiales, nomComplet, useConnecte } from "@/lib/session";
 import type { Compte } from "@/lib/session";
 import Icone from "@/components/Icone";
+import MiseEnRoute from "@/components/MiseEnRoute";
 import type { NomIcone } from "@/components/Icone";
 
 type Presence = { compte: Compte; etat: "present" | "pause" | "parti"; depuis: string };
@@ -305,6 +306,8 @@ export default function TableauDeBord() {
           </div>
         </section>
       )}
+
+      {compte.role === "directeur" && <MiseEnRoute etablissementId={etablissement.id} />}
 
       {erreur && <div className="error" style={{ marginBottom: 14 }}>Impossible de charger les données. Vérifie ta connexion puis recharge la page.</div>}
 
