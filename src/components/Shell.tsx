@@ -24,6 +24,21 @@ export default function Shell({ children }: { children: ReactNode }) {
   const horizontale = disposition === "horizontale";
   const [groupeOuvert, setGroupeOuvert] = useState<string | null>(null);
   const refHnav = useRef<HTMLElement>(null);
+  const [compteOuvert, setCompteOuvert] = useState(false);
+  const refCompte = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!compteOuvert) return;
+    const fermer = (e: MouseEvent | TouchEvent) => {
+      if (!refCompte.current?.contains(e.target as Node)) setCompteOuvert(false);
+    };
+    document.addEventListener("mousedown", fermer);
+    document.addEventListener("touchstart", fermer);
+    return () => {
+      document.removeEventListener("mousedown", fermer);
+      document.removeEventListener("touchstart", fermer);
+    };
+  }, [compteOuvert]);
 
   useEffect(() => {
     if (!groupeOuvert) return;
@@ -194,8 +209,9 @@ export default function Shell({ children }: { children: ReactNode }) {
               <small>{ROLE_LABEL[compte.role]}</small>
             </span>
           </Link>
-          <button className="icon-btn" onClick={deconnexion} title="Se déconnecter" aria-label="Se déconnecter">
+          <button className="icon-btn profile-sortie" onClick={deconnexion} title="Se déconnecter" aria-label="Se déconnecter">
             <Icone nom="deconnexion" taille={17} />
+            <span className="profile-sortie-libelle">Se déconnecter</span>
           </button>
         </div>
       </aside>
@@ -263,16 +279,44 @@ export default function Shell({ children }: { children: ReactNode }) {
                 <span className="hide-sm">Messages</span>
               </Link>
             )}
-            {horizontale ? (
-              <Link href="/parametres" className="hnav-profil" title={`${nomComplet(compte)} · ${etablissement.nom}`}>
-                <span className="avatar">{compte.avatar_url ? <img src={compte.avatar_url} alt="" /> : initiales(compte)}</span>
-                <span className="hide-sm">{etablissement.nom}</span>
-              </Link>
-            ) : (
+            {!horizontale && (
               <span className="live">
                 <i /> En ligne
               </span>
             )}
+            <div className="popover menu-compte" ref={refCompte}>
+              <button className="hnav-profil" onClick={() => setCompteOuvert((o) => !o)} aria-expanded={compteOuvert} aria-label="Mon compte" title={`${nomComplet(compte)} · ${etablissement.nom}`}>
+                <span className="avatar">{compte.avatar_url ? <img src={compte.avatar_url} alt="" /> : initiales(compte)}</span>
+                {horizontale && <span className="hide-sm">{etablissement.nom}</span>}
+              </button>
+              {compteOuvert && (
+                <div className="popover-menu menu-compte-liste" role="menu">
+                  <div className="menu-compte-qui">
+                    <b>{nomComplet(compte)}</b>
+                    <small>
+                      {ROLE_LABEL[compte.role]} · {etablissement.nom}
+                    </small>
+                  </div>
+                  <Link href="/parametres" role="menuitem" onClick={() => setCompteOuvert(false)}>
+                    <Icone nom="reglages" /> Mon compte
+                  </Link>
+                  <Link href="/aide" role="menuitem" onClick={() => setCompteOuvert(false)}>
+                    <Icone nom="aide" /> Aide
+                  </Link>
+                  {sites.length > 1 &&
+                    sites
+                      .filter((x) => x.etablissement.id !== etablissement.id)
+                      .map((x) => (
+                        <button key={x.etablissement.id} role="menuitem" onClick={() => changerEtablissement(x.etablissement.id)}>
+                          <Icone nom="immeuble" /> Passer à {x.etablissement.nom}
+                        </button>
+                      ))}
+                  <button role="menuitem" className="menu-compte-sortie" onClick={deconnexion}>
+                    <Icone nom="deconnexion" /> Se déconnecter
+                  </button>
+                </div>
+              )}
+            </div>
             <span className="hide-sm" style={{ textTransform: "capitalize" }}>
               {aujourdhui}
             </span>

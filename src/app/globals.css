@@ -2257,3 +2257,33 @@ tr.row-choisi td { background: var(--lavender); }
 .mdp-carte p { margin: 0; color: var(--ink-2); line-height: 1.55; }
 .mdp-label { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .mdp-label a { font-size: 12.5px; font-weight: 600; color: var(--purple-ink); }
+
+/* ── Menu du compte (avatar en haut à droite) et déconnexion ── */
+button.hnav-profil { border: 0; background: transparent; padding: 2px; border-radius: 999px; cursor: pointer; font: inherit; }
+button.hnav-profil:hover .avatar, button.hnav-profil[aria-expanded="true"] .avatar { box-shadow: 0 0 0 2px var(--purple); }
+.menu-compte-liste { left: auto; right: 0; min-width: 250px; padding: 6px; }
+.menu-compte-liste a, .menu-compte-liste button { display: flex; align-items: center; gap: 10px; padding: 10px 10px; border-radius: 8px; font-size: 14px; color: var(--ink); text-decoration: none; }
+.menu-compte-liste a:hover { background: var(--paper); }
+.menu-compte-liste .icone { color: var(--muted); }
+.menu-compte-qui { display: grid; gap: 2px; padding: 8px 10px 10px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.menu-compte-qui b { font-size: 14px; color: var(--ink); }
+.menu-compte-qui small { font-size: 12px; color: var(--muted); }
+.menu-compte-liste .menu-compte-sortie { margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; color: var(--red-ink); font-weight: 650; }
+.menu-compte-liste .menu-compte-sortie .icone { color: var(--red-ink); }
+.menu-compte-liste .menu-compte-sortie:hover { background: var(--red); }
+.profile-sortie-libelle { display: none; }
+@media (min-width: 861px) {
+  /* Menu latéral : le profil et la déconnexion y sont déjà. */
+  .shell:not(.horizontale) .menu-compte { display: none; }
+}
+@media (max-width: 860px) {
+  .top-right { gap: 10px; }
+  .menu-compte .avatar { width: 34px; height: 34px; }
+  .menu-compte-liste { position: fixed; top: calc(58px + env(safe-area-inset-top, 0px)); right: 12px; left: auto; width: min(300px, calc(100vw - 24px)); }
+  .menu-compte-liste a, .menu-compte-liste button { min-height: 46px; font-size: 15px; }
+  /* Menu latéral ouvert : il passe devant la barre du bas, profil collé en bas. */
+  .sidebar { z-index: 40; padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+  .sidebar .profile { position: sticky; bottom: calc(-14px - env(safe-area-inset-bottom, 0px)); background: var(--card); padding-bottom: 10px; flex-wrap: wrap; }
+  .profile .profile-sortie { width: 100%; height: 44px; display: flex; justify-content: center; gap: 8px; border: 1px solid var(--line); color: var(--red-ink); font-size: 14px; font-weight: 650; }
+  .profile-sortie-libelle { display: inline; }
+}
