@@ -1129,7 +1129,7 @@ tr.clickable { cursor: pointer; }
 .recipe-img img { width: 100%; height: 100%; object-fit: cover; }
 .recipe-body { display: grid; gap: 4px; padding: 12px 14px 14px; }
 .recipe-body b { font-size: 15px; letter-spacing: -.2px; }
-.recipe-allerg { font-size: 14px; letter-spacing: 2px; }
+.recipe-allerg { font-size: 12px; color: var(--muted); line-height: 1.4; }
 .recipe-cost { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12.5px; font-weight: 600; }
 .editeur-grid, .fiche-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
 .ing-list { display: grid; gap: 6px; overflow-x: auto; }
