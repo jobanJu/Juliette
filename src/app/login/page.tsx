@@ -21,6 +21,13 @@ export default function Connexion() {
     if (etat.statut === "connecte") router.replace("/dashboard");
   }, [etat.statut, router]);
 
+  // Arrivée depuis la souscription : code et e-mail déjà connus.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("code")) setCode(q.get("code")!);
+    if (q.get("email")) setEmail(q.get("email")!);
+  }, []);
+
   async function valider(e: FormEvent) {
     e.preventDefault();
     setEnvoi(true);

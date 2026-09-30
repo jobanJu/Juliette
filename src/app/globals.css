@@ -2132,3 +2132,62 @@ tr.row-choisi td { background: var(--lavender); }
   .aide-sommaire { position: static; display: flex; overflow-x: auto; gap: 6px; max-height: none; scrollbar-width: none; }
   .aide-sommaire a { flex: 0 0 auto; white-space: nowrap; border: 1px solid var(--line); background: var(--card); }
 }
+
+/* ── Souscription ── */
+.souscr-offre { display: grid; gap: 10px; }
+.souscr-etiquette { margin: 0; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; opacity: .75; }
+.souscr-prix { margin: 0 !important; font-size: 48px; font-weight: 800; letter-spacing: -2px; line-height: 1; opacity: 1 !important; }
+.souscr-prix small { font-size: 16px; font-weight: 600; letter-spacing: 0; opacity: .8; }
+.souscr-essai { margin: 0 !important; font-weight: 600; opacity: 1 !important; }
+.souscr-form { max-width: 420px !important; padding-block: 12px; }
+.souscr-form fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 12px; }
+.souscr-form legend { padding: 0; margin-bottom: 10px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.souscr-marque-mobile { display: none; }
+@media (max-width: 860px) { .souscr-marque-mobile { display: flex; } }
+.souscr-merci { max-width: 460px; display: grid; gap: 14px; justify-items: center; text-align: center; padding: 32px 26px; }
+.souscr-merci h1 { margin: 0; font-size: 24px; letter-spacing: -.6px; text-wrap: balance; }
+.souscr-merci p { margin: 0; color: var(--ink-2); line-height: 1.55; }
+.souscr-ok { width: 56px; height: 56px; border-radius: 50%; }
+.souscr-code { display: grid; gap: 2px; padding: 12px 26px; border-radius: 12px; background: var(--lavender); }
+.souscr-code small { color: var(--muted); font-size: 11.5px; }
+.souscr-code b { font-size: 28px; letter-spacing: 4px; color: var(--purple-ink); font-variant-numeric: tabular-nums; }
+.souscr-attente { width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--lavender); border-top-color: var(--purple); animation: souscr-tour 0.9s linear infinite; }
+@keyframes souscr-tour { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .souscr-attente { animation-duration: 3s; } }
+
+/* ── Accueil : nouvelles sections ── */
+.acc-nav { align-items: center; }
+.acc-lien { padding: 0 10px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+.acc-lien:hover { color: var(--purple-ink); }
+.acc-hero .acc-cta .icone { margin-right: 4px; }
+.acc-quatre { list-style: none; margin: 0; padding: 0; counter-reset: etape; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.acc-quatre li { counter-increment: etape; padding: 4px 6px; }
+.acc-quatre li::before { content: counter(etape); display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--purple); color: #fff; font-size: 16px; font-weight: 700; }
+.acc-quatre h3 { margin: 12px 0 6px; font-size: 16px; text-wrap: balance; }
+.acc-quatre p, .acc-integrations p { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.55; }
+.acc-integrations { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+.acc-integrations > div { padding: 20px; border-left: 1px solid var(--line); }
+.acc-integrations > div:first-child { border-left: 0; }
+.acc-integrations h3 { margin: 0 0 6px; font-size: 15px; }
+.acc-atouts h3 { display: flex; align-items: center; gap: 8px; }
+.acc-atouts h3 .icone { color: var(--purple); }
+.acc-tarif { max-width: 560px; margin: 0 auto; padding: 30px; display: grid; gap: 18px; justify-items: center; text-align: center; border-color: var(--purple); }
+.acc-tarif-prix { display: grid; gap: 6px; justify-items: center; }
+.acc-tarif-prix b { font-size: 54px; font-weight: 800; letter-spacing: -2px; line-height: 1; font-variant-numeric: tabular-nums; }
+.acc-tarif-prix span { color: var(--muted); font-size: 14px; }
+.acc-tarif-prix .pill { margin: 6px 0 0; }
+.acc-tarif ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 14px; color: var(--ink-2); }
+.acc-tarif ul li::before { content: "✓"; color: var(--mint-ink); font-weight: 800; margin-right: 8px; }
+@media (max-width: 960px) {
+  .acc-quatre { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .acc-integrations { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .acc-integrations > div:nth-child(3) { border-left: 0; }
+  .acc-integrations > div:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+@media (max-width: 600px) {
+  .acc-nav .btn:first-child { display: inline-flex; }
+  .acc-quatre, .acc-integrations { grid-template-columns: minmax(0, 1fr); }
+  .acc-integrations > div { border-left: 0; border-top: 1px solid var(--line); }
+  .acc-integrations > div:first-child { border-top: 0; }
+  .acc-tarif { padding: 22px 16px; }
+}

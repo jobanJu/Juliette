@@ -9,11 +9,12 @@ import { emailValide } from "@/lib/personnel";
 import { MODULES_ACCES } from "@/lib/accreditations";
 import Accreditations from "@/components/parametres/Accreditations";
 import Caisse from "@/components/parametres/Caisse";
+import Abonnement from "@/components/parametres/Abonnement";
 import { useDispositionMenu } from "@/lib/preferences";
 import Icone from "@/components/Icone";
 
-type Onglet = "compte" | "acces" | "restaurant" | "modules" | "caisse" | "pointeuse" | "emails" | "accreditations";
-const ONGLETS: Onglet[] = ["compte", "acces", "restaurant", "modules", "caisse", "pointeuse", "emails", "accreditations"];
+type Onglet = "compte" | "acces" | "restaurant" | "modules" | "caisse" | "pointeuse" | "emails" | "accreditations" | "abonnement";
+const ONGLETS: Onglet[] = ["compte", "acces", "restaurant", "modules", "caisse", "pointeuse", "emails", "accreditations", "abonnement"];
 
 type Etab = {
   id: string;
@@ -74,6 +75,7 @@ export default function Parametres() {
     ...(compte.role !== "salarie" ? ([["caisse", "Caisse"]] as [Onglet, string][]) : []),
     ...(directeur ? ([["pointeuse", "Pointeuse"], ["emails", "E-mails automatiques"]] as [Onglet, string][]) : []),
     ...(modules.has("accreditations") ? ([["accreditations", "Accréditations"]] as [Onglet, string][]) : []),
+    ...(directeur ? ([["abonnement", "Abonnement"]] as [Onglet, string][]) : []),
   ];
   const bouton = ([k, l]: [Onglet, string]) => (
     <button key={k} role="tab" aria-selected={onglet === k} className={onglet === k ? "on" : ""} onClick={() => setOnglet(k)}>
@@ -121,6 +123,8 @@ export default function Parametres() {
         <ModulesEtablissement onToast={setToast} />
       ) : onglet === "accreditations" ? (
         <Accreditations />
+      ) : onglet === "abonnement" ? (
+        <Abonnement />
       ) : (
         <Emails />
       )}
