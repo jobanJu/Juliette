@@ -24,6 +24,7 @@ export default function Souscription() {
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [annule, setAnnule] = useState(false);
+  const [accepte, setAccepte] = useState(false);
 
   useEffect(() => {
     setAnnule(new URLSearchParams(window.location.search).has("annule"));
@@ -41,8 +42,9 @@ export default function Souscription() {
     e.preventDefault();
     setErreur(null);
     if (f.motDePasse.length < 8) return setErreur("Le mot de passe doit faire au moins 8 caractères.");
+    if (!accepte) return setErreur("Pour continuer, accepte les conditions générales d'abonnement.");
     setEnvoi(true);
-    const r = await fetch("/api/souscription", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) }).catch(() => null);
+    const r = await fetch("/api/souscription", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...f, accepteConditions: accepte }) }).catch(() => null);
     const d = r ? await r.json().catch(() => ({})) : {};
     if (r?.ok && d.url) {
       window.location.href = d.url;
@@ -155,6 +157,25 @@ export default function Souscription() {
               <small className="hint">8 caractères minimum.</small>
             </div>
           </fieldset>
+
+          <label className="souscr-accord">
+            <input type="checkbox" checked={accepte} onChange={(e) => setAccepte(e.target.checked)} required />
+            <span>
+              J&apos;agis pour les besoins de mon activité professionnelle et j&apos;accepte les{" "}
+              <Link href="/conditions" target="_blank">
+                conditions générales d&apos;abonnement
+              </Link>
+              , dont l&apos;
+              <Link href="/sous-traitance" target="_blank">
+                accord de sous-traitance des données
+              </Link>
+              . J&apos;ai lu la{" "}
+              <Link href="/confidentialite" target="_blank">
+                politique de confidentialité
+              </Link>
+              .
+            </span>
+          </label>
 
           {erreur && (
             <div className="error" role="alert">

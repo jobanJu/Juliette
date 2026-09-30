@@ -54,7 +54,9 @@ export default function Connexion() {
             <li><Icone nom="surgele" /> HACCP : températures, nettoyage et traçabilité</li>
           </ul>
         </div>
-        <small style={{ opacity: 0.6 }}>© {new Date().getFullYear()} Juliette</small>
+        <small style={{ opacity: 0.7 }}>
+          © {new Date().getFullYear()} Juliette · <Link href="/mentions-legales">Mentions légales</Link> · <Link href="/confidentialite">Confidentialité</Link>
+        </small>
       </aside>
 
       <div className="login-form">

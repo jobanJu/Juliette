@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getStripe, joursEssai } from "@/lib/stripeServeur";
+import { VERSION_CONDITIONS } from "@/lib/editeur";
 
 export const runtime = "nodejs";
 
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
   if (!f.etablissement || !f.prenom || !f.nom) return NextResponse.json({ erreur: "champs", message: "Nom de l'établissement, prénom et nom sont obligatoires." }, { status: 400 });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) return NextResponse.json({ erreur: "email", message: "Adresse e-mail invalide." }, { status: 400 });
   if (f.motDePasse.length < 8) return NextResponse.json({ erreur: "mdp", message: "Le mot de passe doit faire au moins 8 caractères." }, { status: 400 });
+  if (b.accepteConditions !== true) return NextResponse.json({ erreur: "conditions", message: "Pour continuer, accepte les conditions générales d'abonnement." }, { status: 400 });
   if (f.code.length < 3) return NextResponse.json({ erreur: "code", message: "Le code établissement doit faire au moins 3 lettres ou chiffres." }, { status: 400 });
 
   const { data: codePris } = await admin.from("etablissements").select("id").eq("code", f.code).maybeSingle();
@@ -48,7 +50,7 @@ export async function POST(request: Request) {
 
   const { data: s, error } = await admin
     .from("souscriptions")
-    .insert({ auth_user_id: userId, email: f.email, prenom: f.prenom, nom: f.nom, etablissement_nom: f.etablissement, ville: f.ville || null, pays: f.pays, code: f.code })
+    .insert({ auth_user_id: userId, email: f.email, prenom: f.prenom, nom: f.nom, etablissement_nom: f.etablissement, ville: f.ville || null, pays: f.pays, code: f.code, conditions_version: VERSION_CONDITIONS, conditions_acceptees_at: new Date().toISOString() })
     .select("id")
     .single();
   if (error || !s) return NextResponse.json({ erreur: "enregistrement", message: "Inscription impossible pour le moment, réessaie dans un instant." }, { status: 500 });

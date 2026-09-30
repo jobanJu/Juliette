@@ -252,6 +252,11 @@ export default function Accueil() {
           <Marque taille={26} />
           Juliette
         </span>
+        <nav className="acc-legal" aria-label="Informations légales">
+          <Link href="/mentions-legales">Mentions légales</Link>
+          <Link href="/conditions">Conditions d&apos;abonnement</Link>
+          <Link href="/confidentialite">Confidentialité</Link>
+        </nav>
         <span className="hint">© {new Date().getFullYear()} Juliette · Fait pour les restaurants</span>
       </footer>
     </div>
