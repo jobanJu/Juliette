@@ -10,6 +10,7 @@ import type { EtatStock, Produit } from "@/lib/stock";
 import ModalProduit from "@/components/stock/ModalProduit";
 import ModalZones from "@/components/stock/ModalZones";
 import Modal from "@/components/Modal";
+import Icone from "@/components/Icone";
 
 type Onglet = "stock" | "compter";
 
@@ -151,7 +152,7 @@ export default function Stocks() {
 
           <div className="filters">
             <label className="search" style={{ flex: "1 1 220px", background: "var(--card)" }}>
-              <span aria-hidden>⌕</span>
+              <Icone nom="recherche" taille={15} />
               <input placeholder="Produit, fournisseur, référence…" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
             </label>
             <select className="select-sm" value={zone} onChange={(e) => setZone(e.target.value)} aria-label="Zone">
@@ -440,7 +441,7 @@ function ModalRanger({ zoneId, zoneTitre, produits, dejaIci, zonesDe, onClose, o
       }
     >
       <label className="search" style={{ background: "var(--card)" }}>
-        <span aria-hidden>⌕</span>
+        <Icone nom="recherche" taille={15} />
         <input placeholder="Rechercher un produit" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
       </label>
       <label className="hint" style={{ display: "flex", gap: 6, alignItems: "center" }}>

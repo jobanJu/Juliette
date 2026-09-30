@@ -11,6 +11,7 @@ import type { Produit } from "@/lib/stock";
 import EditeurFiche from "@/components/fiches/EditeurFiche";
 import Calculateur from "@/components/fiches/Calculateur";
 import { useStock } from "@/lib/useStock";
+import Icone from "@/components/Icone";
 
 export default function PageFiche() {
   const { id } = useParams<{ id: string }>();
@@ -143,10 +144,10 @@ export default function PageFiche() {
           {gestion && (
             <>
               <button className="btn" onClick={dupliquer}>
-                ⧉ Dupliquer
+                <Icone nom="copier" /> Dupliquer
               </button>
               <button className="btn btn-primary" onClick={() => setEdition(true)}>
-                ✎ Modifier
+                <Icone nom="modifier" /> Modifier
               </button>
             </>
           )}
@@ -233,7 +234,7 @@ export default function PageFiche() {
               <div className="chips">
                 {fiche.allergenes.map((a) => (
                   <span key={a} className="chip on" style={{ cursor: "default" }}>
-                    {ALLERGENES[a]?.icone} {ALLERGENES[a]?.label ?? a}
+                    {ALLERGENES[a]?.label ?? a}
                   </span>
                 ))}
               </div>

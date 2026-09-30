@@ -7,6 +7,7 @@ import { MODULES, SECTIONS } from "@/lib/modules";
 import { MODULES_ESSENTIELS, ROLE_LABEL } from "@/lib/session";
 import type { Role } from "@/lib/session";
 import { CAISSES, caisse } from "@/lib/caisses";
+import Icone from "@/components/Icone";
 
 // Console de l'équipe Juliette : hors menu, accessible aux seuls membres de equipe_juliette
 // (vérifié côté serveur à chaque appel). Pour tout autre compte, elle se présente comme une page
@@ -161,7 +162,7 @@ export default function Console() {
           ))}
         </div>
         <label className="search" style={{ flex: "1 1 220px", maxWidth: 360 }}>
-          <span aria-hidden>⌕</span>
+          <Icone nom="recherche" taille={15} />
           <input placeholder="Nom, code, ville, directeur…" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
         </label>
       </div>

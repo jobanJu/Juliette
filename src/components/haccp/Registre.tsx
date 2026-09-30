@@ -7,6 +7,7 @@ import { csv } from "@/lib/pointage";
 import { ACTIONS_HUILE, CONSERVATIONS, estTracePhoto, etapeRefroidissementConforme, formatTemp, refroidissementConforme } from "@/lib/haccp";
 import type { Cuisson, Enregistrement, Etiquette, Huile, Nettoyage, Production, Refroidissement, Temperature, TypeEnregistrement } from "@/lib/haccp";
 import PhotoHaccp from "@/components/haccp/Photo";
+import Icone from "@/components/Icone";
 
 const TYPES: Record<TypeEnregistrement, string> = { temperature: "Température", nettoyage: "Nettoyage", refroidissement: "Refroidissement", tracabilite: "Traçabilité", production: "Production", cuisson: "Cuisson", huile: "Huiles" };
 
@@ -46,7 +47,7 @@ function detail(e: Enregistrement): { texte: string; conforme: boolean | null } 
   }
   if (estTracePhoto(e.data)) {
     const d = e.data;
-    return { texte: `📷 ${d.produit || "Article non renseigné"}${d.lot ? ` · lot ${d.lot}` : ""}${d.dlc ? ` · DLC ${depuisIso(d.dlc).toLocaleDateString("fr-FR")}` : ""}`, conforme: null };
+    return { texte: `Photo · ${d.produit || "Article non renseigné"}${d.lot ? ` · lot ${d.lot}` : ""}${d.dlc ? ` · DLC ${depuisIso(d.dlc).toLocaleDateString("fr-FR")}` : ""}`, conforme: null };
   }
   const d = e.data as Etiquette;
   return { texte: `${d.produit}${d.quantite ? ` (${d.quantite})` : ""} · lot ${d.lot} · DLC ${depuisIso(d.dlc).toLocaleDateString("fr-FR")}`, conforme: null };
@@ -133,7 +134,7 @@ export default function Registre({ liste, gestion, etablissementCode, typeInitia
         </div>
         <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button className="btn btn-sm" onClick={copierGoogleSheets} title="Copier les données tabulées pour les coller directement dans Google Sheets">
-            {copieOk ? "✓ Copié !" : "📋 Google Sheets"}
+            {copieOk ? "✓ Copié !" : <><Icone nom="liste" /> Google Sheets</>}
           </button>
           <button className="btn btn-sm" onClick={exporter} title="Télécharger sous format CSV compatible Microsoft Excel">
             ⤓ Export Excel (.csv)
@@ -176,7 +177,7 @@ export default function Registre({ liste, gestion, etablissementCode, typeInitia
                     {gestion && (
                       <td className="print-hide" style={{ textAlign: "right" }}>
                         <button className="icon-btn" onClick={() => supprimer(l.e)} aria-label="Supprimer" title="Supprimer (erreur de saisie)">
-                          🗑
+                          <Icone nom="supprimer" />
                         </button>
                       </td>
                     )}

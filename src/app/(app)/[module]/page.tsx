@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { MODULES } from "@/lib/modules";
+import Icone from "@/components/Icone";
 
 // Modules pas encore reconstruits : une page claire plutôt qu'un écran vide ou une 404.
 export default function ModuleAVenir() {
@@ -23,7 +24,7 @@ export default function ModuleAVenir() {
 
   return (
     <div className="card soon-card">
-      <div className="chip-ic t-lav">{m.icon}</div>
+      <div className="chip-ic t-lav"><Icone nom={m.icon} /></div>
       <h1>{m.label}</h1>
       <p>{m.sub}. Ce module est en cours de reconstruction dans la nouvelle version de Juliette. Les données existantes sont conservées dans la base et réapparaîtront ici.</p>
       <p style={{ marginTop: 18 }}>

@@ -5,6 +5,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { ajouterJours, depuisIso, iso } from "@/lib/planning";
 import { CATEGORIES_DLC, joursRestants, numeroLot, PRODUITS_DLC_DEFAUT } from "@/lib/haccp";
 import type { CategorieDlcId, Enregistrement, Etiquette, ProduitDlcConfig } from "@/lib/haccp";
+import Icone from "@/components/Icone";
 
 type Props = {
   etablissementId: string;
@@ -186,7 +187,7 @@ export default function Etiquettes(p: Props) {
         </div>
         {p.gestion && p.onConfigurer && (
           <button className="btn btn-sm" onClick={p.onConfigurer} title="Ajouter des produits ou changer les durées de DLC">
-            ⚙ Paramètres des produits & DLC
+            <Icone nom="reglages" /> Paramètres des produits & DLC
           </button>
         )}
       </div>
@@ -209,7 +210,7 @@ export default function Etiquettes(p: Props) {
                   className={`haccp-dlc-cat-card ${active ? "on" : ""}`}
                   onClick={() => changerCategorie(cat.id)}
                 >
-                  <span className="haccp-dlc-cat-icon">{cat.icone}</span>
+                  <span className="haccp-dlc-cat-icon"><Icone nom={cat.icone} taille={22} /></span>
                   <div className="haccp-dlc-cat-text">
                     <b>{cat.label}</b>
                     <small>Standard : J+{cat.dlcDefautJours} · {cat.conservation}</small>
@@ -232,7 +233,7 @@ export default function Etiquettes(p: Props) {
             <input
               type="search"
               className="haccp-dlc-search"
-              placeholder="🔍 Filtrer les produits…"
+              placeholder="Filtrer les produits…"
               value={filtreRecherche}
               onChange={(e) => setFiltreRecherche(e.target.value)}
             />
@@ -335,7 +336,7 @@ export default function Etiquettes(p: Props) {
                 style={{ width: "100%", height: 42, borderRadius: 8, fontWeight: 750, fontSize: 14 }}
               />
               <span className="hint" style={{ fontSize: 11, marginTop: 3 }}>
-                🔒 <b>Sécurité HACCP :</b> la date peut uniquement être modifiée <b>à la baisse</b> (vers une date plus courte).
+                <Icone nom="cadenas" taille={14} /> <b>Sécurité HACCP :</b> la date peut uniquement être modifiée <b>à la baisse</b> (vers une date plus courte).
               </span>
             </div>
 

@@ -6,6 +6,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { depuisIso } from "@/lib/planning";
 import { heure, LIBELLE_TYPE } from "@/lib/pointage";
 import type { PointageBrut, TypePointage } from "@/lib/pointage";
+import Icone from "@/components/Icone";
 
 type Props = {
   etablissementId: string;
@@ -123,7 +124,7 @@ export default function ModalCorrection(p: Props) {
                   {e.justificatif && <small title={e.justificatif}>{e.justificatif}</small>}
                 </span>
                 <button className="icon-btn" onClick={() => supprimer(e)} disabled={envoi} aria-label="Supprimer ce pointage" title="Supprimer">
-                  🗑
+                  <Icone nom="supprimer" />
                 </button>
               </div>
             ))}

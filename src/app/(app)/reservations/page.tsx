@@ -7,6 +7,7 @@ import { ajouterJours, depuisIso, iso, JOURS_COURTS, lundi } from "@/lib/plannin
 import { BRIEFING, COLONNES_RESA, service, STATUT_RESA } from "@/lib/salle";
 import type { NoteBriefing, Reservation, TableSalle } from "@/lib/salle";
 import Modal from "@/components/Modal";
+import Icone from "@/components/Icone";
 
 const HEURES = { midi: ["11:45", "12:00", "12:15", "12:30", "12:45", "13:00", "13:30"], soir: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30"] };
 /** Durée d'occupation d'une table par une réservation, pour proposer les tables libres. */
@@ -351,7 +352,7 @@ function ModalReservation({ etablissementId, compteId, gestion, jour, resa, tabl
               {gestion &&
                 (!suppr ? (
                   <button className="btn btn-danger-ghost" onClick={() => setSuppr(true)} title="Supprimer définitivement">
-                    🗑
+                    <Icone nom="supprimer" />
                   </button>
                 ) : (
                   <button className="btn btn-danger" onClick={supprimer}>

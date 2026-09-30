@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSession } from "@/lib/session";
+import Marque from "@/components/Marque";
 
 const FAMILLES = [
   {
@@ -50,7 +51,7 @@ export default function Accueil() {
     <div className="accueil">
       <header className="acc-haut">
         <span className="brand">
-          <span className="brand-mark">J</span>Juliette
+          <Marque />Juliette
         </span>
         <nav className="acc-nav">
           <Link href="/borne" className="btn">
@@ -156,9 +157,7 @@ export default function Accueil() {
 
       <footer className="acc-pied">
         <span className="brand" style={{ fontSize: 16 }}>
-          <span className="brand-mark" style={{ width: 26, height: 26, fontSize: 18 }}>
-            J
-          </span>
+          <Marque taille={26} />
           Juliette
         </span>
         <span className="hint">© {new Date().getFullYear()} Juliette · Fait pour les restaurants</span>

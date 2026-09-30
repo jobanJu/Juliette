@@ -7,6 +7,7 @@ import { ORDRE_POSTES, POSTES } from "@/lib/planning";
 import { anciennete, chargerMembres, FONCTIONS, NATURES, STATUTS, TYPES_CONTRAT } from "@/lib/personnel";
 import type { Membre } from "@/lib/personnel";
 import ModalNouveau from "@/components/equipe/ModalNouveau";
+import Icone from "@/components/Icone";
 
 type Onglet = "actifs" | "invites" | "partis";
 
@@ -94,7 +95,7 @@ export default function Equipe() {
             <option value="aucun">Sans poste</option>
           </select>
           <label className="search" style={{ width: 230, background: "var(--card)" }}>
-            <span aria-hidden>⌕</span>
+            <Icone nom="recherche" taille={15} />
             <input placeholder="Nom, fonction, téléphone…" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
           </label>
         </div>

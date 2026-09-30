@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Icone from "@/components/Icone";
 
 type Props = {
   onCapture: (photo: File) => void;
@@ -88,7 +89,7 @@ export default function Camera({ onCapture, onClose, inline, titre }: Props) {
           <div className="camera-info">
             <p>Caméra indisponible (autorisation refusée ou appareil sans caméra).</p>
             <button className="btn btn-primary" onClick={() => secours.current?.click()}>
-              📁 Choisir une photo
+              <Icone nom="dossier" /> Choisir une photo
             </button>
           </div>
         )}
@@ -116,7 +117,7 @@ export default function Camera({ onCapture, onClose, inline, titre }: Props) {
           </button>
         ) : (
           <button className="camera-rond petit" onClick={() => secours.current?.click()} aria-label="Choisir une photo existante">
-            📁
+            <Icone nom="dossier" taille={20} />
           </button>
         )}
       </div>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useConnecte } from "@/lib/session";
 import { CAISSES, caisse, STATUTS_CAISSE } from "@/lib/caisses";
+import Icone from "@/components/Icone";
 
 type Connexion = { logiciel: string; statut: string; identifiant: string | null; derniere_synchro: string | null; derniere_erreur: string | null; demande_at: string };
 
@@ -82,7 +83,7 @@ export default function Caisse({ onToast }: { onToast: (m: string) => void }) {
       {cx && actuelle && (
         <section className="card caisse-etat">
           <div className="card-head">
-            <h2>🖥 {actuelle.nom}</h2>
+            <h2><Icone nom="ecran" taille={18} /> {actuelle.nom}</h2>
             <span className={`pill ${STATUTS_CAISSE[cx.statut]?.ton ?? "t-lav"}`}>{STATUTS_CAISSE[cx.statut]?.label ?? cx.statut}</span>
           </div>
           {actuelle.mode === "api" ? (
@@ -123,7 +124,7 @@ export default function Caisse({ onToast }: { onToast: (m: string) => void }) {
             {CAISSES.map((k) => (
               <button key={k.cle} className={`caisse-carte${choix === k.cle ? " on" : ""}`} onClick={() => { setChoix(k.cle); setChamps({}); setErreur(null); }}>
                 <b>{k.nom}</b>
-                <small>{k.mode === "api" ? "⚡ Connexion immédiate" : "🤝 Sur demande"}</small>
+                <small>{k.mode === "api" ? "Connexion immédiate" : "Sur demande"}</small>
               </button>
             ))}
           </div>
@@ -149,7 +150,7 @@ export default function Caisse({ onToast }: { onToast: (m: string) => void }) {
                   <input id="cx-note" value={champs.identifiant ?? ""} onChange={(e) => setChamps({ ...champs, identifiant: e.target.value })} />
                 </div>
               )}
-              {c.mode === "api" && <p className="hint" style={{ margin: 0 }}>🔒 La clé est vérifiée auprès de {c.nom}, puis chiffrée. Personne ne peut la relire, pas même l&apos;équipe Juliette.</p>}
+              {c.mode === "api" && <p className="hint" style={{ margin: 0 }}><Icone nom="cadenas" taille={13} /> La clé est vérifiée auprès de {c.nom}, puis chiffrée. Personne ne peut la relire, pas même l&apos;équipe Juliette.</p>}
               {erreur && (
                 <div className="error" role="alert">
                   {erreur}

@@ -6,6 +6,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { initiales, nomComplet } from "@/lib/session";
 import type { Compte } from "@/lib/session";
 import type { Groupe, Membre } from "@/lib/messagerie";
+import Icone from "@/components/Icone";
 
 type Props = {
   etablissementId: string;
@@ -123,7 +124,7 @@ export default function ModalGroupe(p: Props) {
           Membres · {choisis.size} sélectionné{choisis.size > 1 ? "s" : ""}
         </label>
         <label className="search" style={{ background: "var(--card)" }}>
-          <span aria-hidden>⌕</span>
+          <Icone nom="recherche" taille={15} />
           <input placeholder="Rechercher" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
         </label>
         <div className="pick-list">

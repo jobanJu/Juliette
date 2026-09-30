@@ -7,6 +7,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabase";
+import Icone from "@/components/Icone";
+import type { NomIcone } from "@/components/Icone";
+import Marque from "@/components/Marque";
 
 const CLE = "juliette.pointeuse.jeton";
 const LONGUEUR_CODE = 6;
@@ -15,11 +18,11 @@ type Type = "arrivee" | "depart" | "pause_debut" | "pause_fin";
 type Personne = { prenom: string; nom: string; dernier: Type | null; depuis: string | null };
 type Ecran = { etape: "code" } | { etape: "choix"; code: string; p: Personne } | { etape: "ok"; prenom: string; type: Type; heure: string };
 
-const LIBELLES: Record<Type, { bouton: string; icone: string; message: (p: string) => string; ton: string }> = {
-  arrivee: { bouton: "Arrivée", icone: "→", message: (p) => `Bonne journée ${p} !`, ton: "arrivee" },
-  depart: { bouton: "Départ", icone: "⇥", message: (p) => `À bientôt ${p} !`, ton: "depart" },
-  pause_debut: { bouton: "Début de pause", icone: "❚❚", message: (p) => `Bonne pause ${p}`, ton: "pause" },
-  pause_fin: { bouton: "Fin de pause", icone: "▶", message: (p) => `Bon retour ${p}`, ton: "arrivee" },
+const LIBELLES: Record<Type, { bouton: string; icone: NomIcone; message: (p: string) => string; ton: string }> = {
+  arrivee: { bouton: "Arrivée", icone: "arrivee", message: (p) => `Bonne journée ${p} !`, ton: "arrivee" },
+  depart: { bouton: "Départ", icone: "deconnexion", message: (p) => `À bientôt ${p} !`, ton: "depart" },
+  pause_debut: { bouton: "Début de pause", icone: "pause", message: (p) => `Bonne pause ${p}`, ton: "pause" },
+  pause_fin: { bouton: "Fin de pause", icone: "reprise", message: (p) => `Bon retour ${p}`, ton: "arrivee" },
 };
 
 function lireJeton() {
@@ -106,7 +109,7 @@ function Activation({ onActive }: { onActive: (j: string) => void }) {
     <div className="login">
       <aside className="login-art">
         <div className="brand">
-          <span className="brand-mark">J</span>Juliette
+          <Marque />Juliette
         </div>
         <div>
           <h2>Pointeuse</h2>
@@ -117,7 +120,7 @@ function Activation({ onActive }: { onActive: (j: string) => void }) {
       <div className="login-form">
         <form onSubmit={activer}>
           <div className="brand" style={{ marginBottom: 10 }}>
-            <span className="brand-mark">J</span>Juliette
+            <Marque />Juliette
           </div>
           <div>
             <h1>Activer la pointeuse</h1>
@@ -238,13 +241,11 @@ function Clavier({ jeton, infos, heure, onDesactive }: { jeton: string; infos: {
     <div className="borne">
       <header className="borne-haut">
         <span className="brand" style={{ fontSize: 17 }}>
-          <span className="brand-mark" style={{ width: 28, height: 28, fontSize: 19 }}>
-            J
-          </span>
+          <Marque taille={28} />
           {infos.etablissement}
         </span>
         <button className="icon-btn" onClick={() => setReglages(true)} aria-label="Réglages de la pointeuse">
-          ⚙
+          <Icone nom="reglages" taille={20} />
         </button>
       </header>
 
@@ -287,7 +288,7 @@ function Clavier({ jeton, infos, heure, onDesactive }: { jeton: string; infos: {
           <div className="borne-actions">
             {actionsPour(ecran.p.dernier, infos.pause).map((t) => (
               <button key={t} className={`borne-action ${LIBELLES[t].ton}`} onClick={() => pointer(t)} disabled={envoi}>
-                <span>{LIBELLES[t].icone}</span>
+                <span><Icone nom={LIBELLES[t].icone} taille={30} /></span>
                 {LIBELLES[t].bouton}
               </button>
             ))}

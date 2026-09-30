@@ -6,6 +6,8 @@ import { formatDuree, hm } from "@/lib/planning";
 import type { Creneau } from "@/lib/planning";
 import { actionsPossibles, ecartMinutes, etatService, heure, LIBELLE_TYPE, minutesPause, minutesService, TOLERANCE_MIN } from "@/lib/pointage";
 import type { Service, TypePointage } from "@/lib/pointage";
+import Icone from "@/components/Icone";
+import type { NomIcone } from "@/components/Icone";
 
 type Props = {
   etablissementId: string;
@@ -18,11 +20,11 @@ type Props = {
   onPointe: (message: string) => void;
 };
 
-const BOUTON: Record<TypePointage, { label: string; classe: string; icone: string }> = {
-  arrivee: { label: "Pointer mon arrivée", classe: "btn-primary", icone: "→" },
-  depart: { label: "Pointer mon départ", classe: "btn-primary", icone: "⇥" },
-  pause_debut: { label: "Commencer ma pause", classe: "", icone: "❚❚" },
-  pause_fin: { label: "Reprendre le service", classe: "btn-primary", icone: "▶" },
+const BOUTON: Record<TypePointage, { label: string; classe: string; icone: NomIcone }> = {
+  arrivee: { label: "Pointer mon arrivée", classe: "btn-primary", icone: "arrivee" },
+  depart: { label: "Pointer mon départ", classe: "btn-primary", icone: "deconnexion" },
+  pause_debut: { label: "Commencer ma pause", classe: "", icone: "pause" },
+  pause_fin: { label: "Reprendre le service", classe: "btn-primary", icone: "reprise" },
 };
 
 export default function MonPointage(p: Props) {
@@ -132,7 +134,7 @@ export default function MonPointage(p: Props) {
           ) : (
             actions.map((a) => (
               <button key={a} className={`btn punch-btn ${BOUTON[a].classe}`} onClick={() => cliquer(a)} disabled={envoi}>
-                <span aria-hidden>{BOUTON[a].icone}</span> {etat === "termine" && a === "arrivee" ? "Reprendre un service" : BOUTON[a].label}
+                <Icone nom={BOUTON[a].icone} /> {etat === "termine" && a === "arrivee" ? "Reprendre un service" : BOUTON[a].label}
               </button>
             ))
           )}

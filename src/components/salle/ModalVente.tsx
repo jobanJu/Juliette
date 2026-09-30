@@ -7,6 +7,7 @@ import type { ArticleCarte, Bon, LigneBon } from "@/lib/salle";
 import type { Fiche } from "@/lib/fiches";
 import type { Produit } from "@/lib/stock";
 import CartePicker, { ajouterLigne } from "@/components/salle/CartePicker";
+import Icone from "@/components/Icone";
 
 type Props = {
   etablissementId: string;
@@ -112,7 +113,7 @@ export default function ModalVente(p: Props) {
         <div className="modal-head">
           <div>
             <h2>
-              {livraison ? "🛵 Livraison" : "🛍 À emporter"}
+              <Icone nom={livraison ? "livraison" : "emporter"} /> {livraison ? "Livraison" : "À emporter"}
               {b?.client_nom ? ` · ${b.client_nom}` : ""}
             </h2>
             <p>{b ? `Commande de ${new Date(b.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · prise par ${b.cree_par_nom}` : "Nouvelle commande"}</p>
@@ -254,7 +255,7 @@ export default function ModalVente(p: Props) {
               )}
               {suivi!.cle === "prete" && livraison && (
                 <button className="btn btn-primary" style={{ height: 46 }} onClick={() => etape({ en_livraison_at: new Date().toISOString() }, `${b!.client_nom} : partie en livraison`)} disabled={envoi}>
-                  🛵 Partie en livraison
+                  <Icone nom="livraison" /> Partie en livraison
                 </button>
               )}
               {(suivi!.cle === "route" || (suivi!.cle === "prete" && !livraison)) && (

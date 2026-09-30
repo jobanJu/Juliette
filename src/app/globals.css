@@ -38,11 +38,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; border-radius: 6px; }
 
 /* ——— Marque ——— */
-.brand { display: flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 750; letter-spacing: -1px; }
-.brand-mark {
-  width: 32px; height: 32px; border-radius: 11px 11px 11px 4px; background: var(--purple); color: #fff;
-  display: grid; place-items: center; font-family: Georgia, serif; font-size: 22px; font-style: italic; font-weight: 600;
-}
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-marque), Georgia, serif; font-style: italic; font-size: 23px; font-weight: 500; letter-spacing: -.3px; }
+.brand-mark { flex-shrink: 0; display: block; border-radius: 24%; }
 
 /* ——— Coquille ——— */
 .shell { min-height: 100vh; }
@@ -74,7 +71,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   color: #6f6a7e; font-size: 12.5px; font-weight: 550;
 }
 .nav-item:hover { background: var(--paper); color: var(--ink); }
-.nav-item .ic { width: 18px; text-align: center; font-size: 15px; color: #9e98ab; }
+.nav-item .ic { width: 18px; display: inline-grid; place-items: center; font-size: 15px; color: #9e98ab; }
 .nav-item.active { background: var(--lavender); color: var(--purple-ink); font-weight: 650; }
 .nav-item.active .ic { color: var(--purple); }
 .nav-item .soon { margin-left: auto; font-size: 9.5px; color: #b1acbc; }
@@ -88,7 +85,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   background: #f8e7dc; color: #a56c4d; font-size: 11.5px; font-weight: 700; overflow: hidden;
 }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
-.icon-btn { border: 0; background: transparent; color: var(--muted); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+.icon-btn { display: inline-grid; place-items: center; flex-shrink: 0; padding: 0; border: 0; background: transparent; color: var(--muted); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px; }
 .icon-btn:hover { background: var(--paper); color: var(--ink); }
 
 .main { margin-left: 256px; min-height: 100vh; display: flex; flex-direction: column; }
@@ -184,10 +181,10 @@ table.data tr:hover td { background: var(--paper); }
   padding: 48px; display: flex; flex-direction: column; justify-content: space-between;
 }
 .login-art .brand { color: #fff; }
-.login-art .brand-mark { background: #ffffff26; }
+.login-art .brand-mark { box-shadow: 0 0 0 1px #ffffff40; }
 .login-art h2 { font-size: 34px; line-height: 1.15; letter-spacing: -1.2px; margin: 0 0 14px; max-width: 440px; }
 .login-art p { margin: 0; opacity: .8; max-width: 400px; line-height: 1.55; }
-.login-art ul { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 10px; font-size: 13px; opacity: .9; }
+.login-art ul { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 12px; font-size: 13px; opacity: .9; }
 .login-form { display: grid; place-items: center; padding: 32px 20px; }
 .login-form form { width: 100%; max-width: 360px; display: grid; gap: 14px; }
 .login-form h1 { margin: 0; font-size: 24px; letter-spacing: -.6px; }
@@ -1722,7 +1719,7 @@ tr.row-choisi td { background: var(--lavender); }
 .hnav-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 40; display: grid; gap: 2px; min-width: 280px; padding: 6px; border: 1px solid var(--line); border-radius: 13px; background: var(--card); box-shadow: 0 12px 34px #2724351f; }
 .hnav-menu a { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 9px; color: var(--ink); text-decoration: none; }
 .hnav-menu a:hover, .hnav-menu a.on { background: var(--lavender); }
-.hnav-menu .ic { width: 20px; text-align: center; font-size: 16px; color: var(--purple); }
+.hnav-menu .ic { width: 20px; display: inline-grid; place-items: center; font-size: 16px; color: var(--purple); }
 .hnav-menu b { display: block; font-size: 13px; font-weight: 650; }
 .hnav-menu small { display: block; font-size: 11px; color: var(--muted); }
 .hnav-profil { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-weight: 600; text-decoration: none; }
@@ -2050,8 +2047,6 @@ tr.row-choisi td { background: var(--lavender); }
 }
 .ct-nom { font-family: ui-monospace, Menlo, monospace; font-size: 12px; font-weight: 650; color: var(--ink); word-break: break-all; }
 .page-head .ct-nom { display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 6px; background: var(--lavender); color: var(--purple-ink); }
-/* Barre latérale : « Se déconnecter » en icône seule (le libellé ne tient pas). */
-.profile .icon-btn .hide-sm { display: none; }
 .contrat-sig-ligne { font-size: 11.5px; padding-bottom: 2px; border-bottom: 1px dotted #9e98ab; }
 .contrat-sig-lu { font-family: "Snell Roundhand", "Segoe Script", cursive; font-size: 15px; color: #1c1a2b; }
 .contrat-pied-paraphes i { display: inline-grid; place-items: center; font-style: normal; font-weight: 700; font-size: 10pt; color: #1c1a2b; }
@@ -2081,3 +2076,6 @@ tr.row-choisi td { background: var(--lavender); }
   .doc-materiel { grid-template-columns: 1fr 60px 40px; }
   .doc-materiel input:nth-child(3), .doc-materiel select { grid-column: span 1; }
 }
+
+/* Icônes au trait (composant Icone) : alignées sur le texte, jamais écrasées. */
+.icone { display: inline-block; flex-shrink: 0; vertical-align: -0.18em; }

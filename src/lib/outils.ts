@@ -19,15 +19,15 @@ export type OutilEtablissement = {
 };
 
 export const CATEGORIES = {
-  administratif: { label: "Social & administratif", icone: "🏛" },
-  banque: { label: "Banque & paiement", icone: "🏦" },
-  assurance: { label: "Mutuelle & assurance", icone: "🛡" },
-  paie: { label: "Paie & RH", icone: "🧾" },
-  compta: { label: "Comptabilité & gestion", icone: "📊" },
-  caisse: { label: "Logiciel de caisse", icone: "🖥" },
-  vente: { label: "Livraison & réservation", icone: "🛵" },
-  metier: { label: "Formation & syndicats", icone: "🤝" },
-  autre: { label: "Autres", icone: "⧉" },
+  administratif: { label: "Social & administratif", icone: "institution" },
+  banque: { label: "Banque & paiement", icone: "paiement" },
+  assurance: { label: "Mutuelle & assurance", icone: "bouclier" },
+  paie: { label: "Paie & RH", icone: "facture" },
+  compta: { label: "Comptabilité & gestion", icone: "graphique" },
+  caisse: { label: "Logiciel de caisse", icone: "ecran" },
+  vente: { label: "Livraison & réservation", icone: "livraison" },
+  metier: { label: "Formation & syndicats", icone: "partenaire" },
+  autre: { label: "Autres", icone: "lien" },
 } as const;
 export type Categorie = keyof typeof CATEGORIES;
 

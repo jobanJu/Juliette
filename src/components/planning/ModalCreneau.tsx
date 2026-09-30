@@ -5,6 +5,7 @@ import Modal from "@/components/Modal";
 import { getSupabaseClient } from "@/lib/supabase";
 import { alertesCoupure, coupuresDuJour, depuisIso, dureeCreneau, formatDuree, hm, JOURS_COURTS, MOTIFS_ABSENCE } from "@/lib/planning";
 import type { Creneau, TypeCreneau } from "@/lib/planning";
+import Icone from "@/components/Icone";
 
 type Frequent = { debut: string; fin: string; pause: number };
 
@@ -186,7 +187,7 @@ export default function ModalCreneau(p: Props) {
                   <small>{c.type === "shift" ? `${formatDuree(dureeCreneau(c))}${c.pause_minutes ? ` · pause ${c.pause_minutes} min` : ""}` : c.note ?? ""}</small>
                 </span>
                 <button className="icon-btn" onClick={() => supprimer(c)} disabled={envoi} aria-label="Supprimer ce créneau" title="Supprimer">
-                  🗑
+                  <Icone nom="supprimer" />
                 </button>
               </div>
             ))}

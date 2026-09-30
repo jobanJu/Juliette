@@ -44,7 +44,7 @@ export default function Cuisine({ bons, onChange }: { bons: Bon[]; onChange: (m?
                 </div>
                 <small className="hint">
                   {b.type_commande && b.type_commande !== "sur_place"
-                    ? `${b.type_commande === "livraison" ? "🛵 livrer" : "🛍 retrait"} ${b.heure_souhaitee ? `à ${b.heure_souhaitee.slice(0, 5)}` : "dès que possible"}`
+                    ? `${b.type_commande === "livraison" ? "Livrer" : "Retrait"} ${b.heure_souhaitee ? `à ${b.heure_souhaitee.slice(0, 5)}` : "dès que possible"}`
                     : `${b.couverts} couvert(s)`}{" "}
                   · {b.cree_par_nom} · {new Date(b.updated_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
                 </small>

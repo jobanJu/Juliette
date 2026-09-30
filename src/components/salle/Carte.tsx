@@ -9,6 +9,7 @@ import type { Fiche } from "@/lib/fiches";
 import { ETAT_CARTE, euros, ficheDe, ingredientsPortion, trierCategories } from "@/lib/salle";
 import type { ArticleCarte, TableSalle } from "@/lib/salle";
 import type { Produit } from "@/lib/stock";
+import Icone from "@/components/Icone";
 
 type Props = {
   etablissementId: string;
@@ -101,7 +102,7 @@ export default function Carte(p: Props) {
                         <td onClick={(e) => e.stopPropagation()}>
                           {f ? (
                             <Link href={`/fiche-technique/${f.id}`} className="hint" style={{ whiteSpace: "nowrap" }}>
-                              ❏ liée{c?.ratio != null && p.produits.size > 0 ? <span className={`pill ${tonRatio(c.ratio)}`} style={{ marginLeft: 6 }}>{c.ratio.toFixed(0)} %</span> : null}
+                              <Icone nom="cuisine" /> liée{c?.ratio != null && p.produits.size > 0 ? <span className={`pill ${tonRatio(c.ratio)}`} style={{ marginLeft: 6 }}>{c.ratio.toFixed(0)} %</span> : null}
                             </Link>
                           ) : (
                             <span className="hint">—</span>

@@ -6,6 +6,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { iso } from "@/lib/planning";
 import { formatTemp, nouvelId } from "@/lib/haccp";
 import type { CategorieCuisson, Cuisson as Releve, Enregistrement } from "@/lib/haccp";
+import Icone from "@/components/Icone";
 
 type Props = {
   etablissementId: string;
@@ -54,10 +55,10 @@ export default function Cuisson(p: Props) {
     <div style={{ display: "grid", gap: 14 }}>
       <section className="card cuisson-saisie">
         <div className="card-head">
-          <h2>🌡 Relevé de cuisson à cœur</h2>
+          <h2><Icone nom="temperature" taille={18} /> Relevé de cuisson à cœur</h2>
           {p.parametres && (
             <button className="btn" onClick={p.onConfigurer}>
-              ⚙ Seuils
+              <Icone nom="reglages" /> Seuils
             </button>
           )}
         </div>

@@ -9,6 +9,7 @@ import { COLONNES_MESSAGE, heureMessage, jourMessage, lireLus, lirePieceJointe, 
 import type { Groupe, Membre, Message, PieceJointe } from "@/lib/messagerie";
 import ModalGroupe from "@/components/messagerie/ModalGroupe";
 import Modal from "@/components/Modal";
+import Icone from "@/components/Icone";
 
 const PAGE = 60;
 
@@ -260,7 +261,7 @@ export default function Messagerie() {
             <h1>Messagerie</h1>
             <span style={{ display: "flex", gap: 6 }}>
               <button className="icon-btn" title="Nouveau message privé" aria-label="Nouveau message privé" onClick={() => setModal("direct")}>
-                ✎
+                <Icone nom="modifier" taille={16} />
               </button>
               {directeur && (
                 <button className="icon-btn" title="Nouveau groupe" aria-label="Nouveau groupe" onClick={() => setModal("groupe")}>
@@ -270,7 +271,7 @@ export default function Messagerie() {
             </span>
           </div>
           <label className="search" style={{ margin: "0 12px 8px" }}>
-            <span aria-hidden>⌕</span>
+            <Icone nom="recherche" taille={15} />
             <input placeholder="Rechercher une conversation" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
           </label>
           <div className="chat-convs">
@@ -292,7 +293,7 @@ export default function Messagerie() {
                     <span className="conv-bottom">
                       <small>
                         {c.dernier
-                          ? `${c.dernier.compte_id === compte.id ? "Toi : " : c.g.est_direct ? "" : `${parId.get(c.dernier.compte_id)?.prenom ?? ""} : `}${c.dernier.texte || (c.dernier.attachments?.length ? "📎 Pièce jointe" : "")}`
+                          ? `${c.dernier.compte_id === compte.id ? "Toi : " : c.g.est_direct ? "" : `${parId.get(c.dernier.compte_id)?.prenom ?? ""} : `}${c.dernier.texte || (c.dernier.attachments?.length ? "Pièce jointe" : "")}`
                           : "Aucun message"}
                       </small>
                       {c.nonLus > 0 && <i className="conv-badge">{c.nonLus > 99 ? "99+" : c.nonLus}</i>}
@@ -372,7 +373,7 @@ export default function Messagerie() {
                                   </button>
                                 ) : (
                                   <a key={k} className="msg-file" href={pj.dataUrl} download={pj.name}>
-                                    📎 {pj.name}
+                                    <Icone nom="piece_jointe" taille={14} /> {pj.name}
                                   </a>
                                 ),
                               )}
@@ -412,7 +413,7 @@ export default function Messagerie() {
                   <div className="chat-pieces">
                     {pieces.map((p, i) => (
                       <span key={i} className="piece">
-                        {p.kind === "image" ? <img src={p.dataUrl} alt="" /> : "📎"}
+                        {p.kind === "image" ? <img src={p.dataUrl} alt="" /> : <Icone nom="piece_jointe" taille={20} />}
                         <small>{p.name}</small>
                         <button onClick={() => setPieces((x) => x.filter((_, k) => k !== i))} aria-label="Retirer">
                           ✕
@@ -428,7 +429,7 @@ export default function Messagerie() {
                 )}
                 <div className="chat-input">
                   <button className="icon-btn" onClick={() => fichierRef.current?.click()} aria-label="Joindre un fichier" title="Photo ou fichier (2 Mo max)" disabled={pieces.length >= 4}>
-                    📎
+                    <Icone nom="piece_jointe" taille={18} />
                   </button>
                   <input
                     ref={fichierRef}

@@ -8,6 +8,7 @@ import type { Donnees, ModeleCle, Periodicite } from "@/lib/contrats";
 import { alertesAvenant, AVENANT_VIDE, genererAvenant, MODIFS, nomAvenant, PERIODICITES } from "@/lib/avenants";
 import type { Avenant, DonneesAvenant, TypeModif } from "@/lib/avenants";
 import DocumentContrat, { imprimerContrat } from "@/components/contrats/DocumentContrat";
+import Icone from "@/components/Icone";
 
 export type Parent = { id: string; compte_id: string; modele: ModeleCle; donnees: Donnees; created_at: string };
 export type AvenantEnregistre = { id: string; numero: number; donnees: DonneesAvenant };
@@ -110,10 +111,10 @@ export default function EditeurAvenant({
 
       <div className="seg seg-inline contrat-bascule print-hide" role="tablist" aria-label="Affichage">
         <button role="tab" aria-selected={vueMobile === "remplir"} className={vueMobile === "remplir" ? "on" : ""} onClick={() => setVueMobile("remplir")}>
-          ✎ Remplir
+          <Icone nom="modifier" /> Remplir
         </button>
         <button role="tab" aria-selected={vueMobile === "apercu"} className={vueMobile === "apercu" ? "on" : ""} onClick={() => setVueMobile("apercu")}>
-          👁 Aperçu
+          <Icone nom="voir" /> Aperçu
         </button>
       </div>
 

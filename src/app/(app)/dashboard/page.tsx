@@ -6,6 +6,8 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { MODULES } from "@/lib/modules";
 import { initiales, nomComplet, useConnecte } from "@/lib/session";
 import type { Compte } from "@/lib/session";
+import Icone from "@/components/Icone";
+import type { NomIcone } from "@/components/Icone";
 
 type Presence = { compte: Compte; etat: "present" | "pause" | "parti"; depuis: string };
 type Creneau = { compte_id: string; heure_debut: string | null; heure_fin: string | null };
@@ -31,16 +33,16 @@ const hhmm = (t: string | null) => (t ? t.slice(0, 5).replace(":", "h") : "—")
 const euros = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
 const CARTES = [
-  { id: "presence", label: "Présences", detail: "Pointages et équipe présente", icon: "◷", couleur: "t-mint" },
-  { id: "stock-stat", label: "Stock critique", detail: "Produits sous le seuil", icon: "▤", couleur: "t-peach" },
-  { id: "pertes", label: "Pertes · 7 jours", detail: "Montant et déclarations", icon: "↘", couleur: "t-red" },
-  { id: "commandes-stat", label: "À commander", detail: "Liste d’achat et demandes en attente", icon: "↗", couleur: "t-lav" },
-  { id: "equipe", label: "Équipe du jour", detail: "Qui travaille aujourd’hui", icon: "☺", couleur: "t-blue" },
-  { id: "stock", label: "Stock à surveiller", detail: "Détail des alertes stock", icon: "!", couleur: "t-peach" },
-  { id: "evenements", label: "Événements à venir", detail: "Événements qui influencent l’activité", icon: "✦", couleur: "t-yellow" },
-  { id: "commandes", label: "Dernières commandes", detail: "Commandes envoyées aux fournisseurs", icon: "↗", couleur: "t-lav" },
-  { id: "raccourcis", label: "Raccourcis", detail: "Accès rapides aux modules", icon: "⌘", couleur: "t-blue" },
-] as const;
+  { id: "presence", label: "Présences", detail: "Pointages et équipe présente", icon: "horloge", couleur: "t-mint" },
+  { id: "stock-stat", label: "Stock critique", detail: "Produits sous le seuil", icon: "stock", couleur: "t-peach" },
+  { id: "pertes", label: "Pertes · 7 jours", detail: "Montant et déclarations", icon: "baisse", couleur: "t-red" },
+  { id: "commandes-stat", label: "À commander", detail: "Liste d’achat et demandes en attente", icon: "camion", couleur: "t-lav" },
+  { id: "equipe", label: "Équipe du jour", detail: "Qui travaille aujourd’hui", icon: "equipe", couleur: "t-blue" },
+  { id: "stock", label: "Stock à surveiller", detail: "Détail des alertes stock", icon: "alerte", couleur: "t-peach" },
+  { id: "evenements", label: "Événements à venir", detail: "Événements qui influencent l’activité", icon: "evenement", couleur: "t-yellow" },
+  { id: "commandes", label: "Dernières commandes", detail: "Commandes envoyées aux fournisseurs", icon: "camion", couleur: "t-lav" },
+  { id: "raccourcis", label: "Raccourcis", detail: "Accès rapides aux modules", icon: "eclair", couleur: "t-blue" },
+] as const satisfies readonly { id: string; label: string; detail: string; icon: NomIcone; couleur: string }[];
 
 const CARTES_PAR_DEFAUT = CARTES.map((carte) => carte.id);
 const VUE_ESSENTIELLE = ["presence", "stock-stat", "equipe", "stock", "raccourcis"];
@@ -147,12 +149,12 @@ async function charger(etabId: string, modules: Set<string>, cartesActives: Set<
   };
 }
 
-function Stat({ label, icon, ton, valeur, unite, pied, href }: { label: string; icon: string; ton: string; valeur: string | number | null; unite?: string; pied: string; href: string }) {
+function Stat({ label, icon, ton, valeur, unite, pied, href }: { label: string; icon: NomIcone; ton: string; valeur: string | number | null; unite?: string; pied: string; href: string }) {
   return (
     <Link href={href} className="card stat">
       <div className="stat-top">
         {label}
-        <span className={`chip-ic ${ton}`}>{icon}</span>
+        <span className={`chip-ic ${ton}`}><Icone nom={icon} /></span>
       </div>
       {valeur === null ? (
         <div className="skeleton" style={{ height: 31, width: "50%" }} />
@@ -265,9 +267,9 @@ export default function TableauDeBord() {
         </div>
         <div className="dashboard-actions">
           <button className={`btn ${personnalisation ? "btn-on" : ""}`} onClick={() => setPersonnalisation((ouverte) => !ouverte)} aria-expanded={personnalisation}>
-            <span aria-hidden="true">✦</span> {personnalisation ? "Terminer" : "Personnaliser"}
+            <Icone nom="reglages" /> {personnalisation ? "Terminer" : "Personnaliser"}
           </button>
-          {modules.has("pointeuse") && <Link className="btn btn-primary" href="/pointeuse">◷ Pointer</Link>}
+          {modules.has("pointeuse") && <Link className="btn btn-primary" href="/pointeuse"><Icone nom="horloge" /> Pointer</Link>}
         </div>
       </div>
 
@@ -283,7 +285,7 @@ export default function TableauDeBord() {
           </div>
           <div className="dashboard-presets" aria-label="Vues rapides">
             <button className="chip" onClick={() => setCartes([...CARTES_PAR_DEFAUT])}>Tout afficher</button>
-            <button className="chip" onClick={() => setCartes([...VUE_ESSENTIELLE])}>Vue essentielle ✨</button>
+            <button className="chip" onClick={() => setCartes([...VUE_ESSENTIELLE])}>Vue essentielle</button>
             <button className="chip" onClick={() => setCartes([])}>Tout masquer</button>
             <span className={`dashboard-save dashboard-save-${sauvegarde}`} aria-live="polite">
               {sauvegarde === "en-cours" ? "Enregistrement…" : sauvegarde === "ok" ? "✓ Enregistré" : sauvegarde === "erreur" ? "Enregistrement impossible" : ""}
@@ -294,7 +296,7 @@ export default function TableauDeBord() {
               const active = visibles.has(carte.id);
               return (
                 <button key={carte.id} className={`dashboard-card-option ${active ? "selected" : ""}`} onClick={() => basculerCarte(carte.id)} aria-pressed={active}>
-                  <span className={`chip-ic ${carte.couleur}`}>{carte.icon}</span>
+                  <span className={`chip-ic ${carte.couleur}`}><Icone nom={carte.icon} /></span>
                   <span className="dashboard-card-option-text"><b>{carte.label}</b><small>{carte.detail}</small></span>
                   <span className={`dashboard-switch ${active ? "on" : ""}`} aria-hidden="true"><i /></span>
                 </button>
@@ -309,7 +311,7 @@ export default function TableauDeBord() {
       {CARTES.slice(0, 4).some((carte) => visibles.has(carte.id)) && <div className="grid-stats">
         {visibles.has("presence") && <Stat
           label="Présents"
-          icon="◷"
+          icon="horloge"
           ton="t-mint"
           href="/pointeuse"
           valeur={d ? (d.presences ? presents : "—") : null}
@@ -318,7 +320,7 @@ export default function TableauDeBord() {
         />}
         {visibles.has("stock-stat") && <Stat
           label="Stock critique"
-          icon="▤"
+          icon="stock"
           ton="t-peach"
           href="/inventaire"
           valeur={d ? (d.critiques ? d.critiques.length : "—") : null}
@@ -327,7 +329,7 @@ export default function TableauDeBord() {
         />}
         {visibles.has("pertes") && <Stat
           label="Pertes · 7 jours"
-          icon="↘"
+          icon="baisse"
           ton="t-red"
           href="/perte"
           valeur={d ? (d.pertes7j ? euros(d.pertes7j.euros) : "—") : null}
@@ -335,7 +337,7 @@ export default function TableauDeBord() {
         />}
         {visibles.has("commandes-stat") && <Stat
           label="À commander"
-          icon="↗"
+          icon="camion"
           ton="t-lav"
           href="/aide-commande"
           valeur={d ? (d.aCommander ?? "—") : null}
@@ -380,7 +382,7 @@ export default function TableauDeBord() {
             <div className="rows">
               {d.critiques.slice(0, 6).map((p) => (
                 <div key={p.id} className="row">
-                  <span className="chip-ic t-peach">!</span>
+                  <span className="chip-ic t-peach"><Icone nom="alerte" /></span>
                   <span className="main-txt">
                     <b>{p.nom}</b>
                     <small>
@@ -414,7 +416,7 @@ export default function TableauDeBord() {
             <div className="rows">
               {d.evenements.map((e) => (
                 <div key={e.id} className="row">
-                  <span className={`chip-ic ${e.sens === "baisse" ? "t-blue" : "t-yellow"}`}>{e.sens === "baisse" ? "↓" : "↑"}</span>
+                  <span className={`chip-ic ${e.sens === "baisse" ? "t-blue" : "t-yellow"}`}><Icone nom={e.sens === "baisse" ? "baisse" : "hausse"} /></span>
                   <span className="main-txt">
                     <b>{e.nom}</b>
                     <small>
@@ -446,7 +448,7 @@ export default function TableauDeBord() {
             <div className="rows">
               {d.commandes.map((c) => (
                 <div key={c.id} className="row">
-                  <span className="chip-ic t-lav">↗</span>
+                  <span className="chip-ic t-lav"><Icone nom="camion" /></span>
                   <span className="main-txt">
                     <b>{c.fournisseur_nom}</b>
                     <small>{new Date(c.envoyee_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</small>
@@ -465,7 +467,7 @@ export default function TableauDeBord() {
           <div className="shortcuts">
             {raccourcis.map((m) => (
               <Link key={m.href} href={m.href} className="shortcut">
-                <span className="chip-ic t-lav">{m.icon}</span>
+                <span className="chip-ic t-lav"><Icone nom={m.icon} /></span>
                 <span>
                   {m.label}
                   <small>{m.sub}</small>
@@ -476,7 +478,7 @@ export default function TableauDeBord() {
         </section>}
       </div>}
       {preferencesChargees && cartes.length === 0 && <section className="dashboard-empty card">
-        <span aria-hidden="true">🪄</span><h2>Ton tableau, ta page blanche</h2>
+        <Icone nom="tableau" taille={30} /><h2>Ton tableau, ta page blanche</h2>
         <p>Réactive les cartes dont tu as besoin pour retrouver tes repères.</p>
         <button className="btn btn-primary" onClick={() => setCartes([...VUE_ESSENTIELLE])}>Afficher la vue essentielle</button>
       </section>}

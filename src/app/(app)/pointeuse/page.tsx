@@ -10,6 +10,7 @@ import { csv, ecartMinutes, etatService, heure, minutesPause, minutesService, se
 import type { PointageBrut, Service } from "@/lib/pointage";
 import MonPointage from "@/components/pointage/MonPointage";
 import ModalCorrection from "@/components/pointage/ModalCorrection";
+import Icone from "@/components/Icone";
 
 type Membre = Compte & { heures_contrat: number | null };
 type Onglet = "jour" | "semaine";
@@ -472,7 +473,7 @@ function LigneJour({ m, servs, prevus, jour, maintenant, onCorriger }: { m: Memb
         <span className={`pill ${statut[1]}`}>{statut[0]}</span>
         {justifs.length > 0 && (
           <small className="justif" title={justifs.map((e) => e.justificatif).join("\n")}>
-            💬 {justifs[justifs.length - 1].justificatif}
+            <Icone nom="message" taille={14} /> {justifs[justifs.length - 1].justificatif}
           </small>
         )}
       </td>

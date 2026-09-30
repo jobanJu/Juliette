@@ -8,6 +8,9 @@ import { GROUPES, MODULES, SECTIONS, moduleDeRoute, pagesDeSection } from "@/lib
 import type { ModuleJuliette, SectionCle } from "@/lib/modules";
 import { initiales, nomComplet, ROLE_LABEL, useConnecte, useSession } from "@/lib/session";
 import { useDispositionMenu } from "@/lib/preferences";
+import Icone from "@/components/Icone";
+import type { NomIcone } from "@/components/Icone";
+import Marque from "@/components/Marque";
 
 export default function Shell({ children }: { children: ReactNode }) {
   const { compte, etablissement, sites, modules } = useConnecte();
@@ -44,7 +47,7 @@ export default function Shell({ children }: { children: ReactNode }) {
 
   // Menu allégé : une rubrique regroupée (Équipe, Stock & commandes, Salle) n'occupe qu'une ligne,
   // qui mène à sa première page autorisée. La recherche, elle, retrouve aussi les pages internes.
-  type Entree = { cle: string; href: string; label: string; sub: string; icon: string; groupe: ModuleJuliette["groupe"]; actif: boolean; pret: boolean };
+  type Entree = { cle: string; href: string; label: string; sub: string; icon: NomIcone; groupe: ModuleJuliette["groupe"]; actif: boolean; pret: boolean };
   const entrees = useMemo(() => {
     const q = recherche.trim().toLowerCase();
     const trouve = (m: ModuleJuliette) => !q || m.label.toLowerCase().includes(q) || m.sub.toLowerCase().includes(q);
@@ -119,7 +122,7 @@ export default function Shell({ children }: { children: ReactNode }) {
       <div className={`scrim${menuOuvert ? " open" : ""}`} onClick={() => setMenuOuvert(false)} />
       <aside className={`sidebar${menuOuvert ? " open" : ""}`} aria-label="Navigation principale">
         <Link href="/dashboard" className="brand" style={{ padding: "0 8px" }}>
-          <span className="brand-mark">J</span>Juliette
+          <Marque />Juliette
         </Link>
 
         <div className="popover" ref={refSites}>
@@ -153,7 +156,7 @@ export default function Shell({ children }: { children: ReactNode }) {
         </div>
 
         <label className="search">
-          <span aria-hidden>⌕</span>
+          <Icone nom="recherche" taille={15} />
           <input placeholder="Rechercher un module" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
         </label>
 
@@ -166,7 +169,7 @@ export default function Shell({ children }: { children: ReactNode }) {
               {items.map((m) => (
                 <Link key={m.cle} href={m.href} className={`nav-item${m.actif ? " active" : ""}`} title={m.sub} onClick={() => setMenuOuvert(false)}>
                   <span className="ic" aria-hidden>
-                    {m.icon}
+                    <Icone nom={m.icon} />
                   </span>
                   {m.label}
                   {!m.pret && <span className="soon">bientôt</span>}
@@ -186,7 +189,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             </span>
           </Link>
           <button className="icon-btn" onClick={deconnexion} title="Se déconnecter" aria-label="Se déconnecter">
-            ⎋ <span className="hide-sm">Se déconnecter</span>
+            <Icone nom="deconnexion" taille={17} />
           </button>
         </div>
       </aside>
@@ -196,7 +199,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           {horizontale && (
             <nav className="hnav" ref={refHnav} aria-label="Navigation principale">
               <Link href="/dashboard" className="brand hnav-brand">
-                <span className="brand-mark">J</span>
+                <Marque />
               </Link>
               {GROUPES.map((g) => {
                 const items = entrees.filter((m) => m.groupe === g);
@@ -218,7 +221,7 @@ export default function Shell({ children }: { children: ReactNode }) {
                         {items.map((m) => (
                           <Link key={m.cle} href={m.href} role="menuitem" className={m.actif ? "on" : ""} onClick={() => setGroupeOuvert(null)}>
                             <span className="ic" aria-hidden>
-                              {m.icon}
+                              <Icone nom={m.icon} />
                             </span>
                             <span>
                               <b>{m.label}</b>
@@ -235,7 +238,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           )}
           <div className="crumb">
             <button className="icon-btn menu-btn" onClick={() => setMenuOuvert(true)} aria-label="Ouvrir le menu">
-              ☰
+              <Icone nom="menu" taille={18} />
             </button>
             <span className="hide-sm">{etablissement.nom}</span>
             <span aria-hidden className="hide-sm" style={{ color: "#cfcad6" }}>/</span>
@@ -246,7 +249,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           <div className="top-right">
             {messagerie && (
               <Link href="/messagerie" className={`btn-messages${courant?.module === "messagerie" ? " on" : ""}`} aria-label="Messagerie" title="Messagerie">
-                <span aria-hidden>✉</span>
+                <Icone nom="mail" />
                 <span className="hide-sm">Messages</span>
               </Link>
             )}
@@ -271,7 +274,7 @@ export default function Shell({ children }: { children: ReactNode }) {
               <nav className="haccp-tabs section-tabs" aria-label={SECTIONS[courant!.section!].label}>
                 {soeurs.map((m) => (
                   <Link key={m.href} href={m.href} className={courant?.href === m.href ? "on" : ""} aria-current={courant?.href === m.href ? "page" : undefined}>
-                    <span aria-hidden>{m.icon}</span> {m.label}
+                    <Icone nom={m.icon} taille={15} /> {m.label}
                   </Link>
                 ))}
               </nav>
@@ -284,12 +287,12 @@ export default function Shell({ children }: { children: ReactNode }) {
       <nav className="barre-bas" aria-label="Accès rapide">
         {barreBas.map((m) => (
           <Link key={m.href} href={m.href} className={courant?.href === m.href ? "on" : ""}>
-            <span aria-hidden>{m.icon}</span>
+            <Icone nom={m.icon} taille={20} />
             {m.module === "dashboard" ? "Accueil" : m.module === "pointeuse" ? "Pointer" : m.module === "messagerie" ? "Messages" : m.module === "commandes-caisse" ? "Commandes" : m.label}
           </Link>
         ))}
         <button onClick={() => setMenuOuvert(true)} className={menuOuvert ? "on" : ""}>
-          <span aria-hidden>☰</span>
+          <Icone nom="menu" taille={20} />
           Menu
         </button>
       </nav>

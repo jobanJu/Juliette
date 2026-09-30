@@ -10,6 +10,7 @@ import type { Evenement } from "@/lib/evenements";
 import { caisse } from "@/lib/caisses";
 import { caParJour, coutMatiere, eur, pct, prevision, topVentes, totalTTC, TVA_SUR_PLACE } from "@/lib/finance";
 import type { BonVendu } from "@/lib/finance";
+import Icone from "@/components/Icone";
 
 type Periode = "7j" | "30j" | "mois" | "mois-1";
 
@@ -315,7 +316,7 @@ function Colonnes({ serie, evenements, aujourdhui }: { serie: { jour: string; tt
                   <span className="hint">{eur(s.ht, 2)} HT</span>
                   {evts.map((e) => (
                     <span key={e.id} className="hint">
-                      ✦ {e.nom}
+                      <Icone nom="evenement" /> {e.nom}
                     </span>
                   ))}
                 </span>

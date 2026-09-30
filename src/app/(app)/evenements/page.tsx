@@ -7,6 +7,7 @@ import { ajouterJours, depuisIso, iso, lundi } from "@/lib/planning";
 import { COLONNES_EVT, couvre, IMPACTS, reperes, TYPES_EVT } from "@/lib/evenements";
 import type { Evenement, Repere } from "@/lib/evenements";
 import Modal from "@/components/Modal";
+import Icone from "@/components/Icone";
 
 export default function Evenements() {
   const { compte, etablissement } = useConnecte();
@@ -125,12 +126,12 @@ export default function Evenements() {
                   <span className="cal-num">{depuisIso(j).getDate()}</span>
                   {du.map((e) => (
                     <button key={e.id} className={`cal-evt ${e.sens} impact-${e.impact}`} onClick={() => setEdition(e)} title={`${e.nom}${e.lieu ? ` · ${e.lieu}` : ""}`}>
-                      {TYPES_EVT[e.type ?? "Autre"] ?? "✦"} {e.nom}
+                      <Icone nom={TYPES_EVT[e.type ?? "Autre"] ?? "evenement"} taille={12} /> {e.nom}
                     </button>
                   ))}
                   {rp.map((r) => (
                     <span key={r.nom} className="cal-evt repere" title={`${r.nom} (repère calculé)`}>
-                      {TYPES_EVT[r.type] ?? "📅"} {r.nom}
+                      <Icone nom={TYPES_EVT[r.type] ?? "calendrier"} taille={12} /> {r.nom}
                     </span>
                   ))}
                 </div>
@@ -145,7 +146,7 @@ export default function Evenements() {
               <span className="cal-evt baisse" style={{ display: "inline-block" }}>▼</span> moins de monde
             </span>
             <span>
-              <span className="cal-evt repere" style={{ display: "inline-block" }}>📅</span> repère calculé
+              <span className="cal-evt repere" style={{ display: "inline-block" }}><Icone nom="calendrier" taille={12} /></span> repère calculé
             </span>
           </div>
         </section>
@@ -162,7 +163,7 @@ export default function Evenements() {
             <div className="rows">
               {aVenir.map((e, i) => (
                 <div key={("id" in e && e.id) || `${e.nom}${i}`} className="row">
-                  <span className={`chip-ic ${e.sens === "hausse" ? "t-yellow" : "t-blue"}`}>{TYPES_EVT[e.type ?? "Autre"] ?? "✦"}</span>
+                  <span className={`chip-ic ${e.sens === "hausse" ? "t-yellow" : "t-blue"}`}><Icone nom={TYPES_EVT[e.type ?? "Autre"] ?? "evenement"} /></span>
                   <button className="main-txt resa-main" onClick={() => !e.repere && setEdition(e as Evenement)} style={{ cursor: e.repere ? "default" : "pointer" }}>
                     <b>{e.nom}</b>
                     <small>

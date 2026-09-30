@@ -20,6 +20,7 @@ import {
 } from "@/lib/conges";
 import type { Demande } from "@/lib/conges";
 import ModalDemande from "@/components/conges/ModalDemande";
+import Icone from "@/components/Icone";
 
 type Onglet = "traiter" | "calendrier" | "historique" | "miennes";
 
@@ -306,10 +307,10 @@ function CarteDemande(p: {
         <div className="request-impact">
           {p.creneauxImpactes > 0 && (
             <span>
-              ▦ {p.creneauxImpactes} créneau{p.creneauxImpactes > 1 ? "x" : ""} au planning à réaffecter
+              <Icone nom="planning" /> {p.creneauxImpactes} créneau{p.creneauxImpactes > 1 ? "x" : ""} au planning à réaffecter
             </span>
           )}
-          {p.autresAbsents.length > 0 && <span>☺ Aussi absent(s) sur la période : {p.autresAbsents.join(", ")}</span>}
+          {p.autresAbsents.length > 0 && <span><Icone nom="equipe" /> Aussi absent(s) sur la période : {p.autresAbsents.join(", ")}</span>}
         </div>
       )}
       <div className="request-foot">

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useConnecte } from "@/lib/session";
 import { adresseReception, refCommande } from "@/lib/boiteMail";
+import Icone from "@/components/Icone";
 
 type Email = {
   id: string;
@@ -138,7 +139,7 @@ export default function BoiteMail() {
       {statut && !statut.configure && (
         <section className="card attente-domaine">
           <div className="card-head">
-            <h2>📭 En attente du domaine</h2>
+            <h2><Icone nom="reception" taille={18} /> En attente du domaine</h2>
             <span className="pill t-yellow">pré-configurée</span>
           </div>
           <p>
@@ -182,7 +183,7 @@ export default function BoiteMail() {
           ))}
         </div>
         <label className="search" style={{ flex: "1 1 200px", maxWidth: 320 }}>
-          <span aria-hidden>⌕</span>
+          <Icone nom="recherche" taille={15} />
           <input placeholder="Rechercher un e-mail" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
         </label>
       </div>
@@ -204,7 +205,7 @@ export default function BoiteMail() {
                 <span className="mail-sujet">{e.sujet || "(sans objet)"}</span>
                 <span className="mail-extrait">
                   {e.fournisseur_id && fournisseurs.get(e.fournisseur_id) && <span className="pill t-lav">{fournisseurs.get(e.fournisseur_id)}</span>}
-                  {e.pieces_jointes.length > 0 && <span aria-label="pièce jointe">📎</span>}
+                  {e.pieces_jointes.length > 0 && <span aria-label="pièce jointe"><Icone nom="piece_jointe" taille={14} /></span>}
                   {(e.texte ?? "").replace(/\s+/g, " ").slice(0, 90)}
                 </span>
               </button>
@@ -247,7 +248,7 @@ export default function BoiteMail() {
               <div className="mail-pj">
                 {courant.pieces_jointes.map((pj) => (
                   <button key={pj.chemin} className="mail-pj-item" onClick={() => telecharger(pj.chemin, pj.nom)}>
-                    📎 <b>{pj.nom}</b> <small>{taille(pj.taille)}</small>
+                    <Icone nom="piece_jointe" taille={14} /> <b>{pj.nom}</b> <small>{taille(pj.taille)}</small>
                   </button>
                 ))}
               </div>

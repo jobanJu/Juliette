@@ -9,6 +9,7 @@ import { alertesDoc, MATERIELS, MODELES_DOCS, ORDRE_DOCS } from "@/lib/documents
 import type { Champ, Contexte, Donnees, LigneMateriel, TypeDoc } from "@/lib/documentsRh";
 import DocumentContrat, { imprimerContrat } from "@/components/contrats/DocumentContrat";
 import SignaturePad from "@/components/contrats/SignaturePad";
+import Icone from "@/components/Icone";
 
 type Doc = {
   id: string;
@@ -148,7 +149,7 @@ export default function DocumentsRh() {
                   setVue({ id: null, type: t });
                 }}
               >
-                <span aria-hidden>{MODELES_DOCS[t].icone}</span>
+                <span aria-hidden><Icone nom={MODELES_DOCS[t].icone} taille={24} /></span>
                 <b>{MODELES_DOCS[t].label}</b>
                 <small>{MODELES_DOCS[t].description}</small>
               </button>
@@ -188,7 +189,7 @@ export default function DocumentsRh() {
                     <td>
                       <b className="ct-nom">{x.titre}</b>
                       <small className="justif">
-                        {MODELES_DOCS[x.type].icone} {MODELES_DOCS[x.type].label}
+                        <Icone nom={MODELES_DOCS[x.type].icone} /> {MODELES_DOCS[x.type].label}
                       </small>
                     </td>
                     <td>{x.type === "promesse" ? String(x.donnees.candidat_nom ?? "Candidat") : nomDe(x.compte_id)}</td>
@@ -383,7 +384,7 @@ function EditeurDoc({ doc, type, membres, etab, directeurNom, etablissementId, a
         <div>
           <p className="eyebrow">Documents RH</p>
           <h1>
-            {modele.icone} {modele.label}
+            <Icone nom={modele.icone} /> {modele.label}
           </h1>
           <p>
             {modele.description} <span className="ct-nom">{titre}</span>
@@ -401,10 +402,10 @@ function EditeurDoc({ doc, type, membres, etab, directeurNom, etablissementId, a
 
       <div className="seg seg-inline contrat-bascule print-hide" role="tablist" aria-label="Affichage">
         <button role="tab" aria-selected={vueMobile === "remplir"} className={vueMobile === "remplir" ? "on" : ""} onClick={() => setVueMobile("remplir")}>
-          ✎ Remplir
+          <Icone nom="modifier" /> Remplir
         </button>
         <button role="tab" aria-selected={vueMobile === "apercu"} className={vueMobile === "apercu" ? "on" : ""} onClick={() => setVueMobile("apercu")}>
-          👁 Aperçu
+          <Icone nom="voir" /> Aperçu
         </button>
       </div>
 
@@ -531,7 +532,7 @@ function VueDoc({ d, directeur, moi, membres, etab, directeurNom, onRetour, onFi
         <div>
           <p className="eyebrow">Documents RH</p>
           <h1>
-            {modele.icone} {modele.label}
+            <Icone nom={modele.icone} /> {modele.label}
           </h1>
           <p>
             <span className={`pill ${STATUTS[d.statut].ton}`}>{STATUTS[d.statut].label}</span> <span className="ct-nom">{d.titre}</span>
@@ -565,7 +566,7 @@ function VueDoc({ d, directeur, moi, membres, etab, directeurNom, onRetour, onFi
             <>
               <p style={{ margin: 0 }}>{peutSignerSalarie ? `Lis le document jusqu'au bout. En signant, tu indiques : « ${modele.mentionSalarie ?? "Lu et approuvé"} ».` : "Signe en tant qu'employeur."}</p>
               <button className="btn btn-primary btn-lg" onClick={() => setSigne(true)}>
-                ✍ Signer
+                <Icone nom="signer" /> Signer
               </button>
             </>
           )}

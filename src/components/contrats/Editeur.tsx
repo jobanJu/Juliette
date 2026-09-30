@@ -31,6 +31,7 @@ import {
 } from "@/lib/contrats";
 import type { Defauts, Donnees, ModeleCle, Periodicite, PosteType, Reglages } from "@/lib/contrats";
 import DocumentContrat, { imprimerContrat } from "@/components/contrats/DocumentContrat";
+import Icone from "@/components/Icone";
 
 export type ContratBrouillon = { id: string; compte_id: string; modele: ModeleCle; donnees: Donnees };
 type Etab = { nom: string; adresse: string | null; ville: string | null; siret: string | null };
@@ -238,10 +239,10 @@ export default function Editeur({
 
       <div className="seg seg-inline contrat-bascule print-hide" role="tablist" aria-label="Affichage">
         <button role="tab" aria-selected={vueMobile === "remplir"} className={vueMobile === "remplir" ? "on" : ""} onClick={() => setVueMobile("remplir")}>
-          ✎ Remplir
+          <Icone nom="modifier" /> Remplir
         </button>
         <button role="tab" aria-selected={vueMobile === "apercu"} className={vueMobile === "apercu" ? "on" : ""} onClick={() => setVueMobile("apercu")}>
-          👁 Aperçu du contrat
+          <Icone nom="voir" /> Aperçu du contrat
         </button>
       </div>
 
@@ -361,7 +362,7 @@ export default function Editeur({
               </div>
             )}
             <button type="button" className="btn" style={{ justifySelf: "start" }} onClick={enregistrerPoste}>
-              ⭐ Enregistrer comme poste type
+              Enregistrer comme poste type
             </button>
           </Etape>
 
@@ -401,7 +402,7 @@ export default function Editeur({
                   <div className="field">
                     <label>Renouvellement de l&apos;essai</label>
                     {renouvellementEssai(d).interdit ? (
-                      <small className="hint">🚫 Non renouvelable : {renouvellementEssai(d).raison}.</small>
+                      <small className="hint"><Icone nom="interdit" taille={13} /> Non renouvelable : {renouvellementEssai(d).raison}.</small>
                     ) : (
                       <>
                         <Choix
@@ -602,7 +603,7 @@ export default function Editeur({
             </div>
           )}
           <button type="button" className="btn ct-defauts" onClick={enregistrerDefauts} title="Repas, tenue, matériel, primes, transport, mutuelle, paraphes, représentant, lieu de travail">
-            ⭐ Enregistrer ces choix par défaut pour mes prochains contrats
+            Enregistrer ces choix par défaut pour mes prochains contrats
           </button>
           <div className="contrat-actions">
             {contrat && (

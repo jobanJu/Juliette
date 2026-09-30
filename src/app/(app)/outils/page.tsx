@@ -6,6 +6,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { useConnecte } from "@/lib/session";
 import { CATALOGUE, CATEGORIES, urlPropre, vueOutil } from "@/lib/outils";
 import type { Categorie, OutilEtablissement, Pays } from "@/lib/outils";
+import Icone from "@/components/Icone";
 
 const COLONNES = "id, cle, nom, categorie, url, identifiant, contact, note, ordre";
 
@@ -65,7 +66,7 @@ export default function OutilsExternes() {
               + Outil personnalisé
             </button>
             <button className="btn btn-primary" onClick={() => setCatalogue(true)}>
-              ⧉ Choisir dans le catalogue
+              <Icone nom="copier" /> Choisir dans le catalogue
             </button>
           </div>
         )}
@@ -90,7 +91,7 @@ export default function OutilsExternes() {
           {parCategorie.map(({ c, liste }) => (
             <section key={c}>
               <div className="nav-label" style={{ padding: 0, marginBottom: 8 }}>
-                {CATEGORIES[c].icone} {CATEGORIES[c].label}
+                <Icone nom={CATEGORIES[c].icone} /> {CATEGORIES[c].label}
               </div>
               <div className="outils-grid">
                 {liste.map((o) => {
@@ -210,7 +211,7 @@ function ModalCatalogue({ etablissementId, deja, onClose, onSaved }: { etablisse
           ))}
         </div>
         <label className="search" style={{ flex: 1, minWidth: 160 }}>
-          <span aria-hidden>⌕</span>
+          <Icone nom="recherche" taille={15} />
           <input placeholder="Rechercher" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
         </label>
       </div>
@@ -221,7 +222,7 @@ function ModalCatalogue({ etablissementId, deja, onClose, onSaved }: { etablisse
           return (
             <div key={c}>
               <div className="nav-label" style={{ padding: 0, margin: "10px 0 4px" }}>
-                {CATEGORIES[c].icone} {CATEGORIES[c].label}
+                <Icone nom={CATEGORIES[c].icone} /> {CATEGORIES[c].label}
               </div>
               {items.map((o) => (
                 <label key={o.cle} className={`catalogue-item${choix.has(o.cle) ? " on" : ""}`}>
@@ -360,7 +361,7 @@ function ModalOutil({ etablissementId, outil, ordre, onClose, onSaved }: { etabl
         <label htmlFor="o-note">Note</label>
         <input id="o-note" value={f.note} onChange={(e) => set("note", e.target.value)} placeholder="Échéances, contrat…" />
       </div>
-      <p className="hint">🔒 Ne note jamais de mot de passe ici : utilise un gestionnaire de mots de passe.</p>
+      <p className="hint"><Icone nom="cadenas" taille={14} /> Ne note jamais de mot de passe ici : utilise un gestionnaire de mots de passe.</p>
       {erreur && (
         <div className="error" role="alert">
           {erreur}

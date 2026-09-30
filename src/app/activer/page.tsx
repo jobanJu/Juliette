@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
+import Marque from "@/components/Marque";
 
 // Première connexion d'un salarié invité : il choisit son mot de passe, le compte se rattache à l'invitation.
 export default function Activer() {
@@ -36,7 +37,7 @@ export default function Activer() {
     <div className="login">
       <aside className="login-art">
         <div className="brand">
-          <span className="brand-mark">J</span>Juliette
+          <Marque />Juliette
         </div>
         <div>
           <h2>Bienvenue dans l&apos;équipe.</h2>
@@ -48,7 +49,7 @@ export default function Activer() {
       <div className="login-form">
         <form onSubmit={valider}>
             <div className="brand" style={{ marginBottom: 10 }}>
-              <span className="brand-mark">J</span>Juliette
+              <Marque />Juliette
             </div>
             <div>
               <h1>Activer mon compte</h1>

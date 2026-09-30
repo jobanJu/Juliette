@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { ETAT_CARTE, euros, trierCategories } from "@/lib/salle";
 import type { ArticleCarte } from "@/lib/salle";
+import Icone from "@/components/Icone";
 
 /** Sélection d'articles de la carte, par catégorie ou par recherche. */
 export default function CartePicker({ carte, onAjouter }: { carte: ArticleCarte[]; onAjouter: (a: ArticleCarte) => void }) {
@@ -15,7 +16,7 @@ export default function CartePicker({ carte, onAjouter }: { carte: ArticleCarte[
   return (
     <section className="pos-carte">
       <label className="search" style={{ background: "var(--card)" }}>
-        <span aria-hidden>⌕</span>
+        <Icone nom="recherche" taille={15} />
         <input placeholder="Chercher un article" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
       </label>
       {!recherche && (

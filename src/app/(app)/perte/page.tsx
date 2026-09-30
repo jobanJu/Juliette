@@ -7,6 +7,7 @@ import { ajouterJours, iso } from "@/lib/planning";
 import { useStock } from "@/lib/useStock";
 import { euros, formatQte, MOTIFS_PERTE } from "@/lib/stock";
 import type { Perte, Produit } from "@/lib/stock";
+import Icone from "@/components/Icone";
 
 const PERIODES = [7, 30, 90] as const;
 
@@ -109,7 +110,7 @@ export default function Pertes() {
                 <h2>Produits les plus perdus</h2>
               </div>
               {!stats.top.length ? (
-                <div className="empty">Aucune perte sur la période. 👏</div>
+                <div className="empty">Aucune perte sur la période.</div>
               ) : (
                 <div className="rows">
                   {stats.top.map(([id, v], i) => (
@@ -166,7 +167,7 @@ export default function Pertes() {
                           {gestion && (
                             <td style={{ textAlign: "right" }}>
                               <button className="icon-btn" onClick={() => supprimer(p)} aria-label="Supprimer" title="Supprimer (erreur de saisie)">
-                                🗑
+                                <Icone nom="supprimer" />
                               </button>
                             </td>
                           )}

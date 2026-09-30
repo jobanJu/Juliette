@@ -10,6 +10,7 @@
 //   * remise de matériel : aucune retenue sur salaire en cas de perte (sanction pécuniaire interdite, L1331-2).
 
 import { briques, EMPLOIS, MATERIELS } from "@/lib/contrats";
+import type { NomIcone } from "@/components/Icone";
 
 const { eur, dateLongue, ou } = briques;
 
@@ -40,7 +41,7 @@ export type Contexte = {
 export type Modele = {
   cle: TypeDoc;
   label: string;
-  icone: string;
+  icone: NomIcone;
   description: string;
   /** requis : un salarié de l'équipe ; optionnel : salarié ou document générique ; candidat : nom saisi ; non : document d'établissement. */
   nominatif: "requis" | "optionnel" | "candidat" | "non";
@@ -126,7 +127,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
   fiche_poste: {
     cle: "fiche_poste",
     label: "Fiche de poste",
-    icone: "📋",
+    icone: "liste",
     description: "Missions, tâches, compétences et conditions de travail d'un poste.",
     nominatif: "optionnel",
     signatureSalarie: true,
@@ -176,7 +177,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
   remise_materiel: {
     cle: "remise_materiel",
     label: "Remise de matériel",
-    icone: "🧰",
+    icone: "outils",
     description: "Fiche de perception : le salarié atteste avoir reçu tenues et équipements.",
     nominatif: "requis",
     signatureSalarie: true,
@@ -218,7 +219,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
   reglement: {
     cle: "reglement",
     label: "Règlement intérieur",
-    icone: "📜",
+    icone: "parchemin",
     description: "Obligatoire dès 50 salariés (France). Hygiène, sécurité, discipline, harcèlement.",
     nominatif: "non",
     signatureSalarie: false,
@@ -291,7 +292,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
   promesse: {
     cle: "promesse",
     label: "Promesse d'embauche",
-    icone: "🤝",
+    icone: "partenaire",
     description: "Offre ferme de contrat adressée à un candidat.",
     nominatif: "candidat",
     signatureSalarie: false,
@@ -335,7 +336,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
   avertissement: {
     cle: "avertissement",
     label: "Avertissement",
-    icone: "⚠️",
+    icone: "alerte",
     description: "Sanction écrite pour un manquement, remise contre décharge.",
     nominatif: "requis",
     signatureSalarie: true,
@@ -369,7 +370,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
   convocation: {
     cle: "convocation",
     label: "Convocation à entretien préalable",
-    icone: "📅",
+    icone: "calendrier",
     description: "Avant une sanction importante ou un licenciement. Délai de 5 jours ouvrables.",
     nominatif: "requis",
     signatureSalarie: true,
@@ -409,7 +410,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
   certificat: {
     cle: "certificat",
     label: "Certificat de travail",
-    icone: "🎓",
+    icone: "formation",
     description: "À remettre à tout salarié à la fin de son contrat.",
     nominatif: "requis",
     signatureSalarie: false,
@@ -442,7 +443,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
   attestation: {
     cle: "attestation",
     label: "Attestation employeur",
-    icone: "🧾",
+    icone: "facture",
     description: "Atteste que la personne est employée (logement, banque, démarches).",
     nominatif: "requis",
     signatureSalarie: false,

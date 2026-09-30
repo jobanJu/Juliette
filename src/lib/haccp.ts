@@ -9,6 +9,7 @@
 //   production      voir Production ci-dessous (fiche de fabrication, complétée au fil de la journée)
 
 import { iso } from "@/lib/planning";
+import type { NomIcone } from "@/components/Icone";
 
 export type TypeEnregistrement = "temperature" | "nettoyage" | "refroidissement" | "tracabilite" | "production" | "huile" | "cuisson";
 
@@ -62,11 +63,11 @@ export type Huile = { friteuse_id?: string; friteuse?: string; action: ActionHui
 export const SEUIL_POLAIRES = 25;
 export const TEMP_FRITURE_MAX = 180;
 export const HUILES_DEFAUT: HuilesConfig = { friteuses: [], seuil_polaires: SEUIL_POLAIRES, prestataire: { nom: "" } };
-export const ACTIONS_HUILE: Record<ActionHuile, { label: string; icone: string }> = {
-  controle: { label: "Contrôle", icone: "🧪" },
-  filtration: { label: "Filtration", icone: "⏚" },
-  changement: { label: "Changement d'huile", icone: "♻" },
-  collecte: { label: "Collecte prestataire", icone: "🚚" },
+export const ACTIONS_HUILE: Record<ActionHuile, { label: string; icone: NomIcone }> = {
+  controle: { label: "Contrôle", icone: "analyse" },
+  filtration: { label: "Filtration", icone: "huile" },
+  changement: { label: "Changement d'huile", icone: "renouveler" },
+  collecte: { label: "Collecte prestataire", icone: "camion" },
 };
 
 export function huileConforme(polaires: number | undefined, temperature: number | undefined, seuil: number) {
@@ -177,10 +178,10 @@ export function reduirePhoto(fichier: File, cote = 1280): Promise<Blob> {
 
 export const COLONNES_ENREG = "id, type, data, compte_id, auteur, created_at, updated_at";
 
-export const EQUIPEMENTS_TYPES: Record<Equipement["type"], { label: string; min: number; max: number; icone: string }> = {
-  positif: { label: "Froid positif", min: 0, max: 4, icone: "❄" },
-  negatif: { label: "Froid négatif", min: -25, max: -18, icone: "✱" },
-  chaud: { label: "Maintien au chaud", min: 63, max: 90, icone: "♨" },
+export const EQUIPEMENTS_TYPES: Record<Equipement["type"], { label: string; min: number; max: number; icone: NomIcone }> = {
+  positif: { label: "Froid positif", min: 0, max: 4, icone: "frigo" },
+  negatif: { label: "Froid négatif", min: -25, max: -18, icone: "surgele" },
+  chaud: { label: "Maintien au chaud", min: 63, max: 90, icone: "cuisson" },
 };
 
 export const EQUIPEMENTS_SUGGERES: Omit<Equipement, "id">[] = [
@@ -281,12 +282,12 @@ export const nouvelId = () => Math.random().toString(36).slice(2, 10);
 export const formatTemp = (v: number) => `${v > 0 ? "+" : ""}${v.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} °C`;
 
 export const CATEGORIES_DLC = [
-  { id: "surgele", label: "PRODUIT SURGELÉ", icone: "🧊", dlcDefautJours: 30, conservation: "−18 °C" },
-  { id: "decongele", label: "PRODUIT DÉCONGELÉ", icone: "🐟", dlcDefautJours: 1, conservation: "0 / +3 °C" },
-  { id: "sec_entame", label: "PRODUIT SEC ENTAMÉ", icone: "🌾", dlcDefautJours: 30, conservation: "Ambiant" },
-  { id: "legume_decontamine", label: "LÉGUME DÉCONTAMINÉ", icone: "🥗", dlcDefautJours: 1, conservation: "0 / +4 °C" },
-  { id: "frais_ouvert", label: "PRODUIT FRAIS OUVERT", icone: "🥛", dlcDefautJours: 3, conservation: "0 / +4 °C" },
-  { id: "viande_sous_vide", label: "VIANDE SOUS VIDE OUVERTE", icone: "🥩", dlcDefautJours: 2, conservation: "0 / +2 °C" },
+  { id: "surgele", label: "PRODUIT SURGELÉ", icone: "surgele", dlcDefautJours: 30, conservation: "−18 °C" },
+  { id: "decongele", label: "PRODUIT DÉCONGELÉ", icone: "decongele", dlcDefautJours: 1, conservation: "0 / +3 °C" },
+  { id: "sec_entame", label: "PRODUIT SEC ENTAMÉ", icone: "ble", dlcDefautJours: 30, conservation: "Ambiant" },
+  { id: "legume_decontamine", label: "LÉGUME DÉCONTAMINÉ", icone: "salade", dlcDefautJours: 1, conservation: "0 / +4 °C" },
+  { id: "frais_ouvert", label: "PRODUIT FRAIS OUVERT", icone: "lait", dlcDefautJours: 3, conservation: "0 / +4 °C" },
+  { id: "viande_sous_vide", label: "VIANDE SOUS VIDE OUVERTE", icone: "viande", dlcDefautJours: 2, conservation: "0 / +2 °C" },
 ] as const;
 
 export type CategorieDlcId = (typeof CATEGORIES_DLC)[number]["id"];

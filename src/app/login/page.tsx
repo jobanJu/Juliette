@@ -5,6 +5,8 @@ import type { FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
+import Marque from "@/components/Marque";
+import Icone from "@/components/Icone";
 
 export default function Connexion() {
   const { etat, connexion } = useSession();
@@ -34,15 +36,15 @@ export default function Connexion() {
     <div className="login">
       <aside className="login-art">
         <div className="brand">
-          <span className="brand-mark">J</span>Juliette
+          <Marque />Juliette
         </div>
         <div>
           <h2>Le quotidien du restaurant, enfin réuni.</h2>
           <p>Équipe, stocks, hygiène et salle au même endroit — pour passer moins de temps sur les papiers et plus avec les clients.</p>
           <ul>
-            <li>◷ Pointage, planning et congés</li>
-            <li>▤ Inventaire, pertes et commandes fournisseurs</li>
-            <li>❄ HACCP : températures, nettoyage et traçabilité</li>
+            <li><Icone nom="horloge" /> Pointage, planning et congés</li>
+            <li><Icone nom="stock" /> Inventaire, pertes et commandes fournisseurs</li>
+            <li><Icone nom="surgele" /> HACCP : températures, nettoyage et traçabilité</li>
           </ul>
         </div>
         <small style={{ opacity: 0.6 }}>© {new Date().getFullYear()} Juliette</small>
@@ -51,7 +53,7 @@ export default function Connexion() {
       <div className="login-form">
         <form onSubmit={valider}>
           <div className="brand" style={{ marginBottom: 10 }}>
-            <span className="brand-mark">J</span>Juliette
+            <Marque />Juliette
           </div>
           <div>
             <h1>Connexion</h1>

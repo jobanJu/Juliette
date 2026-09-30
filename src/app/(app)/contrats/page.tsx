@@ -13,6 +13,7 @@ import EditeurAvenant from "@/components/contrats/EditeurAvenant";
 import { nomAvenant } from "@/lib/avenants";
 import type { DonneesAvenant } from "@/lib/avenants";
 import SignaturePad from "@/components/contrats/SignaturePad";
+import Icone from "@/components/Icone";
 
 type Contrat = {
   id: string;
@@ -374,7 +375,7 @@ function VueContrat({
                   : "Signe en tant qu'employeur. Le salarié pourra signer depuis son compte Juliette."}
               </p>
               <button className="btn btn-primary btn-lg" onClick={() => setSigne(true)}>
-                ✍ Signer le contrat
+                <Icone nom="signer" /> Signer le contrat
               </button>
             </>
           )}

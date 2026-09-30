@@ -369,7 +369,7 @@ export default function EditeurFiche(p: Props) {
                     })
                   }
                 >
-                  {a.icone} {a.label}
+                  {a.label}
                 </button>
               ))}
             </div>

@@ -1,6 +1,7 @@
 // Événements autour de l'établissement : types, impact et repères calculés (jours fériés…).
 
 import { ajouterJours, iso } from "@/lib/planning";
+import type { NomIcone } from "@/components/Icone";
 
 export type Evenement = {
   id: string;
@@ -16,20 +17,20 @@ export type Evenement = {
 
 export const COLONNES_EVT = "id, nom, date, date_fin, lieu, type, sens, impact, note";
 
-export const TYPES_EVT: Record<string, string> = {
-  Concert: "🎤",
-  Match: "⚽",
-  Marché: "🧺",
-  Salon: "🏛",
-  Exposition: "🖼",
-  Festival: "🎪",
-  Braderie: "🛍",
-  "Jour férié": "📅",
-  Vacances: "🏖",
-  Travaux: "🚧",
-  Météo: "🌦",
-  Privatisation: "🥂",
-  Autre: "✦",
+export const TYPES_EVT: Record<string, NomIcone> = {
+  Concert: "micro",
+  Match: "trophee",
+  Marché: "marche",
+  Salon: "institution",
+  Exposition: "image",
+  Festival: "festival",
+  Braderie: "emporter",
+  "Jour férié": "calendrier",
+  Vacances: "vacances",
+  Travaux: "travaux",
+  Météo: "meteo",
+  Privatisation: "vin",
+  Autre: "evenement",
 };
 
 export const IMPACTS: Record<Evenement["impact"], { label: string; poids: number }> = {

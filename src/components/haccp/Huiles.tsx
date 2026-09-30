@@ -5,6 +5,7 @@ import Modal from "@/components/Modal";
 import { getSupabaseClient } from "@/lib/supabase";
 import { ACTIONS_HUILE, huileConforme, nouvelId, TEMP_FRITURE_MAX } from "@/lib/haccp";
 import type { ActionHuile, Enregistrement, Friteuse, Huile, HuilesConfig, Prestataire } from "@/lib/haccp";
+import Icone from "@/components/Icone";
 
 type Props = {
   etablissementId: string;
@@ -36,7 +37,7 @@ export default function Huiles(p: Props) {
         {p.parametres && (
           <p style={{ marginTop: 14 }}>
             <button className="btn btn-primary" onClick={p.onConfigurer}>
-              ⚙ Déclarer les friteuses
+              <Icone nom="reglages" /> Déclarer les friteuses
             </button>
           </p>
         )}
@@ -76,7 +77,7 @@ export default function Huiles(p: Props) {
               <div className="huile-actions">
                 {(["controle", "filtration", "changement"] as const).map((a) => (
                   <button key={a} className={`btn${a === "controle" ? " btn-primary" : ""}`} onClick={() => setSaisie({ friteuse: f, action: a })}>
-                    {ACTIONS_HUILE[a].icone} {ACTIONS_HUILE[a].label}
+                    <Icone nom={ACTIONS_HUILE[a].icone} /> {ACTIONS_HUILE[a].label}
                   </button>
                 ))}
               </div>
@@ -87,11 +88,11 @@ export default function Huiles(p: Props) {
 
       <section className="card">
         <div className="card-head">
-          <h2>🚚 Collecte des huiles usagées</h2>
+          <h2><Icone nom="camion" taille={18} /> Collecte des huiles usagées</h2>
           <span style={{ display: "flex", gap: 8 }}>
             {p.parametres && (
               <button className="btn" onClick={p.onConfigurer}>
-                ⚙ Prestataire
+                <Icone nom="reglages" /> Prestataire
               </button>
             )}
             <button className="btn btn-primary" onClick={() => setSaisie({ friteuse: null, action: "collecte" })}>
@@ -109,7 +110,7 @@ export default function Huiles(p: Props) {
             <div className="presta-liens">
               {pr.telephone && (
                 <a className="btn" href={`tel:${pr.telephone.replace(/\s/g, "")}`}>
-                  📞 {pr.telephone}
+                  <Icone nom="telephone" taille={14} /> {pr.telephone}
                 </a>
               )}
               {pr.email && (
@@ -122,7 +123,7 @@ export default function Huiles(p: Props) {
             {pr.note && <small className="hint">{pr.note}</small>}
           </div>
         ) : (
-          <p className="hint">Aucun prestataire renseigné.{p.parametres ? " Ajoute ses coordonnées avec « ⚙ Prestataire »." : ""}</p>
+          <p className="hint">Aucun prestataire renseigné.{p.parametres ? " Ajoute ses coordonnées avec le bouton Prestataire." : ""}</p>
         )}
         {collectes.length > 0 && (
           <div className="rows" style={{ marginTop: 10 }}>
@@ -186,7 +187,7 @@ function ModalSaisie({ etablissementId, compteId, config, friteuse, action, onCl
 
   return (
     <Modal
-      titre={`${ACTIONS_HUILE[action].icone} ${ACTIONS_HUILE[action].label}`}
+      titre={ACTIONS_HUILE[action].label}
       sousTitre={friteuse?.nom ?? config.prestataire.nom ?? undefined}
       onClose={onClose}
       pied={

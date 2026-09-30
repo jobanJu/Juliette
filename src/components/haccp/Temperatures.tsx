@@ -5,6 +5,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { ajouterJours, depuisIso, iso } from "@/lib/planning";
 import { CRENEAUX_RELEVE, creneauReleve, EQUIPEMENTS_TYPES, estConforme, formatTemp } from "@/lib/haccp";
 import type { Enregistrement, Equipement, Temperature } from "@/lib/haccp";
+import Icone from "@/components/Icone";
 
 type Props = {
   etablissementId: string;
@@ -262,7 +263,7 @@ export default function Temperatures(p: Props) {
         {p.gestion && (
           <p style={{ marginTop: 14 }}>
             <button className="btn btn-primary" onClick={p.onConfigurer}>
-              ⚙ Déclarer les équipements
+              <Icone nom="reglages" /> Déclarer les équipements
             </button>
           </p>
         )}
@@ -283,14 +284,14 @@ export default function Temperatures(p: Props) {
                 className={creneauChoisi === "matin" ? "on" : ""}
                 onClick={() => setCreneauChoisi("matin")}
               >
-                🌅 Matin (ouverture)
+                <Icone nom="matin" /> Matin (ouverture)
               </button>
               <button
                 type="button"
                 className={creneauChoisi === "soir" ? "on" : ""}
                 onClick={() => setCreneauChoisi("soir")}
               >
-                🌙 Soir (fermeture)
+                <Icone nom="soir" /> Soir (fermeture)
               </button>
             </div>
             {creneauChoisi !== creneauActuel && (
@@ -332,7 +333,7 @@ export default function Temperatures(p: Props) {
                 <div>
                   <h3 className="haccp-frigo-title">{e.nom}</h3>
                   <span className="haccp-frigo-sub">
-                    {typeInfo.icone} {typeInfo.label} · Norme {formatTemp(e.min)} à {formatTemp(e.max)}
+                    <Icone nom={typeInfo.icone} taille={13} /> {typeInfo.label} · Norme {formatTemp(e.min)} à {formatTemp(e.max)}
                   </span>
                 </div>
                 {aDejaReleve && (
@@ -485,7 +486,7 @@ export default function Temperatures(p: Props) {
           style={{ height: 32, fontSize: 12 }}
           onClick={() => setVoirHistorique((v) => !v)}
         >
-          {voirHistorique ? "▲ Masquer l’historique des relevés" : "📊 Voir l’historique des relevés (14 jours)"}
+          {voirHistorique ? "▲ Masquer l’historique des relevés" : <><Icone nom="graphique" /> Voir l’historique des relevés (14 jours)</>}
         </button>
       </div>}
 

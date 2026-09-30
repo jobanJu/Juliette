@@ -18,6 +18,7 @@ import Registre from "@/components/haccp/Registre";
 import Huiles, { ModalHuiles } from "@/components/haccp/Huiles";
 import Cuisson, { ModalCuisson } from "@/components/haccp/Cuisson";
 import ModalRubriques from "@/components/haccp/ModalRubriques";
+import Icone from "@/components/Icone";
 
 type Onglet = "temperatures" | "tracabilite" | "etiquettes" | "nettoyage" | "refroidissement" | "cuisson" | "huiles" | "suivi-production" | "registre" | "jour";
 const JOURS_CHARGES = 90;
@@ -195,12 +196,12 @@ export default function Haccp() {
                 setOnglet("registre");
               }}
             >
-              📊 Historique<span className="hide-mobile"> & export</span>
+              <Icone nom="graphique" /> Historique<span className="hide-mobile"> & export</span>
             </button>
           )}
           {parametres && reglageOnglet && (
             <button className="btn" onClick={() => setReglage(reglageOnglet)} title="Paramètres de la rubrique">
-              ⚙ Paramètres
+              <Icone nom="reglages" /> Paramètres
             </button>
           )}
           {parametres && (
@@ -229,17 +230,17 @@ export default function Haccp() {
         <div style={{ display: "grid", gap: 14 }}>
           <section className="haccp-mission" aria-label="Progression HACCP du jour">
             <div className="haccp-mission-main">
-              <div className="haccp-mission-kicker"><span>✦</span> LE PETIT RITUEL DU JOUR</div>
+              <div className="haccp-mission-kicker"><Icone nom="evenement" taille={13} /> LE PETIT RITUEL DU JOUR</div>
               <h2>{resume.temperaturesTotal + resume.nettoyagesTotal === 0 ? "On prépare le service ?" : resume.temperaturesFaites === resume.temperaturesTotal && resume.nettoyagesFaits === resume.nettoyagesTotal ? "Tournée du jour terminée !" : "À toi de jouer !"}</h2>
               <p>{resume.temperaturesTotal + resume.nettoyagesTotal === 0 ? "Configure tes équipements froids et ton plan de nettoyage pour lancer ta première tournée." : "Deux petites étapes pour démarrer la journée du bon pied."}</p>
               {resume.temperaturesTotal + resume.nettoyagesTotal > 0 && <div className="haccp-progress-wrap"><div className="haccp-progress-track"><i style={{ width: `${Math.round(((resume.temperaturesFaites + resume.nettoyagesFaits) / (resume.temperaturesTotal + resume.nettoyagesTotal)) * 100)}%` }} /></div><b>{resume.temperaturesFaites + resume.nettoyagesFaits}<span> / {resume.temperaturesTotal + resume.nettoyagesTotal} gestes</span></b></div>}
             </div>
             <div className="haccp-mission-steps">
               <button className={`haccp-step${resume.temperaturesTotal > 0 && resume.temperaturesFaites === resume.temperaturesTotal ? resume.nonConformes ? " attention" : " done" : ""}`} onClick={() => setOnglet("temperatures")}>
-                <span className="haccp-step-icon">🌡️</span><span><small>ÉTAPE 1</small><b>Tour des frigos</b><em>{resume.temperaturesTotal ? `${resume.temperaturesFaites}/${resume.temperaturesTotal} relevés${resume.nonConformes ? ` · ${resume.nonConformes} hors norme` : ""}` : "À configurer"}</em></span><strong>{resume.nonConformes ? "!" : resume.temperaturesTotal > 0 && resume.temperaturesFaites === resume.temperaturesTotal ? "✓" : "→"}</strong>
+                <span className="haccp-step-icon"><Icone nom="temperature" taille={22} /></span><span><small>ÉTAPE 1</small><b>Tour des frigos</b><em>{resume.temperaturesTotal ? `${resume.temperaturesFaites}/${resume.temperaturesTotal} relevés${resume.nonConformes ? ` · ${resume.nonConformes} hors norme` : ""}` : "À configurer"}</em></span><strong>{resume.nonConformes ? "!" : resume.temperaturesTotal > 0 && resume.temperaturesFaites === resume.temperaturesTotal ? "✓" : "→"}</strong>
               </button>
               <button className={`haccp-step${resume.nettoyagesTotal > 0 && resume.nettoyagesFaits === resume.nettoyagesTotal ? " done" : ""}`} onClick={() => setOnglet("nettoyage")}>
-                <span className="haccp-step-icon">🧽</span><span><small>ÉTAPE 2</small><b>Propreté des postes</b><em>{resume.nettoyagesTotal ? `${resume.nettoyagesFaits}/${resume.nettoyagesTotal} tâches` : "À configurer"}</em></span><strong>{resume.nettoyagesTotal > 0 && resume.nettoyagesFaits === resume.nettoyagesTotal ? "✓" : "→"}</strong>
+                <span className="haccp-step-icon"><Icone nom="nettoyage" taille={22} /></span><span><small>ÉTAPE 2</small><b>Propreté des postes</b><em>{resume.nettoyagesTotal ? `${resume.nettoyagesFaits}/${resume.nettoyagesTotal} tâches` : "À configurer"}</em></span><strong>{resume.nettoyagesTotal > 0 && resume.nettoyagesFaits === resume.nettoyagesTotal ? "✓" : "→"}</strong>
               </button>
               <div className="haccp-mission-note"><span>{resume.nonConformes ? "⚠" : "⏱"}</span> {resume.nonConformes ? `${resume.nonConformes} relevé${resume.nonConformes > 1 ? "s" : ""} hors norme à vérifier` : resume.enCours ? `${resume.enCours} refroidissement${resume.enCours > 1 ? "s" : ""} à surveiller` : "Tout est prêt pour le service"}</div>
             </div>
@@ -248,7 +249,7 @@ export default function Haccp() {
             <button className="card stat" onClick={() => setOnglet("temperatures")}>
               <div className="stat-top">
                 Relevés du {resume.creneau}
-                <span className={`chip-ic ${resume.relevesOk ? "t-mint" : "t-blue"}`}>❄</span>
+                <span className={`chip-ic ${resume.relevesOk ? "t-mint" : "t-blue"}`}><Icone nom="surgele" /></span>
               </div>
               <div className="stat-value">{d.equipements.length ? resume.releves : "—"}</div>
               <div className="stat-foot" style={{ color: resume.nonConformes ? "var(--red-ink)" : undefined }}>

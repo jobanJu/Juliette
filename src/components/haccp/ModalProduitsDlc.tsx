@@ -5,6 +5,7 @@ import Modal from "@/components/Modal";
 import { getSupabaseClient } from "@/lib/supabase";
 import { CATEGORIES_DLC, nouvelId } from "@/lib/haccp";
 import type { CategorieDlcId, ProduitDlcConfig } from "@/lib/haccp";
+import Icone from "@/components/Icone";
 
 type Props = {
   etablissementId: string;
@@ -99,7 +100,7 @@ export default function ModalProduitsDlc({ etablissementId, catalogue, onClose, 
             style={{ fontSize: 11, whiteSpace: "nowrap" }}
             onClick={() => setCatFiltre(c.id)}
           >
-            {c.icone} {c.label}
+            <Icone nom={c.icone} /> {c.label}
           </button>
         ))}
       </div>
@@ -164,7 +165,7 @@ export default function ModalProduitsDlc({ etablissementId, catalogue, onClose, 
       </div>
 
       <p className="hint" style={{ marginTop: 12 }}>
-        💡 <b>Règle HACCP :</b> la durée de DLC paramétrée ici sert de plafond légal. En cuisine, l’opérateur ne peut modifier la date qu’à la baisse (date plus courte).
+        <Icone nom="astuce" taille={14} /> <b>Règle HACCP :</b> la durée de DLC paramétrée ici sert de plafond légal. En cuisine, l’opérateur ne peut modifier la date qu’à la baisse (date plus courte).
       </p>
 
       {erreur && (

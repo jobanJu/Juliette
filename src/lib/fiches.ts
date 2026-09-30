@@ -31,21 +31,21 @@ export type Fiche = {
 export const COLONNES_FICHE = "id, nom, categorie, format, ingredients, etapes, accompagnement, note, images, portions, prix_vente_ttc, tva_pct, allergenes, created_at, updated_at";
 
 /** Les 14 allergènes à déclarer (règlement INCO). */
-export const ALLERGENES: Record<string, { label: string; icone: string }> = {
-  gluten: { label: "Gluten", icone: "🌾" },
-  crustaces: { label: "Crustacés", icone: "🦐" },
-  oeufs: { label: "Œufs", icone: "🥚" },
-  poissons: { label: "Poissons", icone: "🐟" },
-  arachides: { label: "Arachides", icone: "🥜" },
-  soja: { label: "Soja", icone: "🫘" },
-  lait: { label: "Lait", icone: "🥛" },
-  fruits_coque: { label: "Fruits à coque", icone: "🌰" },
-  celeri: { label: "Céleri", icone: "🥬" },
-  moutarde: { label: "Moutarde", icone: "🟡" },
-  sesame: { label: "Sésame", icone: "⚪" },
-  sulfites: { label: "Sulfites", icone: "🍷" },
-  lupin: { label: "Lupin", icone: "🌼" },
-  mollusques: { label: "Mollusques", icone: "🦪" },
+export const ALLERGENES: Record<string, { label: string }> = {
+  gluten: { label: "Gluten" },
+  crustaces: { label: "Crustacés" },
+  oeufs: { label: "Œufs" },
+  poissons: { label: "Poissons" },
+  arachides: { label: "Arachides" },
+  soja: { label: "Soja" },
+  lait: { label: "Lait" },
+  fruits_coque: { label: "Fruits à coque" },
+  celeri: { label: "Céleri" },
+  moutarde: { label: "Moutarde" },
+  sesame: { label: "Sésame" },
+  sulfites: { label: "Sulfites" },
+  lupin: { label: "Lupin" },
+  mollusques: { label: "Mollusques" },
 };
 
 export const TVA_RESTAURATION = [5.5, 10, 20];

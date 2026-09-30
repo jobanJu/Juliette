@@ -5,6 +5,8 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { useConnecte } from "@/lib/session";
 import { iso } from "@/lib/planning";
 import Modal from "@/components/Modal";
+import Icone from "@/components/Icone";
+import type { NomIcone } from "@/components/Icone";
 
 type Doc = {
   id: string;
@@ -22,16 +24,16 @@ type Doc = {
 };
 
 const COLONNES = "id, titre, categorie, contenu, fichier_path, fichier_nom, fichier_type, fichier_taille, visibilite, epingle, echeance, updated_at";
-const CATEGORIES: Record<string, string> = {
-  Procédures: "📋",
-  Hygiène: "🧼",
-  Sécurité: "🧯",
-  Contrats: "📑",
-  Fournisseurs: "🚚",
-  Factures: "🧾",
-  Formation: "🎓",
-  Administratif: "🗂",
-  Autre: "📄",
+const CATEGORIES: Record<string, NomIcone> = {
+  Procédures: "liste",
+  Hygiène: "hygiene",
+  Sécurité: "bouclier",
+  Contrats: "contrat",
+  Fournisseurs: "camion",
+  Factures: "facture",
+  Formation: "formation",
+  Administratif: "dossier",
+  Autre: "document",
 };
 const TAILLE_MAX = 20 * 1024 * 1024;
 
@@ -110,7 +112,7 @@ export default function Documentation() {
               const j = joursAvant(d.echeance!, aujourdhui);
               return (
                 <div key={d.id} className="row">
-                  <span className="chip-ic t-yellow">{CATEGORIES[d.categorie] ?? "📄"}</span>
+                  <span className="chip-ic t-yellow"><Icone nom={CATEGORIES[d.categorie] ?? "document"} /></span>
                   <button className="main-txt resa-main" onClick={() => setOuvert(d)}>
                     <b>{d.titre}</b>
                     <small>échéance le {new Date(d.echeance! + "T00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</small>
@@ -125,13 +127,13 @@ export default function Documentation() {
 
       <div className="filters">
         <label className="search" style={{ flex: "1 1 240px", background: "var(--card)" }}>
-          <span aria-hidden>⌕</span>
+          <Icone nom="recherche" taille={15} />
           <input placeholder="Titre, contenu, nom de fichier…" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
         </label>
         <div className="chips">
           {["toutes", ...Object.keys(CATEGORIES).filter((c) => (docs ?? []).some((d) => d.categorie === c))].map((c) => (
             <button key={c} className={`chip${categorie === c ? " on" : ""}`} onClick={() => setCategorie(c)}>
-              {c === "toutes" ? "Tout" : `${CATEGORIES[c]} ${c}`}
+              {c === "toutes" ? "Tout" : <><Icone nom={CATEGORIES[c]} /> {c}</>}
             </button>
           ))}
         </div>
@@ -148,10 +150,10 @@ export default function Documentation() {
         <div className="doc-grid">
           {liste.map((d) => (
             <button key={d.id} className="card doc-card" onClick={() => setOuvert(d)}>
-              <span className="doc-ic">{CATEGORIES[d.categorie] ?? "📄"}</span>
+              <span className="doc-ic"><Icone nom={CATEGORIES[d.categorie] ?? "document"} taille={20} /></span>
               <span className="doc-body">
                 <b>
-                  {d.epingle && "📌 "}
+                  {d.epingle && <><Icone nom="epingle" taille={14} /> </>}
                   {d.titre}
                 </b>
                 <small className="hint">
@@ -159,7 +161,7 @@ export default function Documentation() {
                   {d.fichier_nom ? ` · ${d.fichier_nom.split(".").pop()?.toUpperCase()} ${taille(d.fichier_taille)}` : d.contenu ? " · procédure écrite" : ""}
                 </small>
                 <span className="person-tags">
-                  {d.visibilite === "responsables" && <span className="pill t-lav">🔒 Responsables</span>}
+                  {d.visibilite === "responsables" && <span className="pill t-lav"><Icone nom="cadenas" taille={12} /> Responsables</span>}
                   {d.echeance && <span className={`pill ${joursAvant(d.echeance, aujourdhui) < 0 ? "t-red" : "t-yellow"}`}>échéance {new Date(d.echeance + "T00:00").toLocaleDateString("fr-FR")}</span>}
                 </span>
               </span>
@@ -184,7 +186,7 @@ export default function Documentation() {
                     setOuvert(null);
                   }}
                 >
-                  ✎ Modifier
+                  <Icone nom="modifier" /> Modifier
                 </button>
               )}
               {ouvert.fichier_path && (
@@ -198,7 +200,7 @@ export default function Documentation() {
           {ouvert.contenu ? <div className="doc-texte">{ouvert.contenu}</div> : !ouvert.fichier_path && <p className="hint">Document vide.</p>}
           {ouvert.fichier_path && (
             <p className="hint">
-              📎 {ouvert.fichier_nom} · {taille(ouvert.fichier_taille)}
+              <Icone nom="piece_jointe" /> {ouvert.fichier_nom} · {taille(ouvert.fichier_taille)}
             </p>
           )}
         </Modal>
@@ -344,7 +346,7 @@ function ModalDocument({ etablissementId, compteId, doc, onClose, onSaved }: { e
           </span>
         ) : (
           <button className="btn" onClick={() => ref.current?.click()}>
-            📎 Choisir un fichier
+            <Icone nom="piece_jointe" /> Choisir un fichier
           </button>
         )}
         <input ref={ref} type="file" hidden onChange={(e) => e.target.files?.[0] && setFichier(e.target.files[0])} />
@@ -361,7 +363,7 @@ function ModalDocument({ etablissementId, compteId, doc, onClose, onSaved }: { e
               Toute l&apos;équipe
             </button>
             <button className={visibilite === "responsables" ? "on" : ""} onClick={() => setVisibilite("responsables")}>
-              🔒 Responsables
+              <Icone nom="cadenas" taille={14} /> Responsables
             </button>
           </div>
         </div>

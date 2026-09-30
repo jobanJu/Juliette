@@ -32,6 +32,7 @@ import ModalSuggestion from "@/components/planning/ModalSuggestion";
 import { suggererSemaine } from "@/lib/suggestion";
 import type { JourEvenement } from "@/lib/suggestion";
 import { COLONNES_EVT, reperes } from "@/lib/evenements";
+import Icone from "@/components/Icone";
 
 type Membre = Compte & { heures_contrat: number | null };
 
@@ -228,7 +229,7 @@ export default function Planning() {
         <div className="toolbar">
           {d?.pointages && (
             <button className={`btn${reel ? " btn-on" : ""}`} onClick={() => setReel((r) => !r)} title="Comparer les heures prévues aux heures réellement pointées">
-              ◷ {reel ? "Masquer le réel" : "Comparer au pointage"}
+              <Icone nom="horloge" /> {reel ? "Masquer le réel" : "Comparer au pointage"}
             </button>
           )}
           <button className="btn" onClick={() => window.print()}>
@@ -236,12 +237,12 @@ export default function Planning() {
           </button>
           {gestion && (
             <button className="btn" onClick={() => setSuggestion(true)} disabled={!d} title="Proposer la semaine d'après les habitudes de l'équipe, les contrats, les congés et les événements">
-              ✨ Suggestion
+              Suggestion
             </button>
           )}
           {gestion && (
             <button className="btn btn-primary" onClick={() => setCopie({ etat: "confirmer" })} disabled={!d || copie?.etat === "encours"}>
-              ⧉ Copier la semaine précédente
+              <Icone nom="copier" /> Copier la semaine précédente
             </button>
           )}
         </div>
@@ -602,7 +603,7 @@ function Slot({ c }: { c: Creneau }) {
       <span className="slot slot-shift" title={c.note ?? undefined}>
         {hm(c.heure_debut)} – {hm(c.heure_fin)}
         {c.pause_minutes ? <small> · {c.pause_minutes}′</small> : null}
-        {c.note ? <small> ✎</small> : null}
+        {c.note ? <small> <Icone nom="modifier" taille={11} /></small> : null}
       </span>
     );
   }

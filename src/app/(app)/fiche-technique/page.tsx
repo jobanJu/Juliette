@@ -7,6 +7,7 @@ import { useConnecte } from "@/lib/session";
 import { ALLERGENES, COLONNES_FICHE, coutsFiche, euros, tonRatio } from "@/lib/fiches";
 import type { Fiche } from "@/lib/fiches";
 import type { Produit } from "@/lib/stock";
+import Icone from "@/components/Icone";
 
 export default function FichesTechniques() {
   const { compte, etablissement } = useConnecte();
@@ -97,7 +98,7 @@ export default function FichesTechniques() {
 
       <div className="filters">
         <label className="search" style={{ flex: "1 1 240px", background: "var(--card)" }}>
-          <span aria-hidden>⌕</span>
+          <Icone nom="recherche" taille={15} />
           <input placeholder="Recette ou ingrédient…" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
         </label>
         <div className="chips">
@@ -124,7 +125,7 @@ export default function FichesTechniques() {
         <div className="people-grid">
           {liste.map(({ f, c }) => (
             <Link key={f.id} href={`/fiche-technique/${f.id}`} className="card recipe-card">
-              <span className="recipe-img">{f.images?.[0] ? <img src={f.images[0]} alt="" /> : <span aria-hidden>❏</span>}</span>
+              <span className="recipe-img">{f.images?.[0] ? <img src={f.images[0]} alt="" /> : <Icone nom="cuisine" taille={28} />}</span>
               <span className="recipe-body">
                 <small className="eyebrow">{f.categorie ?? "Sans catégorie"}</small>
                 <b>{f.nom}</b>
@@ -134,7 +135,7 @@ export default function FichesTechniques() {
                 </small>
                 {(f.allergenes ?? []).length > 0 && (
                   <span className="recipe-allerg" title={(f.allergenes ?? []).map((a) => ALLERGENES[a]?.label).join(", ")}>
-                    {(f.allergenes ?? []).map((a) => ALLERGENES[a]?.icone).join(" ")}
+                    {(f.allergenes ?? []).map((a) => ALLERGENES[a]?.label ?? a).join(", ")}
                   </span>
                 )}
                 {gestion && (

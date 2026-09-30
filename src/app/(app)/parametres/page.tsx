@@ -10,6 +10,7 @@ import { MODULES_ACCES } from "@/lib/accreditations";
 import Accreditations from "@/components/parametres/Accreditations";
 import Caisse from "@/components/parametres/Caisse";
 import { useDispositionMenu } from "@/lib/preferences";
+import Icone from "@/components/Icone";
 
 type Onglet = "compte" | "acces" | "restaurant" | "modules" | "caisse" | "pointeuse" | "emails" | "accreditations";
 const ONGLETS: Onglet[] = ["compte", "acces", "restaurant", "modules", "caisse", "pointeuse", "emails", "accreditations"];
@@ -188,7 +189,7 @@ function ModulesEtablissement({ onToast }: { onToast: (m: string) => void }) {
                 }
               />
               <span className="ic" aria-hidden>
-                {m.icon}
+                <Icone nom={m.icon} />
               </span>
               <span className="main-txt">
                 <b>{m.label}</b>

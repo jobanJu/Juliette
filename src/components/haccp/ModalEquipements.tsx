@@ -5,6 +5,7 @@ import Modal from "@/components/Modal";
 import { getSupabaseClient } from "@/lib/supabase";
 import { EQUIPEMENTS_SUGGERES, EQUIPEMENTS_TYPES, nouvelId } from "@/lib/haccp";
 import type { Equipement } from "@/lib/haccp";
+import Icone from "@/components/Icone";
 
 export default function ModalEquipements({
   etablissementId,
@@ -148,7 +149,7 @@ export default function ModalEquipements({
             >
               {Object.entries(EQUIPEMENTS_TYPES).map(([k, v]) => (
                 <option key={k} value={k}>
-                  {v.icone} {v.label}
+                  <Icone nom={v.icone} /> {v.label}
                 </option>
               ))}
             </select>

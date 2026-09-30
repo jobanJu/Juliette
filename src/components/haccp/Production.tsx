@@ -9,6 +9,7 @@ import type { Enregistrement, Etape, LigneProduction, Production as Fiche } from
 import type { Ingredient } from "@/lib/fiches";
 import PhotoHaccp, { envoyerPhoto } from "@/components/haccp/Photo";
 import Camera from "@/components/Camera";
+import Icone from "@/components/Icone";
 
 type Props = {
   etablissementId: string;
@@ -279,7 +280,7 @@ function FicheProduction({ e, etablissementId, etablissementNom, onSaved, imprim
                     <PhotoHaccp chemin={l.photo} className="prod-vignette" alt={l.produit} />
                   ) : (
                     <button className="prod-photo-btn" title="Photographier l'étiquette" onClick={() => setCamera(i)} disabled={photoEnvoi !== null}>
-                      {photoEnvoi === i ? "…" : "📷"}
+                      {photoEnvoi === i ? "…" : <Icone nom="photo" />}
                     </button>
                   )}
                 </td>
@@ -363,7 +364,7 @@ function FicheProduction({ e, etablissementId, etablissementNom, onSaved, imprim
 
       <div className="prod-actions">
         <button className="btn" title="Photo de la préparation" onClick={() => setCamera("fiche")} disabled={photoEnvoi !== null}>
-          {photoEnvoi === "fiche" ? "Envoi…" : f.photo ? "📷 Changer la photo" : "📷 Photo de la préparation"}
+          {photoEnvoi === "fiche" ? "Envoi…" : f.photo ? <><Icone nom="photo" /> Changer la photo</> : <><Icone nom="photo" /> Photo de la préparation</>}
         </button>
         {f.photo && <PhotoHaccp chemin={f.photo} className="prod-vignette" alt={f.recette} />}
         <span style={{ flex: 1 }} />

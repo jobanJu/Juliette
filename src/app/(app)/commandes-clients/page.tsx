@@ -13,6 +13,7 @@ import ModalTable from "@/components/salle/ModalTable";
 import ModalVente from "@/components/salle/ModalVente";
 import Cuisine from "@/components/salle/Cuisine";
 import Carte from "@/components/salle/Carte";
+import Icone from "@/components/Icone";
 
 type Onglet = "salle" | "ventes" | "cuisine" | "carte";
 
@@ -263,10 +264,10 @@ function Ventes({ ventes, terminees, maintenant, onNouvelle, onOuvrir }: { vente
     <div style={{ display: "grid", gap: 14 }}>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         <button className="btn btn-primary" onClick={() => onNouvelle("livraison")}>
-          🛵 Nouvelle livraison
+          <Icone nom="livraison" /> Nouvelle livraison
         </button>
         <button className="btn" onClick={() => onNouvelle("emporter")}>
-          🛍 À emporter
+          <Icone nom="emporter" /> À emporter
         </button>
         <span className="hint" style={{ marginLeft: "auto" }}>
           Aujourd&apos;hui : {terminees.length} commande(s) remise(s) · {euros(ca)}
@@ -286,7 +287,7 @@ function Ventes({ ventes, terminees, maintenant, onNouvelle, onOuvrir }: { vente
             return (
               <button key={b.id} className={`card vente-card${retard ? " vente-retard" : ""}`} onClick={() => onOuvrir(b)}>
                 <span className="vente-top">
-                  <span>{b.type_commande === "livraison" ? "🛵" : "🛍"}</span>
+                  <span><Icone nom={b.type_commande === "livraison" ? "livraison" : "emporter"} /></span>
                   <b>{b.client_nom}</b>
                   <span className={`pill ${e.ton}`}>{e.label}</span>
                 </span>

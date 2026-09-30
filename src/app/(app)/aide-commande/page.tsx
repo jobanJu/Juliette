@@ -9,6 +9,7 @@ import { euros, formatQte, memeNom, quantiteSuggeree } from "@/lib/stock";
 import type { Commande, EtatStock, Fournisseur, LigneCommande, Produit } from "@/lib/stock";
 import ModalFournisseur from "@/components/stock/ModalFournisseur";
 import Modal from "@/components/Modal";
+import Icone from "@/components/Icone";
 
 type Onglet = "liste" | "envoyees" | "fournisseurs";
 type Groupe = { cle: string; nom: string; fournisseur: Fournisseur | undefined; lignes: { p: Produit; quantite: number; s: EtatStock | undefined }[] };
@@ -156,7 +157,7 @@ export default function Commandes() {
                 <h2>Passer une commande chez…</h2>
                 <div style={{ position: "relative", minWidth: 240 }}>
                   <label className="search" style={{ background: "var(--card)" }}>
-                    <span aria-hidden>⌕</span>
+                    <Icone nom="recherche" taille={15} />
                     <input placeholder="ou chercher un produit" value={ajout} onChange={(e) => setAjout(e.target.value)} />
                   </label>
                   {recherchables.length > 0 && (
