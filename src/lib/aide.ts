@@ -123,12 +123,14 @@ export const GUIDES: Guide[] = [
     icone: "documents",
     pour: "Directeur",
     href: "/documents-rh",
-    resume: "Fiche de poste, remise de matériel, règlement intérieur, promesse d'embauche, avertissement, convocation, certificat de travail, attestation employeur : rédigés en quelques clics.",
+    resume: "Fiche de poste, remise de matériel, règlement intérieur, promesse d'embauche, avertissement, convocation, et tous les documents de fin de contrat (licenciement, rupture conventionnelle, rupture de l'essai ou d'un CDD, démission, solde de tout compte, certificat de travail) : rédigés en quelques clics, avec les mentions obligatoires.",
     etapes: [
       { titre: "Choisir le document", texte: "Clique sur le modèle voulu, puis sur la personne concernée." },
       { titre: "Remplir", texte: "Les champs connus (identité, poste, dates) sont pré-remplis. Complète le reste : l'aperçu se met à jour en direct." },
       { titre: "Imprimer ou faire signer", texte: "Le document s'imprime en A4, ou part dans l'espace du salarié pour signature (remise de matériel, règlement intérieur…)." },
+      { titre: "Mettre fin à un contrat", texte: "Rubrique « Fin de contrat » : pour un licenciement, commence par la convocation à entretien préalable, puis rédige la lettre au moins 2 jours ouvrables après l'entretien. La rupture conventionnelle calcule le délai de rétractation, la date d'homologation et l'indemnité minimale ; la demande d'homologation se fait ensuite en ligne sur TéléRC. Termine par le reçu pour solde de tout compte et le certificat de travail." },
     ],
+    astuces: ["Les alertes sous le formulaire signalent les délais légaux non respectés et les montants insuffisants avant que tu ne fasses signer."],
   },
   {
     id: "messagerie",

@@ -5,7 +5,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { nomComplet, useConnecte } from "@/lib/session";
 import { chargerMembres, FONCTIONS } from "@/lib/personnel";
 import type { Membre } from "@/lib/personnel";
-import { alertesDoc, MATERIELS, MODELES_DOCS, ORDRE_DOCS } from "@/lib/documentsRh";
+import { alertesDoc, GROUPES_DOCS, MATERIELS, MODELES_DOCS, ORDRE_DOCS } from "@/lib/documentsRh";
 import type { Champ, Contexte, Donnees, LigneMateriel, TypeDoc } from "@/lib/documentsRh";
 import DocumentContrat, { imprimerContrat } from "@/components/contrats/DocumentContrat";
 import SignaturePad from "@/components/contrats/SignaturePad";
@@ -139,22 +139,27 @@ export default function DocumentsRh() {
               ✕
             </button>
           </div>
-          <div className="doc-grille">
-            {ORDRE_DOCS.map((t) => (
-              <button
-                key={t}
-                className="doc-carte"
-                onClick={() => {
-                  setChoix(false);
-                  setVue({ id: null, type: t });
-                }}
-              >
-                <span aria-hidden><Icone nom={MODELES_DOCS[t].icone} taille={24} /></span>
-                <b>{MODELES_DOCS[t].label}</b>
-                <small>{MODELES_DOCS[t].description}</small>
-              </button>
-            ))}
-          </div>
+          {GROUPES_DOCS.map((g) => (
+            <div key={g} className="doc-groupe">
+              <h3 className="doc-groupe-titre">{g}</h3>
+              <div className="doc-grille">
+                {ORDRE_DOCS.filter((t) => MODELES_DOCS[t].groupe === g).map((t) => (
+                  <button
+                    key={t}
+                    className="doc-carte"
+                    onClick={() => {
+                      setChoix(false);
+                      setVue({ id: null, type: t });
+                    }}
+                  >
+                    <span aria-hidden><Icone nom={MODELES_DOCS[t].icone} taille={24} /></span>
+                    <b>{MODELES_DOCS[t].label}</b>
+                    <small>{MODELES_DOCS[t].description}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </section>
       )}
 
@@ -320,7 +325,7 @@ function EditeurDoc({ doc, type, membres, etab, directeurNom, etablissementId, a
   const [erreur, setErreur] = useState<string | null>(null);
   const set = (k: string, v: Donnees[string]) => setD((x) => ({ ...x, [k]: v }));
   const texte = useMemo(() => modele.generer(d, ctx), [modele, d, ctx]);
-  const alertes = alertesDoc(type, d);
+  const alertes = alertesDoc(type, d, ctx);
   const titre = nomFichier(type, type === "promesse" ? { prenom: String(d.candidat_nom ?? "").split(" ")[0] ?? "", nom: String(d.candidat_nom ?? "").split(" ").slice(1).join(" ") } : membre ? { prenom: membre.prenom ?? "", nom: membre.nom ?? "" } : null, String(d.fait_le ?? ""), etab.nom);
 
   async function choisirSalarie(id: string) {

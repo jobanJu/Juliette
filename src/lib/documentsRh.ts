@@ -11,10 +11,17 @@
 
 import { briques, EMPLOIS, MATERIELS } from "@/lib/contrats";
 import type { NomIcone } from "@/components/Icone";
+import { anciennete, calendrierRupture, indemniteLegale, joursEntre, preavisLegal, prevenanceEssai, ajouterOuvrables } from "@/lib/finContrat";
+import { ajouterJours } from "@/lib/planning";
 
 const { eur, dateLongue, ou } = briques;
 
-export type TypeDoc = "fiche_poste" | "remise_materiel" | "reglement" | "promesse" | "avertissement" | "convocation" | "certificat" | "attestation";
+export type TypeDoc =
+  | "fiche_poste" | "remise_materiel" | "reglement" | "promesse" | "avertissement" | "convocation" | "certificat" | "attestation"
+  | "licenciement" | "rupture_conventionnelle" | "rupture_essai" | "rupture_cdd" | "demission" | "solde_tout_compte";
+
+export type GroupeDoc = "Embauche & quotidien" | "Discipline" | "Fin de contrat";
+export const GROUPES_DOCS: GroupeDoc[] = ["Embauche & quotidien", "Discipline", "Fin de contrat"];
 export type Valeur = string | string[] | boolean | LigneMateriel[];
 export type LigneMateriel = { article: string; quantite: string; taille: string; etat: string };
 export type Donnees = Record<string, Valeur>;
@@ -42,6 +49,7 @@ export type Modele = {
   cle: TypeDoc;
   label: string;
   icone: NomIcone;
+  groupe: GroupeDoc;
   description: string;
   /** requis : un salarié de l'équipe ; optionnel : salarié ou document générique ; candidat : nom saisi ; non : document d'établissement. */
   nominatif: "requis" | "optionnel" | "candidat" | "non";
@@ -126,6 +134,7 @@ function trameDe(poste: string): Trame {
 export const MODELES_DOCS: Record<TypeDoc, Modele> = {
   fiche_poste: {
     cle: "fiche_poste",
+    groupe: "Embauche & quotidien",
     label: "Fiche de poste",
     icone: "liste",
     description: "Missions, tâches, compétences et conditions de travail d'un poste.",
@@ -176,6 +185,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
 
   remise_materiel: {
     cle: "remise_materiel",
+    groupe: "Embauche & quotidien",
     label: "Remise de matériel",
     icone: "outils",
     description: "Fiche de perception : le salarié atteste avoir reçu tenues et équipements.",
@@ -218,6 +228,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
 
   reglement: {
     cle: "reglement",
+    groupe: "Embauche & quotidien",
     label: "Règlement intérieur",
     icone: "parchemin",
     description: "Obligatoire dès 50 salariés (France). Hygiène, sécurité, discipline, harcèlement.",
@@ -291,6 +302,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
 
   promesse: {
     cle: "promesse",
+    groupe: "Embauche & quotidien",
     label: "Promesse d'embauche",
     icone: "partenaire",
     description: "Offre ferme de contrat adressée à un candidat.",
@@ -335,6 +347,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
 
   avertissement: {
     cle: "avertissement",
+    groupe: "Discipline",
     label: "Avertissement",
     icone: "alerte",
     description: "Sanction écrite pour un manquement, remise contre décharge.",
@@ -369,6 +382,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
 
   convocation: {
     cle: "convocation",
+    groupe: "Discipline",
     label: "Convocation à entretien préalable",
     icone: "calendrier",
     description: "Avant une sanction importante ou un licenciement. Délai de 5 jours ouvrables.",
@@ -409,6 +423,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
 
   certificat: {
     cle: "certificat",
+    groupe: "Fin de contrat",
     label: "Certificat de travail",
     icone: "formation",
     description: "À remettre à tout salarié à la fin de son contrat.",
@@ -442,6 +457,7 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
 
   attestation: {
     cle: "attestation",
+    groupe: "Embauche & quotidien",
     label: "Attestation employeur",
     icone: "facture",
     description: "Atteste que la personne est employée (logement, banque, démarches).",
@@ -470,15 +486,279 @@ export const MODELES_DOCS: Record<TypeDoc, Modele> = {
         .filter(Boolean)
         .join("\n\n"),
   },
+
+  licenciement: {
+    cle: "licenciement",
+    label: "Lettre de licenciement",
+    icone: "interdit",
+    groupe: "Fin de contrat",
+    description: "Motif personnel (faute, insuffisance), après l'entretien préalable. À envoyer en recommandé.",
+    nominatif: "requis",
+    signatureSalarie: false,
+    champs: [
+      {
+        cle: "motif",
+        label: "Motif",
+        type: "choix",
+        options: [["faute_simple", "Faute simple (cause réelle et sérieuse)"], ["faute_grave", "Faute grave"], ["faute_lourde", "Faute lourde (intention de nuire)"], ["insuffisance", "Insuffisance professionnelle"]],
+      },
+      { cle: "date_entretien", label: "Date de l'entretien préalable", type: "date", requis: true },
+      { cle: "faits", label: "Motifs précis (faits datés et vérifiables)", type: "zone", requis: true, aide: "La lettre fixe les limites du litige : tout motif non écrit ne pourra pas être invoqué ensuite." },
+      { cle: "mise_a_pied", label: "Le salarié était en mise à pied conservatoire", type: "oui_non", si: (d) => d.motif === "faute_grave" || d.motif === "faute_lourde" },
+      { cle: "preavis", label: "Durée du préavis", type: "texte", si: (d) => d.motif === "faute_simple" || d.motif === "insuffisance" },
+      { cle: "preavis_dispense", label: "Dispense de préavis (payé)", type: "oui_non", si: (d) => d.motif === "faute_simple" || d.motif === "insuffisance" },
+      { cle: "organisme", label: "Organisme santé / prévoyance (portabilité)", type: "texte" },
+      ...CHAMPS_FIN,
+    ],
+    defauts: (ctx) => {
+      const anc = anciennete(ctx.salarie?.date_embauche ?? "", aujourdhui());
+      return { motif: "faute_simple", date_entretien: "", faits: "", mise_a_pied: false, preavis: preavisLegal(anc.mois), preavis_dispense: false, organisme: "", fait_a: ctx.etablissement.ville, fait_le: aujourdhui() };
+    },
+    generer: (d, ctx) => {
+      const motif = s(d, "motif");
+      const grave = motif === "faute_grave" || motif === "faute_lourde";
+      const civ = ctx.salarie?.civilite === "Mme" ? "Madame" : "Monsieur";
+      const anc = anciennete(ctx.salarie?.date_embauche ?? "", s(d, "fait_le") || aujourdhui());
+      const qualif = { faute_simple: "une faute constituant une cause réelle et sérieuse de licenciement", faute_grave: "une faute grave", faute_lourde: "une faute lourde, commise avec l'intention de nuire à l'entreprise", insuffisance: "une insuffisance professionnelle" }[motif] ?? "une cause réelle et sérieuse";
+      return [
+        "# Notification de licenciement",
+        `#> ${ctx.etablissement.nom} · lettre recommandée avec accusé de réception`,
+        `**${nomSal(ctx)}**${ctx.salarie ? `, ${posteDe(ctx.salarie.fonction, ctx.salarie.civilite)}` : ""}`,
+        `${civ},`,
+        `Nous vous avons reçu${e(ctx)} le ${dateLongue(s(d, "date_entretien"))} pour l'entretien préalable auquel vous aviez été convoqué${e(ctx)}. Les explications recueillies au cours de cet entretien ne nous ont pas permis de modifier notre appréciation des faits.`,
+        `Nous vous notifions par la présente votre **licenciement** pour ${qualif}, pour les motifs suivants :`,
+        ou(s(d, "faits")),
+        grave
+          ? `Ces faits rendent impossible votre maintien dans l'entreprise, y compris pendant la durée d'un préavis. Votre licenciement prend donc effet immédiatement, à la date de première présentation de cette lettre, sans préavis ni indemnité de licenciement.${b(d, "mise_a_pied") ? " La période de mise à pied conservatoire, nécessaire à la procédure, ne sera pas rémunérée." : ""}`
+          : `Votre préavis, d'une durée de ${ou(s(d, "preavis"))}, débutera à la date de première présentation de cette lettre.${b(d, "preavis_dispense") ? " Nous vous dispensons de l'effectuer ; il vous sera néanmoins intégralement rémunéré aux échéances habituelles de la paie." : ""}`,
+        !grave && anc.mois >= 8 ? "Vous percevrez l'indemnité de licenciement prévue par la loi ou par la convention collective, si elle est plus favorable." : "",
+        "Vous percevrez l'indemnité compensatrice correspondant aux congés payés acquis et non pris.",
+        "À l'issue de votre contrat, votre certificat de travail, votre attestation destinée à France Travail et votre reçu pour solde de tout compte vous seront remis.",
+        `Vous bénéficiez, sous réserve de votre prise en charge par l'assurance chômage, du maintien gratuit de vos garanties de complémentaire santé et de prévoyance pour une durée égale à celle de votre dernier contrat, dans la limite de 12 mois (art. L911-8 du Code de la sécurité sociale)${s(d, "organisme") ? ` ; organisme : ${s(d, "organisme")}` : ""}.`,
+        "Vous pouvez, dans les quinze jours suivant la notification de la présente lettre, nous demander par lettre recommandée ou remise contre récépissé de préciser les motifs de votre licenciement (art. R1232-13 du Code du travail). Toute action portant sur la rupture du contrat de travail se prescrit par douze mois à compter de sa notification (art. L1471-1).",
+        `Veuillez agréer, ${civ}, l'expression de nos salutations distinguées.`,
+        fait(d, ctx),
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+    },
+  },
+
+  rupture_conventionnelle: {
+    cle: "rupture_conventionnelle",
+    label: "Rupture conventionnelle",
+    icone: "partenaire",
+    groupe: "Fin de contrat",
+    description: "Convention signée par les deux parties (CDI), avec calendrier et indemnité minimale calculés.",
+    nominatif: "requis",
+    signatureSalarie: true,
+    mentionSalarie: "Lu et approuvé",
+    champs: [
+      { cle: "entretiens", label: "Date(s) du ou des entretiens (une par ligne)", type: "liste", placeholder: "ex. 2 octobre 2026", requis: true },
+      { cle: "assistance", label: "Assistance lors des entretiens (facultatif)", type: "texte", placeholder: "ex. le salarié était assisté de M. X, délégué du personnel" },
+      { cle: "date_signature", label: "Date de signature de la convention", type: "date", requis: true },
+      { cle: "salaire_reference", label: "Salaire brut mensuel de référence (€)", type: "nombre", aide: "Le plus favorable entre la moyenne des 12 et des 3 derniers mois." },
+      { cle: "indemnite", label: "Indemnité spécifique convenue (€)", type: "nombre", requis: true },
+      { cle: "date_fin", label: "Date de fin du contrat envisagée", type: "date", requis: true },
+      { cle: "fait_a", label: "Fait à", type: "texte" },
+    ],
+    defauts: (ctx) => ({ entretiens: [], assistance: "", date_signature: aujourdhui(), salaire_reference: "", indemnite: "", date_fin: "", fait_a: ctx.etablissement.ville }),
+    generer: (d, ctx) => {
+      const cal = calendrierRupture(s(d, "date_signature"));
+      const anc = anciennete(ctx.salarie?.date_embauche ?? "", s(d, "date_fin") || s(d, "date_signature"));
+      const mini = indemniteLegale(Number(s(d, "salaire_reference")), anc.annees);
+      return [
+        "# Convention de rupture conventionnelle",
+        `#> Contrat à durée indéterminée · articles L1237-11 et suivants du Code du travail`,
+        "Entre les soussignés :",
+        `${employeur(ctx)}, représentée par ${ou(ctx.directeur)}, ci-après « l'employeur »,`,
+        `et ${nomSal(ctx)}${ctx.salarie?.fonction ? `, ${posteDe(ctx.salarie.fonction, ctx.salarie.civilite)}` : ""}, employé${e(ctx)} depuis le ${dateLongue(ctx.salarie?.date_embauche ?? "")}, ci-après « ${leSal(ctx)} ».`,
+        "## Entretiens",
+        `Les parties se sont réunies lors ${l(d, "entretiens").length > 1 ? "des entretiens" : "de l'entretien"} du ${l(d, "entretiens").join(", du ") || "[date à compléter]"}, au cours ${l(d, "entretiens").length > 1 ? "desquels" : "duquel"} elles ont convenu du principe et des conditions de la rupture. ${s(d, "assistance") || `${leSal(ctx) === "la salariée" ? "La salariée" : "Le salarié"} a été informé${e(ctx)} de la possibilité de se faire assister.`}`,
+        "## Conditions de la rupture",
+        puces([
+          `Date envisagée de fin du contrat : **${dateLongue(s(d, "date_fin"))}**.`,
+          `Indemnité spécifique de rupture conventionnelle : **${s(d, "indemnite") ? eur(Number(s(d, "indemnite"))) : "[montant à compléter]"}** brut${mini ? ` (minimum légal : ${eur(mini)}, soit l'indemnité légale de licenciement pour ${Math.floor(anc.annees)} an${Math.floor(anc.annees) > 1 ? "s" : ""} et ${anc.mois % 12} mois d'ancienneté)` : ""}.`,
+          "Les congés payés acquis et non pris donnent lieu à une indemnité compensatrice.",
+        ]),
+        "## Calendrier",
+        cal
+          ? puces([
+              `Signature de la convention : ${dateLongue(s(d, "date_signature"))}.`,
+              `Délai de rétractation de 15 jours calendaires : jusqu'au **${dateLongue(cal.finRetractation)}** inclus. Chaque partie peut se rétracter par lettre recommandée ou remise contre décharge, sans avoir à se justifier.`,
+              `Demande d'homologation en ligne sur le service TéléRC, à partir du ${dateLongue(cal.depot)}.`,
+              `Réponse de l'administration au plus tard le ${dateLongue(cal.homologation)} (15 jours ouvrables ; sans réponse, l'homologation est acquise).`,
+              `Fin du contrat au plus tôt le ${dateLongue(cal.finAuPlusTot)}.`,
+            ])
+          : "[Date de signature à compléter]",
+        "## Fin du contrat",
+        "À la date de fin du contrat, l'employeur remettra le certificat de travail, l'attestation destinée à France Travail et le reçu pour solde de tout compte. La rupture conventionnelle ouvre droit, sous conditions, aux allocations d'assurance chômage et au maintien des garanties santé et prévoyance (portabilité).",
+        "La présente convention, établie en deux exemplaires dont un remis à chaque partie, reprend l'accord des parties. La demande d'homologation est déposée sur le formulaire officiel en ligne (TéléRC), après l'expiration du délai de rétractation.",
+        `Fait à ${ou(s(d, "fait_a") || ctx.etablissement.ville)}, le ${dateLongue(s(d, "date_signature"))}.`,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+    },
+  },
+
+  rupture_essai: {
+    cle: "rupture_essai",
+    label: "Rupture de la période d'essai",
+    icone: "horloge",
+    groupe: "Fin de contrat",
+    description: "Par l'employeur, avec le délai de prévenance légal calculé selon la présence.",
+    nominatif: "requis",
+    signatureSalarie: true,
+    mentionSalarie: "Reçu en main propre",
+    champs: [
+      { cle: "date_debut", label: "Date d'entrée du salarié", type: "date" },
+      { cle: "date_notification", label: "Date de remise de la lettre", type: "date" },
+      { cle: "fin_essai", label: "Fin prévue de la période d'essai", type: "date", aide: "Renouvellement compris." },
+    ],
+    defauts: (ctx) => ({ date_debut: ctx.salarie?.date_embauche ?? "", date_notification: aujourdhui(), fin_essai: "" }),
+    generer: (d, ctx) => {
+      const civ = ctx.salarie?.civilite === "Mme" ? "Madame" : "Monsieur";
+      const prev = prevenanceEssai(joursEntre(s(d, "date_debut"), s(d, "date_notification")));
+      const finPrev = s(d, "date_notification") ? ajouterJours(s(d, "date_notification"), prev.jours) : "";
+      const depasse = s(d, "fin_essai") && finPrev > s(d, "fin_essai");
+      return [
+        "# Rupture de la période d'essai",
+        `#> ${ctx.etablissement.nom} · lettre remise en main propre contre décharge`,
+        `**${nomSal(ctx)}**`,
+        `${civ},`,
+        `Vous êtes entré${e(ctx)} dans notre établissement le ${dateLongue(s(d, "date_debut"))}. Nous vous informons que nous mettons fin à votre période d'essai.`,
+        `Conformément à l'article L1221-25 du Code du travail, compte tenu de votre temps de présence, vous bénéficiez d'un délai de prévenance de **${prev.libelle}**.`,
+        depasse
+          ? `La période d'essai ne pouvant être prolongée par le délai de prévenance, votre contrat prendra fin le **${dateLongue(s(d, "fin_essai"))}**. Vous percevrez une indemnité compensatrice correspondant aux salaires et avantages que vous auriez perçus jusqu'au terme du délai de prévenance.`
+          : `Votre contrat de travail prendra fin le **${dateLongue(finPrev)}** au soir.`,
+        "Votre certificat de travail, votre attestation destinée à France Travail et votre reçu pour solde de tout compte, comprenant l'indemnité compensatrice de congés payés, vous seront remis à cette date.",
+        `Veuillez agréer, ${civ}, l'expression de nos salutations distinguées.`,
+        `Fait à ${ou(ctx.etablissement.ville)}, le ${dateLongue(s(d, "date_notification"))}.`,
+      ].join("\n\n");
+    },
+  },
+
+  rupture_cdd: {
+    cle: "rupture_cdd",
+    label: "Rupture anticipée d'un CDD",
+    icone: "calendrier",
+    groupe: "Fin de contrat",
+    description: "Accord commun écrit pour mettre fin à un CDD avant son terme.",
+    nominatif: "requis",
+    signatureSalarie: true,
+    mentionSalarie: "Lu et approuvé, bon pour accord",
+    champs: [
+      { cle: "date_debut", label: "Date de début du CDD", type: "date" },
+      { cle: "terme", label: "Terme initialement prévu", type: "date" },
+      { cle: "date_fin", label: "Date de fin convenue", type: "date", requis: true },
+      { cle: "usage", label: "CDD d'usage (extra)", type: "oui_non", aide: "Pas d'indemnité de fin de contrat pour un CDD d'usage." },
+      ...CHAMPS_FIN,
+    ],
+    defauts: (ctx) => ({ date_debut: ctx.salarie?.date_embauche ?? "", terme: "", date_fin: "", usage: ctx.salarie?.nature === "extra", fait_a: ctx.etablissement.ville, fait_le: aujourdhui() }),
+    generer: (d, ctx) =>
+      [
+        "# Rupture anticipée du contrat à durée déterminée d'un commun accord",
+        `#> Article L1243-1 du Code du travail`,
+        "Entre les soussignés :",
+        `${employeur(ctx)}, représentée par ${ou(ctx.directeur)}, ci-après « l'employeur »,`,
+        `et ${nomSal(ctx)}, ci-après « ${leSal(ctx)} ».`,
+        `Les parties ont conclu un contrat à durée déterminée ayant pris effet le ${dateLongue(s(d, "date_debut"))}${s(d, "terme") ? ` et dont le terme était fixé au ${dateLongue(s(d, "terme"))}` : ""}.`,
+        `Elles conviennent, d'un commun accord et sans contrainte, de mettre fin à ce contrat de manière anticipée. Le contrat prendra fin le **${dateLongue(s(d, "date_fin"))}** au soir.`,
+        b(d, "usage")
+          ? "S'agissant d'un contrat à durée déterminée d'usage, aucune indemnité de fin de contrat n'est due. Une indemnité compensatrice de congés payés sera versée."
+          : `${leSal(ctx) === "la salariée" ? "La salariée" : "Le salarié"} percevra l'indemnité de fin de contrat égale à 10 % de la rémunération totale brute perçue, ainsi que l'indemnité compensatrice de congés payés.`,
+        "Le certificat de travail, l'attestation destinée à France Travail et le reçu pour solde de tout compte seront remis à la fin du contrat.",
+        "Établi en deux exemplaires, dont un remis à chaque partie.",
+        fait(d, ctx),
+      ].join("\n\n"),
+  },
+
+  demission: {
+    cle: "demission",
+    label: "Accusé de réception de démission",
+    icone: "reception",
+    groupe: "Fin de contrat",
+    description: "Prend acte de la démission et fixe le préavis et la date de départ.",
+    nominatif: "requis",
+    signatureSalarie: true,
+    mentionSalarie: "Reçu en main propre",
+    champs: [
+      { cle: "date_reception", label: "Démission reçue le", type: "date" },
+      { cle: "forme", label: "Reçue par", type: "choix", options: [["main", "Lettre remise en main propre"], ["lrar", "Lettre recommandée"], ["email", "E-mail"]] },
+      { cle: "preavis", label: "Durée du préavis", type: "texte", placeholder: "ex. 8 jours, 15 jours, 1 mois selon l'ancienneté et la convention" },
+      { cle: "dispense", label: "Dispense de préavis", type: "choix", options: [["non", "Pas de dispense"], ["salarie", "Accordée à la demande du salarié (non payée)"], ["employeur", "À l'initiative de l'employeur (payée)"]] },
+      { cle: "date_depart", label: "Date de fin du contrat", type: "date" },
+      ...CHAMPS_FIN,
+    ],
+    defauts: (ctx) => ({ date_reception: aujourdhui(), forme: "main", preavis: "", dispense: "non", date_depart: "", fait_a: ctx.etablissement.ville, fait_le: aujourdhui() }),
+    generer: (d, ctx) => {
+      const civ = ctx.salarie?.civilite === "Mme" ? "Madame" : "Monsieur";
+      const forme = { main: "votre lettre remise en main propre", lrar: "votre lettre recommandée", email: "votre courriel" }[s(d, "forme")] ?? "votre courrier";
+      const disp = s(d, "dispense");
+      return [
+        "# Accusé de réception de démission",
+        `#> ${ctx.etablissement.nom}`,
+        `**${nomSal(ctx)}**`,
+        `${civ},`,
+        `Nous accusons réception de ${forme} du ${dateLongue(s(d, "date_reception"))}, par laquelle vous nous avez fait part de votre décision de démissionner de votre poste${ctx.salarie ? ` de ${posteDe(ctx.salarie.fonction, ctx.salarie.civilite)}` : ""}. Nous en prenons acte.`,
+        disp === "salarie"
+          ? `À votre demande, nous acceptons de vous dispenser de votre préavis${s(d, "preavis") ? ` de ${s(d, "preavis")}` : ""}. Cette dispense n'étant pas rémunérée, votre contrat prendra fin le **${dateLongue(s(d, "date_depart"))}**.`
+          : disp === "employeur"
+            ? `Nous vous dispensons d'effectuer votre préavis${s(d, "preavis") ? ` de ${s(d, "preavis")}` : ""}, qui vous sera néanmoins rémunéré. Vous cesserez vos fonctions dès réception de la présente ; votre contrat prendra fin le **${dateLongue(s(d, "date_depart"))}**.`
+            : `Votre préavis${s(d, "preavis") ? ` d'une durée de ${s(d, "preavis")}` : ""} court à compter de la réception de votre démission. Votre contrat prendra fin le **${dateLongue(s(d, "date_depart"))}** au soir.`,
+        "Votre certificat de travail, votre attestation destinée à France Travail et votre reçu pour solde de tout compte, comprenant l'indemnité compensatrice de congés payés, vous seront remis à cette date.",
+        "Nous vous remercions pour le travail accompli et vous souhaitons pleine réussite pour la suite.",
+        `Veuillez agréer, ${civ}, l'expression de nos salutations distinguées.`,
+        fait(d, ctx),
+      ].join("\n\n");
+    },
+  },
+
+  solde_tout_compte: {
+    cle: "solde_tout_compte",
+    label: "Reçu pour solde de tout compte",
+    icone: "facture",
+    groupe: "Fin de contrat",
+    description: "Inventaire des sommes versées à la fin du contrat, signé par le salarié.",
+    nominatif: "requis",
+    signatureSalarie: true,
+    mentionSalarie: "Pour solde de tout compte",
+    champs: [
+      { cle: "date_sortie", label: "Date de fin du contrat", type: "date" },
+      { cle: "lignes", label: "Sommes versées (une par ligne : libellé et montant brut)", type: "liste", placeholder: "ex. Salaire du 1er au 30 septembre : 1 520,00 €", requis: true },
+      { cle: "total", label: "Total net versé", type: "texte", placeholder: "ex. 2 348,15 €", requis: true },
+      { cle: "mode", label: "Mode de paiement", type: "choix", options: [["virement", "Virement"], ["cheque", "Chèque"]] },
+      ...CHAMPS_FIN,
+    ],
+    defauts: (ctx) => ({ date_sortie: "", lignes: ["Salaire du mois en cours", "Indemnité compensatrice de congés payés"], total: "", mode: "virement", fait_a: ctx.etablissement.ville, fait_le: aujourdhui() }),
+    generer: (d, ctx) =>
+      [
+        "# Reçu pour solde de tout compte",
+        `#> Article L1234-20 du Code du travail`,
+        `Je soussigné${e(ctx)} ${nomSal(ctx)}, ${ctx.salarie ? posteDe(ctx.salarie.fonction, ctx.salarie.civilite) : ""}, dont le contrat de travail avec ${employeur(ctx)} a pris fin le ${dateLongue(s(d, "date_sortie"))}, reconnais avoir reçu la somme nette de **${ou(s(d, "total"))}**, versée par ${s(d, "mode") === "cheque" ? "chèque" : "virement"}, en paiement des salaires, accessoires du salaire et indemnités dus au titre de l'exécution et de la cessation de mon contrat de travail.`,
+        "Cette somme se décompose comme suit :",
+        puces(l(d, "lignes")) || "- [détail à compléter]",
+        "Ce reçu, établi en deux exemplaires dont un m'a été remis, peut être dénoncé dans les six mois qui suivent sa signature. Passé ce délai, il devient libératoire pour l'employeur pour les seules sommes qui y sont mentionnées.",
+        fait(d, ctx),
+      ].join("\n\n"),
+  },
 };
 
-export const ORDRE_DOCS: TypeDoc[] = ["fiche_poste", "remise_materiel", "reglement", "promesse", "avertissement", "convocation", "certificat", "attestation"];
+export const ORDRE_DOCS: TypeDoc[] = [
+  "fiche_poste", "remise_materiel", "reglement", "promesse", "attestation",
+  "avertissement", "convocation",
+  "licenciement", "rupture_conventionnelle", "rupture_essai", "rupture_cdd", "demission", "solde_tout_compte", "certificat",
+];
 
 /** Alertes légales propres à chaque document. */
-export function alertesDoc(type: TypeDoc, d: Donnees): string[] {
+export function alertesDoc(type: TypeDoc, d: Donnees, ctx?: Contexte): string[] {
   const a: string[] = [];
   const m = MODELES_DOCS[type];
-  for (const c of m.champs) if (c.requis && !(typeof d[c.cle] === "string" ? (d[c.cle] as string).trim() : d[c.cle])) a.push(`${c.label} : à compléter.`);
+  for (const c of m.champs) {
+    const v = d[c.cle];
+    const vide = typeof v === "string" ? !v.trim() : Array.isArray(v) ? !v.some((x) => typeof x !== "string" || x.trim()) : !v;
+    if (c.requis && (!c.si || c.si(d)) && vide) a.push(`${c.label} : à compléter.`);
+  }
   const jours = (x: string) => Math.round((new Date(x + "T12:00").getTime() - Date.now()) / 864e5);
   if (type === "convocation" && s(d, "date_entretien")) {
     if (jours(s(d, "date_entretien")) < 7) a.push("L'entretien doit se tenir au moins 5 jours ouvrables après la remise de la convocation (hors samedi, dimanche et jours fériés).");
@@ -487,6 +767,22 @@ export function alertesDoc(type: TypeDoc, d: Donnees): string[] {
   if (type === "reglement" && !Number(s(d, "mise_a_pied_jours"))) a.push("Indique la durée maximale de la mise à pied disciplinaire, sinon elle ne pourra pas être appliquée.");
   if (type === "reglement" && !s(d, "date_vigueur")) a.push("Indique la date d'entrée en vigueur (au moins un mois après les formalités de dépôt).");
   if (type === "certificat" && !s(d, "date_sortie")) a.push("Indique la date de sortie (fin du préavis, même non effectué).");
+  if (type === "licenciement" && s(d, "date_entretien")) {
+    const auPlusTot = ajouterOuvrables(s(d, "date_entretien"), 2);
+    if (s(d, "fait_le") && s(d, "fait_le") < auPlusTot) a.push(`La lettre ne peut pas être envoyée moins de 2 jours ouvrables après l'entretien : au plus tôt le ${dateLongue(auPlusTot)} (art. L1232-6).`);
+    const disciplinaire = s(d, "motif") !== "insuffisance";
+    if (disciplinaire && s(d, "fait_le") && s(d, "fait_le") > ajouterJours(s(d, "date_entretien"), 30)) a.push("Licenciement disciplinaire : la lettre doit être envoyée au plus tard un mois après l'entretien (art. L1332-2).");
+  }
+  if (type === "licenciement" && s(d, "motif") === "faute_lourde") a.push("La faute lourde suppose une intention de nuire à l'entreprise, difficile à prouver : en cas de doute, retiens la faute grave.");
+  if (type === "rupture_conventionnelle") {
+    const cal = calendrierRupture(s(d, "date_signature"));
+    if (cal && s(d, "date_fin") && s(d, "date_fin") < cal.finAuPlusTot) a.push(`La date de fin ne peut pas précéder le lendemain de l'homologation : au plus tôt le ${dateLongue(cal.finAuPlusTot)}.`);
+    const ref = Number(s(d, "salaire_reference"));
+    if (!ref) a.push("Indique le salaire de référence pour vérifier l'indemnité minimale.");
+    if (ref && s(d, "indemnite") && Number(s(d, "indemnite")) < indemniteLegale(ref, anciennete(ctx?.salarie?.date_embauche ?? "", s(d, "date_fin") || s(d, "date_signature")).annees)) a.push("L'indemnité convenue est inférieure à l'indemnité légale de licenciement : l'administration refusera l'homologation.");
+  }
+  if (type === "rupture_essai" && !s(d, "fin_essai")) a.push("Indique la fin prévue de la période d'essai : le délai de prévenance ne peut pas la dépasser.");
+  if (type === "solde_tout_compte") a.push("Le montant doit correspondre au bulletin de paie de sortie. Le salarié peut dénoncer ce reçu pendant 6 mois.");
   return a;
 }
 

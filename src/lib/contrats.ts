@@ -208,7 +208,7 @@ export function normaliser(d: Partial<Donnees> & { avantage_nourriture?: boolean
 const num = (s: string) => Number(String(s ?? "").replace(",", "."));
 const eur = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const heures = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
-const date = (iso: string) => (iso ? new Date(iso + "T12:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "[date à compléter]");
+const date = (iso: string) => (iso ? new Date(iso + "T12:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }).replace(/^1 /, "1er ") : "[date à compléter]");
 const ou = (v: string, defaut = "[à compléter]") => (v?.trim() ? v.trim() : defaut);
 const e = (d: Donnees) => (d.civilite === "Mme" ? "e" : "");
 const leSalarie = (d: Donnees) => (d.civilite === "Mme" ? "la salariée" : "le salarié");

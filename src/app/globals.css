@@ -2298,3 +2298,5 @@ button.hnav-profil:hover .avatar, button.hnav-profil[aria-expanded="true"] .avat
   .topbar { padding-top: env(safe-area-inset-top, 0px); height: calc(54px + env(safe-area-inset-top, 0px)); }
   .menu-compte-liste { top: calc(58px + env(safe-area-inset-top, 0px)); }
 }
+.doc-groupe + .doc-groupe { margin-top: 18px; }
+.doc-groupe-titre { margin: 0 0 8px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
