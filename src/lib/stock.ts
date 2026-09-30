@@ -7,6 +7,8 @@
 //   + mouvements depuis (les ventes en salle décomptent les ingrédients, variation négative).
 // Un produit jamais inventorié a un stock inconnu (null) : on ne devine pas.
 
+import type { Famille } from "@/lib/categories";
+
 export type Produit = {
   id: string;
   nom: string;
@@ -20,6 +22,8 @@ export type Produit = {
   unite_alternative: string | null;
   seuil: number | null;
   niveau_cible: number | null;
+  famille: Famille | null;
+  sous_categorie: string | null;
 };
 
 export type Zone = { id: string; titre: string; couleur: string | null; note: string | null; ordre: number };

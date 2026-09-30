@@ -34,7 +34,7 @@ export function useStock(etablissementId: string) {
     const depuis = new Date(Date.now() - JOURS * 864e5).toISOString();
     const e = etablissementId;
     Promise.all([
-      sb.from("produits").select("id, nom, unite, origine, fournisseur, conditionnement, conservation, prix_unitaire, reference_fournisseur, unite_alternative, seuil, niveau_cible").eq("etablissement_id", e).order("nom"),
+      sb.from("produits").select("id, nom, unite, origine, fournisseur, conditionnement, conservation, prix_unitaire, reference_fournisseur, unite_alternative, seuil, niveau_cible, famille, sous_categorie").eq("etablissement_id", e).order("nom"),
       sb.from("zones_stockage").select("id, titre, couleur, note, ordre").eq("etablissement_id", e).order("ordre"),
       sb.from("produit_zones").select("produit_id, zone_id, produits!inner(etablissement_id)").eq("produits.etablissement_id", e),
       sb.from("inventaire_releves").select("id, produit_id, zone_id, valeur, created_at, created_by").eq("etablissement_id", e).gte("created_at", depuis).limit(20000),

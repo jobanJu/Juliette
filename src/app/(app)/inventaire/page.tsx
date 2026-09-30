@@ -9,6 +9,10 @@ import { euros, formatQte, memeNom, quantiteSuggeree, STATUT_STOCK } from "@/lib
 import type { EtatStock, Produit } from "@/lib/stock";
 import ModalProduit from "@/components/stock/ModalProduit";
 import ModalZones from "@/components/stock/ModalZones";
+import ModalImport from "@/components/stock/ModalImport";
+import ModalClasser from "@/components/stock/ModalClasser";
+import { devinerCategorie, FAMILLES, ORDRE_FAMILLES } from "@/lib/categories";
+import type { Famille } from "@/lib/categories";
 import Modal from "@/components/Modal";
 import Icone from "@/components/Icone";
 
@@ -25,6 +29,10 @@ export default function Stocks() {
   const [zone, setZone] = useState("toutes");
   const [fournisseur, setFournisseur] = useState("tous");
   const [statut, setStatut] = useState<EtatStock["statut"] | "tous">("tous");
+  const [famille, setFamille] = useState<Famille | "toutes" | "a_classer">("toutes");
+  const [sousCategorie, setSousCategorie] = useState("toutes");
+  const [importOuvert, setImportOuvert] = useState(false);
+  const [classerOuvert, setClasserOuvert] = useState(false);
   const [produit, setProduit] = useState<Produit | "nouveau" | null>(null);
   const [zonesOuvert, setZonesOuvert] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -38,6 +46,8 @@ export default function Stocks() {
   const sauve = (m: string) => {
     setProduit(null);
     setZonesOuvert(false);
+    setImportOuvert(false);
+    setClasserOuvert(false);
     setToast(m);
     recharger();
   };
@@ -53,12 +63,26 @@ export default function Stocks() {
     const q = recherche.trim().toLowerCase();
     return d.produits
       .map((p) => ({ p, s: stocks.get(p.id) as EtatStock }))
-      .filter(({ p }) => !q || `${p.nom} ${p.fournisseur ?? ""} ${p.reference_fournisseur ?? ""}`.toLowerCase().includes(q))
+      .filter(({ p }) => !q || `${p.nom} ${p.fournisseur ?? ""} ${p.reference_fournisseur ?? ""} ${p.sous_categorie ?? ""}`.toLowerCase().includes(q))
+      .filter(({ p }) => famille === "toutes" || (famille === "a_classer" ? !p.famille : p.famille === famille))
+      .filter(({ p }) => sousCategorie === "toutes" || (p.sous_categorie ?? "") === sousCategorie)
       .filter(({ p }) => zone === "toutes" || (zone === "aucune" ? !zonesDe.has(p.id) : zonesDe.get(p.id)?.includes(zone)))
       .filter(({ p }) => fournisseur === "tous" || (fournisseur === "aucun" ? !p.fournisseur : memeNom(p.fournisseur, fournisseur)))
       .filter(({ s }) => statut === "tous" || s.statut === statut)
       .sort((a, b) => ["rupture", "bas", "ok", "inconnu"].indexOf(a.s.statut) - ["rupture", "bas", "ok", "inconnu"].indexOf(b.s.statut) || a.p.nom.localeCompare(b.p.nom));
-  }, [d, stocks, recherche, zone, fournisseur, statut, zonesDe]);
+  }, [d, stocks, recherche, zone, fournisseur, statut, zonesDe, famille, sousCategorie]);
+
+  // Nombre de produits par famille, pour les onglets de filtre.
+  const parFamille = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const p of d?.produits ?? []) m.set(p.famille ?? "a_classer", (m.get(p.famille ?? "a_classer") ?? 0) + 1);
+    return m;
+  }, [d]);
+  const sousCategories = useMemo(
+    () => (famille === "toutes" || famille === "a_classer" ? [] : [...new Set((d?.produits ?? []).filter((p) => p.famille === famille).map((p) => p.sous_categorie ?? ""))].sort((a, b) => (a ? (b ? a.localeCompare(b) : -1) : 1))),
+    [d, famille],
+  );
+  const aClasser = useMemo(() => (d?.produits ?? []).filter((p) => !p.famille || !p.sous_categorie).map((p) => ({ p, g: devinerCategorie(p.nom, p.famille ?? p.conservation) })).filter(({ p, g }) => (!p.famille && g.famille) || (!p.sous_categorie && g.sous_categorie && g.famille === (p.famille ?? g.famille))), [d]);
 
   const stats = useMemo(() => {
     if (!d) return null;
@@ -98,6 +122,14 @@ export default function Stocks() {
           <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button className="btn" onClick={() => setZonesOuvert(true)}>
               Zones de stockage
+            </button>
+            {aClasser.length > 0 && (
+              <button className="btn" onClick={() => setClasserOuvert(true)}>
+                <Icone nom="magie" /> Classer automatiquement ({aClasser.length})
+              </button>
+            )}
+            <button className="btn" onClick={() => setImportOuvert(true)}>
+              <Icone nom="envoyer" /> Importer depuis Excel
             </button>
             <button className="btn btn-primary" onClick={() => setProduit("nouveau")}>
               + Produit
@@ -150,6 +182,36 @@ export default function Stocks() {
             </div>
           </div>
 
+          <div className="tabs-scroll" style={{ marginBottom: 10 }}>
+            <nav className="haccp-tabs familles-tabs" aria-label="Familles de produits">
+              <button className={famille === "toutes" ? "on" : ""} onClick={() => { setFamille("toutes"); setSousCategorie("toutes"); }}>
+                Tout <small>{d.produits.length}</small>
+              </button>
+              {ORDRE_FAMILLES.filter((f) => parFamille.has(f)).map((f) => (
+                <button key={f} className={famille === f ? "on" : ""} onClick={() => { setFamille(f); setSousCategorie("toutes"); }}>
+                  <Icone nom={FAMILLES[f].icone} taille={15} /> {FAMILLES[f].label} <small>{parFamille.get(f)}</small>
+                </button>
+              ))}
+              {parFamille.has("a_classer") && (
+                <button className={famille === "a_classer" ? "on" : ""} onClick={() => { setFamille("a_classer"); setSousCategorie("toutes"); }}>
+                  À classer <small>{parFamille.get("a_classer")}</small>
+                </button>
+              )}
+            </nav>
+          </div>
+          {sousCategories.length > 1 && (
+            <div className="chips" style={{ marginBottom: 10 }}>
+              <button className={`chip${sousCategorie === "toutes" ? " on" : ""}`} onClick={() => setSousCategorie("toutes")}>
+                Toutes
+              </button>
+              {sousCategories.map((sc) => (
+                <button key={sc || "aucune"} className={`chip${sousCategorie === sc ? " on" : ""}`} onClick={() => setSousCategorie(sc)}>
+                  {sc || "Sans sous-catégorie"}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="filters">
             <label className="search" style={{ flex: "1 1 220px", background: "var(--card)" }}>
               <Icone nom="recherche" taille={15} />
@@ -185,13 +247,30 @@ export default function Stocks() {
 
           <section className="card" style={{ padding: "16px 6px 6px" }}>
             {!lignes.length ? (
-              <div className="empty">{d.produits.length ? "Aucun produit ne correspond." : "Le catalogue est vide : ajoute tes premiers produits."}</div>
+              <div className="empty">
+                {d.produits.length ? (
+                  "Aucun produit ne correspond."
+                ) : (
+                  <>
+                    <b>Le catalogue est vide</b>
+                    Importe ta liste de produits depuis Excel plutôt que de les saisir un par un.
+                    {gestion && (
+                      <p style={{ marginTop: 14 }}>
+                        <button className="btn btn-primary" onClick={() => setImportOuvert(true)}>
+                          <Icone nom="envoyer" /> Importer depuis Excel
+                        </button>
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
             ) : (
               <div className="table-wrap">
                 <table className="data">
                   <thead>
                     <tr>
                       <th>Produit</th>
+                      <th>Catégorie</th>
                       <th>Zone</th>
                       <th style={{ textAlign: "right" }}>Stock</th>
                       <th style={{ textAlign: "right" }}>Seuil / cible</th>
@@ -206,6 +285,16 @@ export default function Stocks() {
                         <td>
                           <b style={{ fontWeight: 600 }}>{p.nom}</b>
                           <small className="justif">{[p.fournisseur, p.conditionnement].filter(Boolean).join(" · ") || "—"}</small>
+                        </td>
+                        <td>
+                          {p.famille ? (
+                            <>
+                              <span className={`pill ${FAMILLES[p.famille].ton}`}>{FAMILLES[p.famille].label}</span>
+                              {p.sous_categorie && <small className="justif">{p.sous_categorie}</small>}
+                            </>
+                          ) : (
+                            <span className="hint">À classer</span>
+                          )}
                         </td>
                         <td>
                           <span className="person-tags">
@@ -264,6 +353,10 @@ export default function Stocks() {
           onSaved={sauve}
         />
       )}
+      {importOuvert && d && (
+        <ModalImport etablissementId={etablissement.id} compteId={compte.id} produits={d.produits} fournisseurs={d.fournisseurs} onClose={() => setImportOuvert(false)} onSaved={sauve} />
+      )}
+      {classerOuvert && <ModalClasser propositions={aClasser} onClose={() => setClasserOuvert(false)} onSaved={sauve} />}
       {zonesOuvert && d && (
         <ModalZones etablissementId={etablissement.id} zones={d.zones} nbProduits={(id) => d.produitZones.filter((x) => x.zone_id === id).length} onClose={() => setZonesOuvert(false)} onSaved={sauve} />
       )}

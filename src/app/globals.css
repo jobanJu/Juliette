@@ -2079,3 +2079,24 @@ tr.row-choisi td { background: var(--lavender); }
 
 /* Icônes au trait (composant Icone) : alignées sur le texte, jamais écrasées. */
 .icone { display: inline-block; flex-shrink: 0; vertical-align: -0.18em; }
+
+/* ── Catalogue : familles et import Excel ── */
+.familles-tabs button small { margin-left: 4px; font-size: 11px; color: var(--muted); font-weight: 600; }
+.modal:has(.import-produits) { max-width: 980px; }
+.import-produits { display: grid; gap: 14px; min-width: 0; }
+.import-depot { position: relative; display: grid; justify-items: center; gap: 6px; padding: 34px 20px; border: 2px dashed var(--line); border-radius: 14px; background: var(--paper); text-align: center; cursor: pointer; color: var(--ink-2); }
+.import-depot:hover, .import-depot:focus-within { border-color: var(--purple); background: var(--lavender); color: var(--purple-ink); }
+.import-depot input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.import-depot small { max-width: 52ch; color: var(--muted); }
+.import-depot.occupe { opacity: .7; cursor: progress; }
+.import-aide { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border-radius: 12px; background: var(--lavender); }
+.import-aide p { margin: 2px 0 0; }
+.import-bilan { display: flex; flex-wrap: wrap; gap: 6px; }
+.import-colonnes summary { cursor: pointer; font-weight: 650; font-size: 13px; }
+.import-grille-colonnes { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-top: 10px; }
+.import-table { max-height: 380px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; }
+.import-table .select-sm { height: 30px; font-size: 12px; }
+.import-ko td { opacity: .65; }
+.import-progression { display: grid; gap: 10px; padding: 24px 4px; }
+.barre-progression { height: 8px; border-radius: 8px; background: var(--lavender); overflow: hidden; }
+.barre-progression i { display: block; height: 100%; background: var(--purple); transition: width .3s; }

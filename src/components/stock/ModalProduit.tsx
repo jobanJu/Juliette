@@ -4,6 +4,8 @@ import { useState } from "react";
 import Modal from "@/components/Modal";
 import { getSupabaseClient } from "@/lib/supabase";
 import { UNITES } from "@/lib/stock";
+import { devinerCategorie, FAMILLES, ORDRE_FAMILLES } from "@/lib/categories";
+import type { Famille } from "@/lib/categories";
 import type { Fournisseur, Produit, Zone } from "@/lib/stock";
 
 type Props = {
@@ -28,6 +30,18 @@ export default function ModalProduit(p: Props) {
   const [reference, setReference] = useState(x?.reference_fournisseur ?? "");
   const [seuil, setSeuil] = useState(x?.seuil != null ? String(x.seuil) : "");
   const [cible, setCible] = useState(x?.niveau_cible != null ? String(x.niveau_cible) : "");
+  const [famille, setFamille] = useState<Famille | "">(x?.famille ?? "");
+  const [sousCategorie, setSousCategorie] = useState(x?.sous_categorie ?? "");
+  // Tant que la catégorie n'a pas été choisie à la main, elle suit le nom saisi.
+  const [categorieManuelle, setCategorieManuelle] = useState(Boolean(x?.famille));
+
+  function changerNom(v: string) {
+    setNom(v);
+    if (categorieManuelle) return;
+    const g = devinerCategorie(v);
+    setFamille(g.famille ?? "");
+    setSousCategorie(g.sous_categorie ?? "");
+  }
   const [zones, setZones] = useState<Set<string>>(() => new Set(p.zonesDuProduit));
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -51,6 +65,8 @@ export default function ModalProduit(p: Props) {
       reference_fournisseur: reference.trim() || null,
       seuil: vals.seuil,
       niveau_cible: vals.cible,
+      famille: famille || null,
+      sous_categorie: famille ? sousCategorie.trim() || null : null,
       ...(x ? {} : { origine: "achat" }),
     };
     const r = x ? await sb.from("produits").update(ligne).eq("id", x.id).select("id").single() : await sb.from("produits").insert(ligne).select("id").single();
@@ -108,7 +124,7 @@ export default function ModalProduit(p: Props) {
       <div className="form-2">
         <div className="field">
           <label htmlFor="p-nom">Nom *</label>
-          <input id="p-nom" value={nom} onChange={(e) => setNom(e.target.value)} autoFocus={!x} />
+          <input id="p-nom" value={nom} onChange={(e) => changerNom(e.target.value)} autoFocus={!x} />
         </div>
         <div className="field">
           <label htmlFor="p-unite">Unité de stock</label>
@@ -116,6 +132,46 @@ export default function ModalProduit(p: Props) {
           <datalist id="unites">
             {UNITES.map((u) => (
               <option key={u} value={u} />
+            ))}
+          </datalist>
+        </div>
+      </div>
+      <div className="form-2">
+        <div className="field">
+          <label htmlFor="p-famille">Famille</label>
+          <select
+            id="p-famille"
+            value={famille}
+            onChange={(e) => {
+              setCategorieManuelle(true);
+              setFamille(e.target.value as Famille | "");
+              setSousCategorie("");
+            }}
+          >
+            <option value="">À classer</option>
+            {ORDRE_FAMILLES.map((f) => (
+              <option key={f} value={f}>
+                {FAMILLES[f].label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="p-sous">Sous-catégorie</label>
+          <input
+            id="p-sous"
+            value={sousCategorie}
+            onChange={(e) => {
+              setCategorieManuelle(true);
+              setSousCategorie(e.target.value);
+            }}
+            list="sous-categories"
+            disabled={!famille}
+            placeholder={famille ? "Ex. : Fromages" : "Choisis d'abord la famille"}
+          />
+          <datalist id="sous-categories">
+            {(famille ? FAMILLES[famille].sous : []).map((s) => (
+              <option key={s} value={s} />
             ))}
           </datalist>
         </div>
