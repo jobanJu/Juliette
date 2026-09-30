@@ -306,7 +306,7 @@ export const GUIDES: Guide[] = [
 ];
 
 export const FAQ: { q: string; r: string }[] = [
-  { q: "Comment changer mon mot de passe ?", r: "Paramètres › Mon compte › Mot de passe. Il faut au moins 8 caractères." },
+  { q: "J'ai oublié mon mot de passe.", r: "Sur la page de connexion, clique sur « Mot de passe oublié ? » et indique ton e-mail : tu reçois un lien, valable une heure, pour en choisir un nouveau. Pour le changer quand tu es connecté : Paramètres › Mon compte › Mot de passe." },
   { q: "Mes données sont-elles partagées entre mes restaurants ?", r: "Non. Chaque établissement a ses propres produits, son équipe et son registre HACCP. Un même compte peut simplement accéder à plusieurs établissements." },
   { q: "Est-ce que Juliette fonctionne sur téléphone ?", r: "Oui. Toutes les pages s'adaptent au téléphone, avec une barre d'accès rapide en bas de l'écran. Tu peux ajouter Juliette à l'écran d'accueil depuis le navigateur." },
   { q: "Puis-je exporter mes données ?", r: "Le registre HACCP et les pointages s'exportent en CSV, lisible dans Excel ou Google Sheets." },

@@ -77,7 +77,10 @@ export default function Connexion() {
             <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required />
           </div>
           <div className="field">
-            <label htmlFor="mdp">Mot de passe</label>
+            <span className="mdp-label">
+              <label htmlFor="mdp">Mot de passe</label>
+              <Link href="/mot-de-passe-oublie">Mot de passe oublié ?</Link>
+            </span>
             <input id="mdp" type="password" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} autoComplete="current-password" required />
           </div>
           {erreur && <div className="error" role="alert">{erreur}</div>}
