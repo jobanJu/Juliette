@@ -179,6 +179,12 @@ export default function Shell({ children }: { children: ReactNode }) {
           );
         })}
         {!entrees.length && <div className="empty">Aucun module trouvé.</div>}
+        <Link href="/aide" className={`nav-item${pathname === "/aide" ? " active" : ""}`} onClick={() => setMenuOuvert(false)}>
+          <span className="ic" aria-hidden>
+            <Icone nom="aide" />
+          </span>
+          Aide
+        </Link>
 
         <div className="profile">
           <Link href="/parametres" className="profile-link" title="Mon compte" onClick={() => setMenuOuvert(false)}>
@@ -244,9 +250,13 @@ export default function Shell({ children }: { children: ReactNode }) {
             <span aria-hidden className="hide-sm" style={{ color: "#cfcad6" }}>/</span>
             {courant?.section && <span className="hide-sm">{SECTIONS[courant.section].label}</span>}
             {courant?.section && <span aria-hidden className="hide-sm" style={{ color: "#cfcad6" }}>/</span>}
-            <b>{courant?.label ?? "Juliette"}</b>
+            <b>{courant?.label ?? (pathname === "/aide" ? "Aide" : "Juliette")}</b>
           </div>
           <div className="top-right">
+            <Link href="/aide" className={`btn-messages${pathname === "/aide" ? " on" : ""}`} aria-label="Aide" title="Aide">
+              <Icone nom="aide" />
+              <span className="hide-sm">Aide</span>
+            </Link>
             {messagerie && (
               <Link href="/messagerie" className={`btn-messages${courant?.module === "messagerie" ? " on" : ""}`} aria-label="Messagerie" title="Messagerie">
                 <Icone nom="mail" />

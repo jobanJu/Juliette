@@ -2100,3 +2100,35 @@ tr.row-choisi td { background: var(--lavender); }
 .import-progression { display: grid; gap: 10px; padding: 24px 4px; }
 .barre-progression { height: 8px; border-radius: 8px; background: var(--lavender); overflow: hidden; }
 .barre-progression i { display: block; height: 100%; background: var(--purple); transition: width .3s; }
+
+/* ── Centre d'aide ── */
+.aide-recherche { max-width: 560px; margin-bottom: 18px; background: var(--card); height: 44px; }
+.aide { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; align-items: start; }
+.aide-sommaire { position: sticky; top: 76px; display: grid; gap: 2px; max-height: calc(100vh - 100px); overflow-y: auto; }
+.aide-sommaire a { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 9px; color: var(--ink-2); font-size: 13px; }
+.aide-sommaire a:hover { background: var(--lavender); color: var(--purple-ink); }
+.aide-contenu { display: grid; gap: 14px; min-width: 0; }
+.aide-guide { display: grid; gap: 12px; scroll-margin-top: 76px; }
+.aide-guide header { display: flex; align-items: center; gap: 12px; }
+.aide-guide header > div { flex: 1; min-width: 0; }
+.aide-guide h2 { margin: 0; font-size: 17px; letter-spacing: -.3px; text-wrap: balance; }
+.aide-guide header small { color: var(--muted); font-size: 12px; }
+.aide-ouvrir { height: 34px; flex-shrink: 0; }
+.aide-premiers { border-color: var(--purple); background: linear-gradient(var(--lavender), var(--card) 140px); }
+.aide-resume { margin: 0; color: var(--ink-2); line-height: 1.6; max-width: 72ch; }
+.aide-etapes { margin: 0; padding: 0; list-style: none; counter-reset: etape; display: grid; gap: 10px; }
+.aide-etapes li { counter-increment: etape; display: grid; grid-template-columns: 26px minmax(0, 1fr); column-gap: 10px; row-gap: 2px; line-height: 1.55; max-width: 78ch; }
+.aide-etapes li::before { content: counter(etape); grid-row: span 2; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--lavender); color: var(--purple-ink); font-size: 12px; font-weight: 700; }
+.aide-etapes b { font-size: 13.5px; }
+.aide-etapes span { color: var(--ink-2); font-size: 13px; }
+.aide-astuce { margin: 0; display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; background: var(--yellow); color: var(--yellow-ink); font-size: 13px; line-height: 1.5; }
+.aide-astuce .icone { margin-top: 2px; }
+.aide-faq { display: grid; gap: 4px; }
+.aide-faq details { border-top: 1px solid var(--line); padding: 10px 2px; }
+.aide-faq summary { cursor: pointer; font-weight: 600; font-size: 13.5px; }
+.aide-faq p { margin: 8px 0 0; color: var(--ink-2); line-height: 1.55; max-width: 72ch; }
+@media (max-width: 860px) {
+  .aide { grid-template-columns: minmax(0, 1fr); }
+  .aide-sommaire { position: static; display: flex; overflow-x: auto; gap: 6px; max-height: none; scrollbar-width: none; }
+  .aide-sommaire a { flex: 0 0 auto; white-space: nowrap; border: 1px solid var(--line); background: var(--card); }
+}
